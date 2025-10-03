@@ -17,20 +17,11 @@
     <input id="input" autocomplete="off" placeholder="type message..."/>
     <button>send</button>
   </form>
-  <form id="nickform" action="">
-    <input id="nickname" autocomplete="off" placeholder="set nickname..."/>
-    <button>set</button>
-  </form>
   <script src="/socket.io/socket.io.js"></script>
   <script>
-    var socket = io({
-  transports: ["websocket"]
-});
-
+    var socket = io({ transports: ["websocket"] });
     var form = document.getElementById('form');
     var input = document.getElementById('input');
-    var nickform = document.getElementById('nickform');
-    var nickname = document.getElementById('nickname');
     var messages = document.getElementById('messages');
 
     form.addEventListener('submit', function(e) {
@@ -41,21 +32,10 @@
       }
     });
 
-    nickform.addEventListener('submit', function(e) {
-      e.preventDefault();
-      if (nickname.value) {
-        socket.emit('set nickname', nickname.value);
-        nickname.value = '';
-      }
-    });
-
     socket.on('chat message', function(data) {
       var item = document.createElement('li');
-      if (data.user === "system") {
-        item.textContent = `[system] ${data.msg}`.toLowerCase();
-      } else {
-        item.textContent = `${data.user}: ${data.msg}`;
-      }
+      item.style.color = data.color;
+      item.textContent = data.msg;
       messages.appendChild(item);
       window.scrollTo(0, document.body.scrollHeight);
     });
