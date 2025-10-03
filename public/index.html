@@ -1,45 +1,36 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
   <title>asterisk</title>
   <style>
-    body { font: 16px sans-serif; margin: 20px; }
-    #messages { list-style: none; padding: 0; }
-    #messages li { margin: 5px 0; padding: 5px; background: #f0f0f0; }
+    body { font-family: monospace; background:#111; color:#eee; }
+    #messages { list-style-type:none; padding:0; }
+    #messages li { margin:5px 0; }
+    #form { position:fixed; bottom:0; width:100%; display:flex; }
+    #input { flex:1; }
   </style>
 </head>
 <body>
-  <h1>asterisk</h1>
-
-  <div id="nicknameBox">
-    <input id="nickname" placeholder="enter a nickname..." />
-    <button id="setName">set nickname</button>
-  </div>
-
+  <h2>asterisk</h2>
   <ul id="messages"></ul>
-
-  <form id="form">
-    <input id="input" autocomplete="off" placeholder="type a message..." />
+  <form id="form" action="">
+    <input id="input" autocomplete="off" placeholder="type message..."/>
     <button>send</button>
   </form>
-
+  <form id="nickform" action="">
+    <input id="nickname" autocomplete="off" placeholder="set nickname..."/>
+    <button>set</button>
+  </form>
   <script src="/socket.io/socket.io.js"></script>
   <script>
-    const socket = io();
-    const form = document.getElementById('form');
-    const input = document.getElementById('input');
-    const messages = document.getElementById('messages');
-    const nicknameInput = document.getElementById('nickname');
-    const setNameBtn = document.getElementById('setName');
+    var socket = io();
+    var form = document.getElementById('form');
+    var input = document.getElementById('input');
+    var nickform = document.getElementById('nickform');
+    var nickname = document.getElementById('nickname');
+    var messages = document.getElementById('messages');
 
-    setNameBtn.addEventListener('click', () => {
-      const name = nicknameInput.value.trim();
-      socket.emit('set nickname', name);
-      nicknameInput.value = '';
-    });
-
-    form.addEventListener('submit', (e) => {
+    form.addEventListener('submit', function(e) {
       e.preventDefault();
       if (input.value) {
         socket.emit('chat message', input.value);
@@ -47,10 +38,22 @@
       }
     });
 
-    socket.on('chat message', (msg) => {
-      const li = document.createElement('li');
-      li.textContent = msg;
-      messages.appendChild(li);
+    nickform.addEventListener('submit', function(e) {
+      e.preventDefault();
+      if (nickname.value) {
+        socket.emit('set nickname', nickname.value);
+        nickname.value = '';
+      }
+    });
+
+    socket.on('chat message', function(data) {
+      var item = document.createElement('li');
+      if (data.user === "system") {
+        item.textContent = `[system] ${data.msg}`.toLowerCase();
+      } else {
+        item.textContent = `${data.user}: ${data.msg}`;
+      }
+      messages.appendChild(item);
       window.scrollTo(0, document.body.scrollHeight);
     });
   </script>
