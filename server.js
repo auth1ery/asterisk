@@ -11,23 +11,41 @@ const app = express();
 const server = createServer(app);
 const io = new Server(server);
 
-// serve static files (our chat page)
 app.use(express.static(path.join(__dirname, "public")));
+
+const bannedWords = ["nigger", "hitler", "vagina", "dick"];
+
+function containsBadWord(msg) {
+  const lower = msg.toLowerCase();
+  return bannedWords.some(word => lower.includes(word));
+}
 
 io.on("connection", (socket) => {
   console.log("A user joined");
 
+  let nickname = "anonymous";
+
+  socket.on("set nickname", (name) => {
+    nickname = (name.trim() || "anonymous").toLowerCase();
+    socket.emit("chat message", `you are now known as ${nickname}`);
+  });
+
   socket.on("chat message", (msg) => {
-    io.emit("chat message", msg); // send to all clients
+    const cleanMsg = msg.toLowerCase();
+    if (!containsBadWord(cleanMsg)) {
+      io.emit("chat message", `${nickname}: ${cleanMsg}`);
+    } else {
+      socket.emit("chat message", "⚠️ message blocked by moderation");
+    }
   });
 
   socket.on("disconnect", () => {
-    console.log("A user left");
+    console.log(`${nickname} left`);
   });
 });
 
-// Render provides PORT env var
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`server running on port ${PORT}`);
 });
+
