@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Chat Room</title>
+  <title>asterisk</title>
   <style>
     body { font: 16px sans-serif; margin: 20px; }
     #messages { list-style: none; padding: 0; }
@@ -10,11 +10,19 @@
   </style>
 </head>
 <body>
-  <h1>Chat Room</h1>
+  <h2>welcome to...</h2>
+  <h1>asterisk</h1>
+
+  <div id="nicknameBox">
+    <input id="nickname" placeholder="set your nickname here..." />
+    <button id="setName">set</button>
+  </div>
+
   <ul id="messages"></ul>
+
   <form id="form">
-    <input id="input" autocomplete="off" placeholder="Type a message..." />
-    <button>Send</button>
+    <input id="input" autocomplete="off" placeholder="type a message..." />
+    <button>send</button>
   </form>
 
   <script src="/socket.io/socket.io.js"></script>
@@ -23,6 +31,14 @@
     const form = document.getElementById('form');
     const input = document.getElementById('input');
     const messages = document.getElementById('messages');
+    const nicknameInput = document.getElementById('nickname');
+    const setNameBtn = document.getElementById('setName');
+
+    setNameBtn.addEventListener('click', () => {
+      const name = nicknameInput.value.trim();
+      socket.emit('set nickname', name);
+      nicknameInput.value = '';
+    });
 
     form.addEventListener('submit', (e) => {
       e.preventDefault();
