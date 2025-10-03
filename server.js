@@ -13,7 +13,7 @@ const io = new Server(server);
 
 app.use(express.static(path.join(__dirname, "public")));
 
-const bannedWords = ["nigger", "hitler", "vagina", "dick"];
+const bannedWords = ["fuck", "shit", "bitch"];
 
 function containsBadWord(msg) {
   const lower = msg.toLowerCase();
@@ -21,21 +21,22 @@ function containsBadWord(msg) {
 }
 
 io.on("connection", (socket) => {
-  console.log("A user joined");
+  console.log("a user joined");
 
-  let nickname = "anonymous";
+  let nickname = "Anonymous";
 
   socket.on("set nickname", (name) => {
-    nickname = (name.trim() || "anonymous").toLowerCase();
-    socket.emit("chat message", `you are now known as ${nickname}`);
+    nickname = name.trim() || "Anonymous";
+    // system message → lowercase
+    socket.emit("chat message", `you are now known as ${nickname}`.toLowerCase());
   });
 
   socket.on("chat message", (msg) => {
-    const cleanMsg = msg.toLowerCase();
-    if (!containsBadWord(cleanMsg)) {
-      io.emit("chat message", `${nickname}: ${cleanMsg}`);
+    if (!containsBadWord(msg)) {
+      io.emit("chat message", `${nickname}: ${msg}`);
     } else {
-      socket.emit("chat message", "⚠️ message blocked by moderation");
+      // moderation warning → lowercase
+      socket.emit("chat message", "⚠️ message blocked by moderation".toLowerCase());
     }
   });
 
@@ -48,4 +49,3 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`server running on port ${PORT}`);
 });
-
