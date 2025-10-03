@@ -13,7 +13,7 @@ const io = new Server(server);
 
 app.use(express.static(path.join(__dirname, "public")));
 
-const bannedWords = ["fuck", "shit", "bitch"];
+const bannedWords = ["nigger", "hitler", "vagina"];
 
 function containsBadWord(msg) {
   const lower = msg.toLowerCase();
@@ -21,31 +21,21 @@ function containsBadWord(msg) {
 }
 
 io.on("connection", (socket) => {
-  console.log("a user joined");
-
   let nickname = "Anonymous";
+
+  // system join message
+  socket.broadcast.emit("chat message", "a user joined".toLowerCase());
 
   socket.on("set nickname", (name) => {
     nickname = name.trim() || "Anonymous";
-    // system message → lowercase
     socket.emit("chat message", `you are now known as ${nickname}`.toLowerCase());
+    socket.broadcast.emit("chat message", `${nickname} joined the chat`.toLowerCase());
   });
 
   socket.on("chat message", (msg) => {
     if (!containsBadWord(msg)) {
+      // keep nickname + message exactly as typed
       io.emit("chat message", `${nickname}: ${msg}`);
     } else {
-      // moderation warning → lowercase
-      socket.emit("chat message", "⚠️ message blocked by moderation".toLowerCase());
-    }
-  });
-
-  socket.on("disconnect", () => {
-    console.log(`${nickname} left`);
-  });
-});
-
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-  console.log(`server running on port ${PORT}`);
-});
+      // system moderation message → lowercase
+      socket.emit("chat message", "⚠️ message blocked by
