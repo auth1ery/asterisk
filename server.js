@@ -11,15 +11,17 @@ app.use(express.static(path.join(__dirname, "public")));
 
 let users = {}; // store color for each socket
 
-// generate random color for each user
 function randomColor() {
   const colors = ["#e74c3c", "#3498db", "#2ecc71", "#f1c40f", "#9b59b6", "#e67e22", "#1abc9c"];
   return colors[Math.floor(Math.random() * colors.length)];
 }
 
 io.on("connection", (socket) => {
-  // assign random color
-  users[socket.id] = randomColor();
+  const color = randomColor();
+  users[socket.id] = color;
+
+  // system message: user joined
+  io.emit("chat message", { color: "#888", msg: "user joined" });
 
   socket.on("chat message", (msg) => {
     io.emit("chat message", {
@@ -29,6 +31,7 @@ io.on("connection", (socket) => {
   });
 
   socket.on("disconnect", () => {
+    io.emit("chat message", { color: "#888", msg: "user left" });
     delete users[socket.id];
   });
 });
