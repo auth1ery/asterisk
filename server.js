@@ -9,7 +9,7 @@ const io = new Server(server);
 
 app.use(express.static(path.join(__dirname, "public")));
 
-let users = {}; // store color for each socket
+let users = {}; // socket.id -> { color, nickname }
 
 function randomColor() {
   const colors = ["#e74c3c", "#3498db", "#2ecc71", "#f1c40f", "#9b59b6", "#e67e22", "#1abc9c"];
@@ -18,21 +18,31 @@ function randomColor() {
 
 io.on("connection", (socket) => {
   const color = randomColor();
-  users[socket.id] = color;
+  users[socket.id] = { color, nickname: "Anonymous" };
 
-  // system message: user joined
-  io.emit("chat message", { color: "#888", msg: "user joined" });
+  // Send active user count immediately
+  io.emit("user count", Object.keys(users).length);
+
+  // Receive nickname from client
+  socket.on("set nickname", (name) => {
+    users[socket.id].nickname = name;
+    io.emit("chat message", { color: "#888", msg: `${name} joined` });
+    io.emit("user count", Object.keys(users).length);
+  });
 
   socket.on("chat message", (msg) => {
-    io.emit("chat message", {
-      color: users[socket.id],
-      msg: msg
-    });
+    const user = users[socket.id];
+    if (!user) return;
+    io.emit("chat message", { color: user.color, msg: `${user.nickname}: ${msg}` });
   });
 
   socket.on("disconnect", () => {
-    io.emit("chat message", { color: "#888", msg: "user left" });
-    delete users[socket.id];
+    const user = users[socket.id];
+    if (user) {
+      io.emit("chat message", { color: "#888", msg: `${user.nickname} left` });
+      delete users[socket.id];
+      io.emit("user count", Object.keys(users).length);
+    }
   });
 });
 
