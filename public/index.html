@@ -3,26 +3,33 @@
 <head>
   <title>asterisk</title>
   <style>
-    body { font-family: monospace; background:#111; color:#eee; }
-    #messages { list-style-type:none; padding:0; }
-    #messages li { margin:5px 0; }
-    #form { position:fixed; bottom:0; width:100%; display:flex; }
-    #input { flex:1; }
+    body { font-family: monospace; background:#111; color:#eee; margin:0; display:flex; flex-direction:column; height:100vh; }
+    h2 { text-align:center; margin:10px 0; }
+    #messages { list-style:none; padding:10px; flex:1; overflow-y:auto; margin:0; }
+    #messages li { margin:3px 0; }
+    #user-count { text-align:center; margin-bottom:5px; font-size:0.9em; color:#ccc; }
+    #form { display:flex; padding:10px; background:#222; }
+    #input { flex:1; padding:5px; border:none; border-radius:3px; outline:none; }
+    button { margin-left:5px; padding:5px 10px; border:none; border-radius:3px; background:#3498db; color:#fff; cursor:pointer; }
   </style>
 </head>
 <body>
   <h2>asterisk</h2>
+  <div id="user-count">0 active people</div>
   <ul id="messages"></ul>
   <form id="form" action="">
-    <input id="input" autocomplete="off" placeholder="type message..."/>
+    <input id="input" autocomplete="off" placeholder="type message..." />
     <button>send</button>
   </form>
+
   <script src="/socket.io/socket.io.js"></script>
   <script>
+    var nickname = prompt("Enter your nickname") || "Anonymous";
     var socket = io({ transports: ["websocket"] });
     var form = document.getElementById('form');
     var input = document.getElementById('input');
     var messages = document.getElementById('messages');
+    var userCount = document.getElementById('user-count');
 
     form.addEventListener('submit', function(e) {
       e.preventDefault();
@@ -39,6 +46,13 @@
       messages.appendChild(item);
       window.scrollTo(0, document.body.scrollHeight);
     });
+
+    socket.on('user count', function(count) {
+      userCount.textContent = count + " active people";
+    });
+
+    // notify server about nickname
+    socket.emit('set nickname', nickname);
   </script>
 </body>
 </html>
