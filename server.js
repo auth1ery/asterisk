@@ -1,20 +1,34 @@
+const express = require("express");
+const http = require("http");
+const { Server } = require("socket.io");
+const path = require("path");
+const fs = require("fs");
+
 const { createReport } = require('./moderation/reports');
 const { banUser } = require('./moderation/bans');
 const { blockBanned } = require('./moderation/middleware');
 const db = require('./db/database');
 
-blockBanned(io);
-
-const express = require("express");
-const http = require("http");
-const { Server } = require("socket.io");
-const path = require("path");
-
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
+// Middleware to block banned users
+blockBanned(io);
+
+// Serve static files
 app.use(express.static(path.join(__dirname, "public")));
+
+// Serve admin.html securely with secret injected
+app.get('/admin.html', (req, res) => {
+  const htmlPath = path.join(__dirname, 'public', 'admin.html');
+  let html = fs.readFileSync(htmlPath, 'utf8');
+
+  // Replace placeholder in HTML with secret from environment variable
+  html = html.replace('PLACEHOLDER', process.env.ADMIN_SECRET);
+
+  res.send(html);
+});
 
 let users = {};  
 let typingUsers = new Set(); 
@@ -29,6 +43,9 @@ io.on("connection", (socket) => {
   const color = randomColor();
   users[socket.id] = { color, nickname: "Anonymous" };
 
+  // Check if this socket is an admin
+  socket.isAdmin = socket.handshake.auth?.admin && socket.handshake.auth?.key === process.env.ADMIN_SECRET;
+
   io.emit("user count", Object.keys(users).length);
 
   socket.on("set nickname", (name) => {
@@ -36,9 +53,9 @@ io.on("connection", (socket) => {
 
     io.emit("chat message", { color: "#888", msg: `${name} joined` });
     io.emit("user count", Object.keys(users).length);
-    });
+  });
 
-    socket.on("chat message", (msg) => {
+  socket.on("chat message", (msg) => {
     const user = users[socket.id];
     if (!user) return;
 
@@ -55,7 +72,6 @@ io.on("connection", (socket) => {
       io.emit("typing", display.concat(extra > 0 ? [`and ${extra} more`] : []));
     }
   });
-
 
   socket.on("typing", (isTyping) => {
     if (!users[socket.id]) return;
@@ -78,15 +94,24 @@ io.on("connection", (socket) => {
     console.log('New report created:', reportId);
   });
 
-   app.get('/admin.html', (req, res) => {
-    const fs = require('fs');
-    const path = require('path');
-    const htmlPath = path.join(__dirname, 'public', 'admin.html');
-    let html = fs.readFileSync(htmlPath, 'utf8');
+  // Admin-only events
+  socket.on('getReports', () => {
+    if (!socket.isAdmin) return;
+    // Fetch reports from DB and send to this socket
+    db.all(`SELECT r.*, m.content as message
+            FROM reports r
+            LEFT JOIN messages m ON r.message_id = m.id
+            WHERE r.status = 'pending'`, [], (err, rows) => {
+      if (err) return console.error(err);
+      socket.emit('reports', rows);
+    });
+  });
 
-    html = html.replace('ADMIN_SECRET', process.env.ADMIN_SECRET);
-
-    res.send(html);
+  socket.on('banUser', data => {
+    if (!socket.isAdmin) return;
+    const { userId } = data;
+    banUser(userId, null, 'Manual admin ban', io);
+    db.run(`UPDATE reports SET status='resolved' WHERE reported_user_id=?`, [userId]);
   });
 
   socket.on("disconnect", () => {
