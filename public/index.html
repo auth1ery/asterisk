@@ -79,6 +79,26 @@
       }
     });
 
+    var throttledTyping = false;
+    var lastTypingTime = 0;
+    var typingThrottleTimeout;
+
+    input.addEventListener('input', function() {
+    const now = Date.now();
+
+    if (!throttledTyping || now - lastTypingTime > 500) {
+        throttledTyping = true;
+        socket.emit('typing', true);
+        lastTypingTime = now;
+      }
+
+      clearTimeout(typingThrottleTimeout);
+      typingThrottleTimeout = setTimeout(() => {
+        throttledTyping = false;
+        socket.emit('typing', false);
+      }, 1000);
+    });
+
     socket.emit('set nickname', nickname);
   </script>
 </body>
