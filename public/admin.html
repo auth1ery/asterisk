@@ -66,6 +66,7 @@
         <td>${r.message || '[message deleted]'}</td>
         <td>${r.reason}</td>
         <td><button onclick="banUser('${r.reported_user_id}')">Ban</button></td>
+        <td><button onclick="ignoreReport('${r.id}')">Ignore</button></td>
       `;
       table.appendChild(tr);
     });
@@ -74,6 +75,12 @@
   function banUser(userId) {
     if (confirm(`Ban user ${userId}?`)) {
       socket.emit('banUser', { userId });
+    }
+  }
+
+  function ignoreReport(reportId) {
+    if (confirm(`Ignore report ${reportId}?`)) {
+      socket.emit('ignoreReport', { reportId });
     }
   }
 
