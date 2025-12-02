@@ -11,8 +11,6 @@
     #form { display:flex; padding:10px; background:#222; }
     #input { flex:1; padding:5px; border:none; border-radius:3px; outline:none; }
     button { margin-left:5px; padding:5px 10px; border:none; border-radius:3px; background:#3498db; color:#fff; cursor:pointer; }
-    .report-btn { margin-left: 10px; padding: 2px 5px; background: #e74c3c; color: #fff; border: none; border-radius: 3px; cursor: pointer; }
-    .report-btn:disabled { cursor: not-allowed; opacity: 0.5; }
   </style>
   <meta name="google-site-verification" content="KnvMw6nIKixixjRMfBJqKhBc8FT76gRBKu6VgyvcIKQ" />
 </head>
@@ -43,43 +41,60 @@
       }
     });
 
-    socket.on('chat message', function(data) {
+socket.on('chat message', function(data) {
+    if (!data.userId) return;
+
     var item = document.createElement('li');
     item.style.color = data.color;
+    item.style.display = "flex";
+    item.style.alignItems = "center";
 
     const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    item.textContent = `[${timestamp}] ${data.msg}`;
 
-    var reportBtn = document.createElement('button');
-    reportBtn.textContent = "report";
-    reportBtn.className = "report-btn";
-    
-    reportBtn.addEventListener('click', function() {
-        var reason = prompt("enter your reason for reporting this message:");
-        if (reason) {
-            socket.emit('report', {
-                messageId: data.id || null,
-                reportedUserId: data.userId || null,
-                reason: reason
-            });
-            alert("report sent! this will be reviewed by human moderators very shortly :)");
+    let reportBtn = null;
+    if (data.userId !== socket.id) {
+        reportBtn = document.createElement('button');
+        reportBtn.textContent = "report";
+        reportBtn.style.background = "#000";
+        reportBtn.style.color = "#e74c3c";
+        reportBtn.style.border = "1px solid #e74c3c";
+        reportBtn.style.borderRadius = "3px";
+        reportBtn.style.cursor = "pointer";
+        reportBtn.style.padding = "2px 5px";
+        reportBtn.style.marginRight = "5px";
+        reportBtn.style.fontSize = "0.8em";
 
-            
-            reportBtn.disabled = true;
-            reportBtn.style.opacity = 0.5;
+        reportBtn.addEventListener('click', function() {
+            var reason = prompt("Enter your reason for reporting this message:");
+            if (reason) {
+                socket.emit('report', {
+                    messageId: data.id || null,
+                    reportedUserId: data.userId || null,
+                    reason: reason
+                });
+                alert("Report sent! This will be reviewed by human moderators very shortly :)");
 
-           
-            item.style.backgroundColor = "#3a1f1f";
-            item.style.borderRadius = "3px";
-            item.style.padding = "2px 4px";
-        }
-    });
+                reportBtn.disabled = true;
+                reportBtn.style.opacity = 0.5;
 
-    item.appendChild(reportBtn);
+                item.style.backgroundColor = "#3a1f1f";
+                item.style.borderRadius = "3px";
+                item.style.padding = "2px 4px";
+            }
+        });
+    }
+
+
+    const textSpan = document.createElement('span');
+    textSpan.textContent = `[${timestamp}] ${data.msg}`;
+
+    if (reportBtn) item.appendChild(reportBtn);
+    item.appendChild(textSpan);
+
     messages.appendChild(item);
     messages.scrollTop = messages.scrollHeight;
-});  
-    
+});
+
     socket.on('user count', function(count) {
       userCount.textContent = count + " active people";
     });
