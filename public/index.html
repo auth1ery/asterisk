@@ -52,27 +52,34 @@
 
     var reportBtn = document.createElement('button');
     reportBtn.textContent = "report";
-    reportBtn.className = "report-btn"; // optional, for CSS styling
+    reportBtn.className = "report-btn";
+    
     reportBtn.addEventListener('click', function() {
         var reason = prompt("enter your reason for reporting this message:");
         if (reason) {
             socket.emit('report', {
-                messageId: data.id || null,   
+                messageId: data.id || null,
                 reportedUserId: data.userId || null,
                 reason: reason
             });
             alert("report sent! this will be reviewed by human moderators very shortly :)");
 
-            // Prevent multiple reports
+            
             reportBtn.disabled = true;
             reportBtn.style.opacity = 0.5;
 
-            // Visual cue for reported message
-            item.style.backgroundColor = "#3a1f1f"; // dark red tint
+           
+            item.style.backgroundColor = "#3a1f1f";
             item.style.borderRadius = "3px";
             item.style.padding = "2px 4px";
         }
     });
+
+    item.appendChild(reportBtn);
+    messages.appendChild(item);
+    messages.scrollTop = messages.scrollHeight;
+}); 
+
 
     item.appendChild(reportBtn);
     messages.appendChild(item);
