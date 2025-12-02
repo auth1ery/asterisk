@@ -45,11 +45,12 @@
     var item = document.createElement('li');
     item.style.color = data.color;
 
-    const timestamp = data.time || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
     item.textContent = `[${timestamp}] ${data.msg}`;
     messages.appendChild(item);
-    window.scrollTo(0, document.body.scrollHeight);
+
+    messages.scrollTop = messages.scrollHeight;
   });
 
 
