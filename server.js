@@ -78,6 +78,17 @@ io.on("connection", (socket) => {
     console.log('New report created:', reportId);
   });
 
+   app.get('/admin.html', (req, res) => {
+    const fs = require('fs');
+    const path = require('path');
+    const htmlPath = path.join(__dirname, 'public', 'admin.html');
+    let html = fs.readFileSync(htmlPath, 'utf8');
+
+    html = html.replace('ADMIN_SECRET', process.env.ADMIN_SECRET);
+
+    res.send(html);
+  });
+
   socket.on("disconnect", () => {
     const user = users[socket.id];
     if (user) {
