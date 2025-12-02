@@ -11,5 +11,5 @@
     "sqlite3": "^5.1.6",
     "uuid": "^9.0.0"
   },
-  "license": "UNLICENSED"
+  "license": "MIT"
 }
