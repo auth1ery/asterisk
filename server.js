@@ -72,6 +72,12 @@ io.on("connection", (socket) => {
     io.emit("typing", display.concat(extra > 0 ? [`and ${extra} more`] : []));
   });
 
+  socket.on('report', data => {
+    const { messageId, reportedUserId, reason } = data;
+    const reportId = createReport(socket.id, reportedUserId, messageId, reason);
+    console.log('New report created:', reportId);
+  });
+
   socket.on("disconnect", () => {
     const user = users[socket.id];
     if (user) {
