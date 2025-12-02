@@ -27,43 +27,54 @@
   </table>
 
   <script src="/socket.io/socket.io.js"></script>
-  <script>
-    // 'PLACEHOLDER' will be replaced by the server with the actual secret
-    const socket = io({
-      transports: ["websocket"],
-      auth: { admin: true, key: 'PLACEHOLDER' }
+<script>
+  // Prompt the user for the admin secret
+  const adminKey = prompt("Enter admin secret:");
+
+  if (!adminKey) {
+    alert("Admin key required!");
+    throw new Error("Admin key not provided");
+  }
+
+  const socket = io({
+    transports: ["websocket"],
+    auth: { admin: true, key: adminKey }
+  });
+
+  const table = document.getElementById('report-table');
+
+  function fetchReports() {
+    socket.emit('getReports');
+  }
+
+  socket.on('connect_error', (err) => {
+    alert("Failed to connect: " + err.message);
+  });
+
+  socket.on('reports', reports => {
+    table.innerHTML = '';
+    reports.forEach(r => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${r.id}</td>
+        <td>${r.reporter_id}</td>
+        <td>${r.reported_user_id}</td>
+        <td>${r.message || '[message deleted]'}</td>
+        <td>${r.reason}</td>
+        <td><button onclick="banUser('${r.reported_user_id}')">Ban</button></td>
+      `;
+      table.appendChild(tr);
     });
+  });
 
-    const table = document.getElementById('report-table');
-
-    function fetchReports() {
-      socket.emit('getReports');
+  function banUser(userId) {
+    if (confirm(`Ban user ${userId}?`)) {
+      socket.emit('banUser', { userId });
     }
+  }
 
-    socket.on('reports', reports => {
-      table.innerHTML = '';
-      reports.forEach(r => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${r.id}</td>
-          <td>${r.reporter_id}</td>
-          <td>${r.reported_user_id}</td>
-          <td>${r.message || '[message deleted]'}</td>
-          <td>${r.reason}</td>
-          <td><button onclick="banUser('${r.reported_user_id}')">Ban</button></td>
-        `;
-        table.appendChild(tr);
-      });
-    });
-
-    function banUser(userId) {
-      if (confirm(`Ban user ${userId}?`)) {
-        socket.emit('banUser', { userId });
-      }
-    }
-
-    fetchReports();
-    setInterval(fetchReports, 5000);
-  </script>
+  fetchReports();
+  setInterval(fetchReports, 5000);
+</script>
 </body>
 </html>
