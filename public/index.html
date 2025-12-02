@@ -48,10 +48,34 @@
     const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
     item.textContent = `[${timestamp}] ${data.msg}`;
-    messages.appendChild(item);
 
+    var reportBtn = document.createElement('button');
+    reportBtn.textContent = "report";
+    reportBtn.style.marginLeft = "10px";
+    reportBtn.style.padding = "2px 5px";
+    reportBtn.style.background = "#e74c3c";
+    reportBtn.style.color = "#fff";
+    reportBtn.style.border = "none";
+    reportBtn.style.borderRadius = "3px";
+    reportBtn.style.cursor = "pointer";
+
+    reportBtn.addEventListener('click', function() {
+        var reason = prompt("enter your reason for reporting this message:");
+        if (reason) {
+            socket.emit('report', {
+                messageId: data.id || null,   
+                reportedUserId: data.userId || null,
+                reason: reason
+            });
+            alert("report sent! this will be reviewed be human moderators very shortly :)");
+        }
+    });
+
+    item.appendChild(reportBtn);
+    messages.appendChild(item);
     messages.scrollTop = messages.scrollHeight;
-  });
+});
+
 
 
     socket.on('user count', function(count) {
