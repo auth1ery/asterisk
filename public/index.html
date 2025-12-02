@@ -42,8 +42,6 @@
     });
 
 socket.on('chat message', function(data) {
-    if (!data.userId) return;
-
     var item = document.createElement('li');
     item.style.color = data.color;
     item.style.display = "flex";
@@ -51,9 +49,11 @@ socket.on('chat message', function(data) {
 
     const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-    let reportBtn = null;
-    if (data.userId !== socket.id) {
-        reportBtn = document.createElement('button');
+    const textSpan = document.createElement('span');
+    textSpan.textContent = `[${timestamp}] ${data.msg}`;
+
+    if (data.userId && data.userId !== socket.id) {
+        var reportBtn = document.createElement('button');
         reportBtn.textContent = "report";
         reportBtn.style.background = "#000";
         reportBtn.style.color = "#e74c3c";
@@ -65,25 +65,30 @@ socket.on('chat message', function(data) {
         reportBtn.style.fontSize = "0.8em";
 
         reportBtn.addEventListener('click', function() {
-            var reason = prompt("Enter your reason for reporting this message:");
+            var reason = prompt("enter your reason for reporting this message:");
             if (reason) {
                 socket.emit('report', {
                     messageId: data.id || null,
-                    reportedUserId: data.userId || null,
+                    reportedUserId: data.userId,
                     reason: reason
                 });
-                alert("Report sent! This will be reviewed by human moderators very shortly :)");
+                alert("report sent! this will be reviewed by human moderators very shortly :)");
 
                 reportBtn.disabled = true;
                 reportBtn.style.opacity = 0.5;
-
                 item.style.backgroundColor = "#3a1f1f";
                 item.style.borderRadius = "3px";
                 item.style.padding = "2px 4px";
             }
         });
+
+        item.appendChild(reportBtn);
     }
 
+    item.appendChild(textSpan);
+    messages.appendChild(item);
+    messages.scrollTop = messages.scrollHeight;
+});
 
     const textSpan = document.createElement('span');
     textSpan.textContent = `[${timestamp}] ${data.msg}`;
