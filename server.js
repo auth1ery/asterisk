@@ -1,3 +1,10 @@
+const { createReport } = require('./moderation/reports');
+const { banUser } = require('./moderation/bans');
+const { blockBanned } = require('./moderation/middleware');
+const db = require('./db/database');
+
+blockBanned(io);
+
 const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
