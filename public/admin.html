@@ -28,7 +28,12 @@
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
-    const socket = io({ transports: ["websocket"], auth: { admin: true } });
+    // The server will replace 'PLACEHOLDER' with your secret key
+    const socket = io({
+      transports: ["websocket"],
+      auth: { admin: true, key: 'PLACEHOLDER' }
+    });
+
     const table = document.getElementById('report-table');
 
     function fetchReports() {
