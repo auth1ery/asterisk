@@ -59,10 +59,14 @@ io.on("connection", (socket) => {
     const user = users[socket.id];
     if (!user) return;
 
-    io.emit("chat message", { 
+    const messageId = Date.now() + Math.floor(Math.random() * 1000);
+      io.emit("chat message", { 
+      id: messageId,
+      userId: socket.id,
       color: user.color, 
       msg: `${user.nickname}: ${msg}`, 
     });
+
 
     if (typingUsers.has(socket.id)) {
       typingUsers.delete(socket.id);
