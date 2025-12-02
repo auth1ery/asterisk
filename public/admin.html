@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>asterisk Admin Dashboard</title>
+  <style>
+    body { font-family: monospace; background:#111; color:#eee; margin:0; padding:20px; }
+    h2 { margin-bottom:10px; }
+    table { width:100%; border-collapse: collapse; margin-top:10px; }
+    th, td { border:1px solid #444; padding:5px; text-align:left; }
+    button { padding:3px 6px; background:#e74c3c; color:#fff; border:none; cursor:pointer; border-radius:3px; }
+  </style>
+</head>
+<body>
+  <h2>Admin Dashboard</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Report ID</th>
+        <th>Reporter</th>
+        <th>Reported User</th>
+        <th>Message</th>
+        <th>Reason</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody id="report-table"></tbody>
+  </table>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io({ transports: ["websocket"], auth: { admin: true } });
+    const table = document.getElementById('report-table');
+
+    function fetchReports() {
+      socket.emit('getReports');
+    }
+
+    socket.on('reports', reports => {
+      table.innerHTML = '';
+      reports.forEach(r => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${r.id}</td>
+          <td>${r.reporter_id}</td>
+          <td>${r.reported_user_id}</td>
+          <td>${r.message || '[message deleted]'}</td>
+          <td>${r.reason}</td>
+          <td><button onclick="banUser('${r.reported_user_id}')">Ban</button></td>
+        `;
+        table.appendChild(tr);
+      });
+    });
+
+    function banUser(userId) {
+      if (confirm(`Ban user ${userId}?`)) {
+        socket.emit('banUser', { userId });
+      }
+    }
+
+    fetchReports();
+    setInterval(fetchReports, 5000);
+  </script>
+</body>
+</html>
