@@ -43,7 +43,6 @@ io.on("connection", (socket) => {
   const color = randomColor();
   users[socket.id] = { color, nickname: "Anonymous" };
 
-  // Check if this socket is an admin
   socket.isAdmin = socket.handshake.auth?.admin && socket.handshake.auth?.key === process.env.ADMIN_SECRET;
 
   io.emit("user count", Object.keys(users).length);
@@ -55,27 +54,35 @@ io.on("connection", (socket) => {
     io.emit("user count", Object.keys(users).length);
   });
 
-  socket.on("chat message", (msg) => {
-    const user = users[socket.id];
-    if (!user) return;
+   socket.on("chat message", (msg) => {
+  const user = users[socket.id];
+  if (!user) return;
 
-    const messageId = Date.now() + Math.floor(Math.random() * 1000);
-      io.emit("chat message", { 
-      id: messageId,
-      userId: socket.id,
-      color: user.color, 
-      msg: `${user.nickname}: ${msg}`, 
-    });
+  const messageId = Date.now() + Math.floor(Math.random() * 1000);
 
-
-    if (typingUsers.has(socket.id)) {
-      typingUsers.delete(socket.id);
-      const nicknames = Array.from(typingUsers).map(id => users[id].nickname);
-      const display = nicknames.slice(0, 3); 
-      const extra = nicknames.length - display.length;
-      io.emit("typing", display.concat(extra > 0 ? [`and ${extra} more`] : []));
+  db.run(
+    "INSERT INTO messages (id, user_id, content, timestamp) VALUES (?, ?, ?, ?)",
+    [messageId, socket.id, msg, Date.now()],
+    (err) => {
+      if (err) console.error("Failed to save message:", err);
     }
+  );
+
+  io.emit("chat message", { 
+    id: messageId,
+    userId: socket.id,
+    color: user.color,
+    msg: `${user.nickname}: ${msg}`, 
   });
+
+  if (typingUsers.has(socket.id)) {
+    typingUsers.delete(socket.id);
+    const nicknames = Array.from(typingUsers).map(id => users[id].nickname);
+    const display = nicknames.slice(0, 3);
+    const extra = nicknames.length - display.length;
+    io.emit("typing", display.concat(extra > 0 ? [`and ${extra} more`] : []));
+  }
+});
 
   socket.on("typing", (isTyping) => {
     if (!users[socket.id]) return;
@@ -98,10 +105,8 @@ io.on("connection", (socket) => {
     console.log('New report created:', reportId);
   });
 
-  // Admin-only events
   socket.on('getReports', () => {
     if (!socket.isAdmin) return;
-    // Fetch reports from DB and send to this socket
     db.all(`SELECT r.*, m.content as message
             FROM reports r
             LEFT JOIN messages m ON r.message_id = m.id
