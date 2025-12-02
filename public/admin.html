@@ -28,7 +28,7 @@
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
-    // The server will replace 'PLACEHOLDER' with your secret key
+    // 'PLACEHOLDER' will be replaced by the server with the actual secret
     const socket = io({
       transports: ["websocket"],
       auth: { admin: true, key: 'PLACEHOLDER' }
