@@ -42,12 +42,16 @@
     });
 
     socket.on('chat message', function(data) {
-      var item = document.createElement('li');
-      item.style.color = data.color;
-      item.textContent = data.msg;
-      messages.appendChild(item);
-      window.scrollTo(0, document.body.scrollHeight);
-    });
+    var item = document.createElement('li');
+    item.style.color = data.color;
+
+    const timestamp = data.time || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    item.textContent = `[${timestamp}] ${data.msg}`;
+    messages.appendChild(item);
+    window.scrollTo(0, document.body.scrollHeight);
+  });
+
 
     socket.on('user count', function(count) {
       userCount.textContent = count + " active people";
