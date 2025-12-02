@@ -17,6 +17,7 @@
 <body>
   <h2>asterisk</h2>
   <div id="user-count">0 active people</div>
+  <div id="typing" style="text-align:center; font-size:0.9em; color:#aaa; height:20px;"></div>
   <ul id="messages"></ul>
   <form id="form" action="">
     <input id="input" autocomplete="off" placeholder="type message..." />
@@ -52,7 +53,32 @@
       userCount.textContent = count + " active people";
     });
 
-    // notify server about nickname
+    var typingDiv = document.getElementById('typing');
+    var typing = false;
+    var typingTimeout;
+
+    input.addEventListener('input', function() {
+      if (!typing) {
+        typing = true;
+        socket.emit('typing', true);
+      }
+      clearTimeout(typingTimeout);
+      typingTimeout = setTimeout(() => {
+        typing = false;
+        socket.emit('typing', false); 
+      }, 1000); 
+    });
+
+    socket.on('typing', function(nicknames) {
+      if (nicknames.length === 0) {
+        typingDiv.textContent = '';
+      } else if (nicknames.length === 1) {
+        typingDiv.textContent = `${nicknames[0]} is typing...`;
+      } else {
+        typingDiv.textContent = nicknames.join(', ') + ' are typing...';
+      }
+    });
+
     socket.emit('set nickname', nickname);
   </script>
 </body>
