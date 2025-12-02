@@ -1,69 +1,110 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>asterisk Admin Dashboard</title>
+  <title>asterisk</title>
   <style>
-    body { font-family: monospace; background:#111; color:#eee; margin:0; padding:20px; }
-    h2 { margin-bottom:10px; }
-    table { width:100%; border-collapse: collapse; margin-top:10px; }
-    th, td { border:1px solid #444; padding:5px; text-align:left; }
-    button { padding:3px 6px; background:#e74c3c; color:#fff; border:none; cursor:pointer; border-radius:3px; }
+    body { font-family: monospace; background:#111; color:#eee; margin:0; display:flex; flex-direction:column; height:100vh; }
+    h2 { text-align:center; margin:10px 0; }
+    #messages { list-style:none; padding:10px; flex:1; overflow-y:auto; margin:0; }
+    #messages li { margin:3px 0; }
+    #user-count { text-align:center; margin-bottom:5px; font-size:0.9em; color:#ccc; }
+    #form { display:flex; padding:10px; background:#222; }
+    #input { flex:1; padding:5px; border:none; border-radius:3px; outline:none; }
+    button { margin-left:5px; padding:5px 10px; border:none; border-radius:3px; background:#3498db; color:#fff; cursor:pointer; }
   </style>
+  <meta name="google-site-verification" content="KnvMw6nIKixixjRMfBJqKhBc8FT76gRBKu6VgyvcIKQ" />
 </head>
 <body>
-  <h2>Admin Dashboard</h2>
-  <table>
-    <thead>
-      <tr>
-        <th>Report ID</th>
-        <th>Reporter</th>
-        <th>Reported User</th>
-        <th>Message</th>
-        <th>Reason</th>
-        <th>Action</th>
-      </tr>
-    </thead>
-    <tbody id="report-table"></tbody>
-  </table>
+  <h2>asterisk</h2>
+  <div id="user-count">0 active people</div>
+  <div id="typing" style="text-align:center; font-size:0.9em; color:#aaa; height:20px;"></div>
+  <ul id="messages"></ul>
+  <form id="form" action="">
+    <input id="input" autocomplete="off" placeholder="type message..." />
+    <button>send</button>
+  </form>
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
-    // 'PLACEHOLDER' will be replaced by the server with the actual secret
-    const socket = io({
-      transports: ["websocket"],
-      auth: { admin: true, key: 'PLACEHOLDER' }
-    });
+    var nickname = prompt("Enter your nickname") || "Anonymous";
+    var socket = io({ transports: ["websocket"] });
+    var form = document.getElementById('form');
+    var input = document.getElementById('input');
+    var messages = document.getElementById('messages');
+    var userCount = document.getElementById('user-count');
 
-    const table = document.getElementById('report-table');
-
-    function fetchReports() {
-      socket.emit('getReports');
-    }
-
-    socket.on('reports', reports => {
-      table.innerHTML = '';
-      reports.forEach(r => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${r.id}</td>
-          <td>${r.reporter_id}</td>
-          <td>${r.reported_user_id}</td>
-          <td>${r.message || '[message deleted]'}</td>
-          <td>${r.reason}</td>
-          <td><button onclick="banUser('${r.reported_user_id}')">Ban</button></td>
-        `;
-        table.appendChild(tr);
-      });
-    });
-
-    function banUser(userId) {
-      if (confirm(`Ban user ${userId}?`)) {
-        socket.emit('banUser', { userId });
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      if (input.value) {
+        socket.emit('chat message', input.value);
+        input.value = '';
       }
-    }
+    });
 
-    fetchReports();
-    setInterval(fetchReports, 5000);
+    socket.on('chat message', function(data) {
+    var item = document.createElement('li');
+    item.style.color = data.color;
+
+    const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    item.textContent = `[${timestamp}] ${data.msg}`;
+    messages.appendChild(item);
+
+    messages.scrollTop = messages.scrollHeight;
+  });
+
+
+    socket.on('user count', function(count) {
+      userCount.textContent = count + " active people";
+    });
+
+    var typingDiv = document.getElementById('typing');
+    var typing = false;
+    var typingTimeout;
+
+    input.addEventListener('input', function() {
+      if (!typing) {
+        typing = true;
+        socket.emit('typing', true);
+      }
+      clearTimeout(typingTimeout);
+      typingTimeout = setTimeout(() => {
+        typing = false;
+        socket.emit('typing', false); 
+      }, 1000); 
+    });
+
+    socket.on('typing', function(nicknames) {
+      if (nicknames.length === 0) {
+        typingDiv.textContent = '';
+      } else if (nicknames.length === 1) {
+        typingDiv.textContent = `${nicknames[0]} is typing...`;
+      } else {
+        typingDiv.textContent = nicknames.join(', ') + ' are typing...';
+      }
+    });
+
+    var throttledTyping = false;
+    var lastTypingTime = 0;
+    var typingThrottleTimeout;
+
+    input.addEventListener('input', function() {
+    const now = Date.now();
+
+    if (!throttledTyping || now - lastTypingTime > 500) {
+        throttledTyping = true;
+        socket.emit('typing', true);
+        lastTypingTime = now;
+      }
+
+      clearTimeout(typingThrottleTimeout);
+      typingThrottleTimeout = setTimeout(() => {
+        throttledTyping = false;
+        socket.emit('typing', false);
+      }, 1000);
+    });
+
+    socket.emit('set nickname', nickname);
   </script>
 </body>
 </html>
