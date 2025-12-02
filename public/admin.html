@@ -28,7 +28,6 @@
 
   <script src="/socket.io/socket.io.js"></script>
 <script>
-  // Prompt the user for the admin secret
   const adminKey = prompt("Enter admin secret:");
 
   if (!adminKey) {
@@ -43,15 +42,20 @@
 
   const table = document.getElementById('report-table');
 
-  function fetchReports() {
-    socket.emit('getReports');
-  }
+  socket.on('connect', () => {
+    console.log("Connected to server!");
+  });
 
   socket.on('connect_error', (err) => {
-    alert("Failed to connect: " + err.message);
+    alert("Connection failed: " + err.message);
   });
 
   socket.on('reports', reports => {
+    if (!reports || reports.length === 0) {
+      alert("No reports found or you are not an admin.");
+      return;
+    }
+
     table.innerHTML = '';
     reports.forEach(r => {
       const tr = document.createElement('tr');
@@ -73,8 +77,10 @@
     }
   }
 
-  fetchReports();
-  setInterval(fetchReports, 5000);
+  // Only try to fetch reports if connected
+  socket.on('connect', () => {
+    socket.emit('getReports');
+  });
 </script>
 </body>
 </html>
