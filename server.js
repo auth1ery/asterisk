@@ -9,7 +9,8 @@ const io = new Server(server);
 
 app.use(express.static(path.join(__dirname, "public")));
 
-let users = {}; // socket.id -> { color, nickname }
+let users = {};  
+let typingUsers = new Set(); 
 
 function randomColor() {
   const colors = ["#e74c3c", "#3498db", "#2ecc71", "#f1c40f", "#9b59b6", "#e67e22", "#1abc9c"];
@@ -17,15 +18,15 @@ function randomColor() {
 }
 
 io.on("connection", (socket) => {
+
   const color = randomColor();
   users[socket.id] = { color, nickname: "Anonymous" };
 
-  // Send active user count immediately
   io.emit("user count", Object.keys(users).length);
 
-  // Receive nickname from client
   socket.on("set nickname", (name) => {
     users[socket.id].nickname = name;
+
     io.emit("chat message", { color: "#888", msg: `${name} joined` });
     io.emit("user count", Object.keys(users).length);
   });
@@ -33,15 +34,43 @@ io.on("connection", (socket) => {
   socket.on("chat message", (msg) => {
     const user = users[socket.id];
     if (!user) return;
+
     io.emit("chat message", { color: user.color, msg: `${user.nickname}: ${msg}` });
+
+    if (typingUsers.has(socket.id)) {
+      typingUsers.delete(socket.id);
+      io.emit("typing", Array.from(typingUsers).map(id => users[id].nickname));
+    }
+  });
+
+  socket.on("typing", (isTyping) => {
+    if (!users[socket.id]) return;
+
+    if (isTyping) {
+      typingUsers.add(socket.id);
+    } else {
+      typingUsers.delete(socket.id);
+    }
+
+    io.emit("typing", Array.from(typingUsers).map(id => users[id].nickname));
   });
 
   socket.on("disconnect", () => {
     const user = users[socket.id];
     if (user) {
       io.emit("chat message", { color: "#888", msg: `${user.nickname} left` });
+
       delete users[socket.id];
+      typingUsers.delete(socket.id);
+
       io.emit("user count", Object.keys(users).length);
+
+      io.emit(
+        "typing",
+        Array.from(typingUsers)
+          .map(id => users[id]?.nickname)
+          .filter(Boolean)
+      );
     }
   });
 });
