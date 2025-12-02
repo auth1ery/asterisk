@@ -123,6 +123,17 @@ io.on("connection", (socket) => {
     db.run(`UPDATE reports SET status='resolved' WHERE reported_user_id=?`, [userId]);
   });
 
+  socket.on('ignoreReport', data => {
+    if (!socket.isAdmin) return;
+    const { reportId } = data;
+  
+    // Mark report as ignored
+    db.run(`UPDATE reports SET status='ignored' WHERE id=?`, [reportId], (err) => {
+      if (err) console.error("Failed to ignore report:", err);
+      else console.log(`Report ${reportId} ignored by admin`);
+    });
+  });
+
   socket.on("disconnect", () => {
     const user = users[socket.id];
     if (user) {
