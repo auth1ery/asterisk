@@ -29,19 +29,29 @@ io.on("connection", (socket) => {
 
     io.emit("chat message", { color: "#888", msg: `${name} joined` });
     io.emit("user count", Object.keys(users).length);
-  });
+    });
 
-  socket.on("chat message", (msg) => {
+    socket.on("chat message", (msg) => {
     const user = users[socket.id];
     if (!user) return;
 
-    io.emit("chat message", { color: user.color, msg: `${user.nickname}: ${msg}` });
+    const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    io.emit("chat message", { 
+      color: user.color, 
+      msg: `${user.nickname}: ${msg}`, 
+      time: timestamp 
+    });
 
     if (typingUsers.has(socket.id)) {
       typingUsers.delete(socket.id);
-      io.emit("typing", Array.from(typingUsers).map(id => users[id].nickname));
+      const nicknames = Array.from(typingUsers).map(id => users[id].nickname);
+      const display = nicknames.slice(0, 3); 
+      const extra = nicknames.length - display.length;
+      io.emit("typing", display.concat(extra > 0 ? [`and ${extra} more`] : []));
     }
   });
+
 
   socket.on("typing", (isTyping) => {
     if (!users[socket.id]) return;
