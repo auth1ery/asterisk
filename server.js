@@ -52,7 +52,10 @@ io.on("connection", (socket) => {
       typingUsers.delete(socket.id);
     }
 
-    io.emit("typing", Array.from(typingUsers).map(id => users[id].nickname));
+    const nicknames = Array.from(typingUsers).map(id => users[id].nickname);
+    const display = nicknames.slice(0, 3); 
+    const extra = nicknames.length - display.length;
+    io.emit("typing", display.concat(extra > 0 ? [`and ${extra} more`] : []));
   });
 
   socket.on("disconnect", () => {
