@@ -35,12 +35,9 @@ io.on("connection", (socket) => {
     const user = users[socket.id];
     if (!user) return;
 
-    const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
     io.emit("chat message", { 
       color: user.color, 
       msg: `${user.nickname}: ${msg}`, 
-      time: timestamp 
     });
 
     if (typingUsers.has(socket.id)) {
