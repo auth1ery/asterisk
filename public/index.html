@@ -64,6 +64,13 @@ socket.on('chat message', function(data) {
         reportBtn.style.marginRight = "5px";
         reportBtn.style.fontSize = "0.8em";
 
+        reportBtn.style.opacity = "0";
+        reportBtn.style.transition = "opacity 0.2s";
+
+        item.addEventListener('mouseenter', () => reportBtn.style.opacity = "1");
+        item.addEventListener('mouseleave', () => reportBtn.style.opacity = "0");
+
+
         reportBtn.addEventListener('click', function() {
             var reason = prompt("enter your reason for reporting this message:");
             if (reason) {
@@ -86,16 +93,6 @@ socket.on('chat message', function(data) {
     }
 
     item.appendChild(textSpan);
-    messages.appendChild(item);
-    messages.scrollTop = messages.scrollHeight;
-});
-
-    const textSpan = document.createElement('span');
-    textSpan.textContent = `[${timestamp}] ${data.msg}`;
-
-    if (reportBtn) item.appendChild(reportBtn);
-    item.appendChild(textSpan);
-
     messages.appendChild(item);
     messages.scrollTop = messages.scrollHeight;
 });
