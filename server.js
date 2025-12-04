@@ -19,7 +19,7 @@ blockBanned(io);
 // Serve static files
 app.use(express.static(path.join(__dirname, "public")));
 
-// Serve admin.html securely with secret injected
+// Serve admin.html securely with secret injected (haha you cant hack me)
 app.get('/admin.html', (req, res) => {
   const htmlPath = path.join(__dirname, 'public', 'admin.html');
   let html = fs.readFileSync(htmlPath, 'utf8');
@@ -38,13 +38,25 @@ function randomColor() {
   return colors[Math.floor(Math.random() * colors.length)];
 }
 
-const ua = socket.handshake.headers["user-agent"] || "";
-if (ua.includes("bot") || ua.includes("curl") || ua.includes("HealthCheck") || ua.includes("UptimeRobot")) {
+io.on("connection", (socket) => {
+  console.log("=== NEW CONNECTION ===");
+  console.log("IP:", socket.handshake.address);
+  console.log("UA:", socket.handshake.headers["user-agent"]);
+  
+  const ua = (socket.handshake.headers["user-agent"] || "").toLowerCase();
+
+  if (
+    ua.includes("bot") ||
+    ua.includes("curl") ||
+    ua.includes("health") ||
+    ua.includes("uptime") ||
+    ua.includes("probe") ||
+    ua.includes("render")
+  ) {
+    console.log("Blocked bot:", ua);
     socket.disconnect(true);
     return;
-} // make sure bots dont just lurk around like creepy dark web visitors
-
-io.on("connection", (socket) => {
+  }
 
   const color = randomColor();
   users[socket.id] = { color, nickname: "Anonymous" };
