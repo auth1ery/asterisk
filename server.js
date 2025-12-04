@@ -38,6 +38,12 @@ function randomColor() {
   return colors[Math.floor(Math.random() * colors.length)];
 }
 
+const ua = socket.handshake.headers["user-agent"] || "";
+if (ua.includes("bot") || ua.includes("curl") || ua.includes("HealthCheck") || ua.includes("UptimeRobot")) {
+    socket.disconnect(true);
+    return;
+} // make sure bots dont just lurk around like creepy dark web visitors
+
 io.on("connection", (socket) => {
 
   const color = randomColor();
