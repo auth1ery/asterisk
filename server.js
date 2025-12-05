@@ -73,6 +73,20 @@ io.on("connection", (socket) => {
   });
 
    socket.on("chat message", (msg) => {
+
+     // bridge for discord
+if (process.env.DISCORD_WEBHOOK) {
+  const nickname = users[socket.id].nickname;
+
+  const proxied = `[${nickname}: ${msg}]`;
+
+  fetch(process.env.DISCORD_WEBHOOK, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ content: proxied })
+  }).catch(err => console.error("Webhook error:", err));
+}
+
   const user = users[socket.id];
   if (!user) return;
 
