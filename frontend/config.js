@@ -1,3 +1,3 @@
 const ASTERISK_CONFIG = {
-  BACKEND_URL: "https://placeholder"
+  BACKEND_URL: "https://asterisk.authsrng.xyz"
 };
