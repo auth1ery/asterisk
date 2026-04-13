@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>asterisk</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400&display=swap" rel="stylesheet">
+  <style>
+    /* ── Reset & Base ──────────────────────────────────────────────────────── */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg:          #09090d;
+      --surface:     #0f0f14;
+      --surface2:    #141419;
+      --border:      #1c1c24;
+      --border2:     #24242f;
+      --text:        #c8c8d8;
+      --muted:       #4a4a60;
+      --muted2:      #2e2e3e;
+      --accent:      #8b7ef5;
+      --accent-glow: rgba(139,126,245,0.2);
+      --danger:      #ff4d6a;
+      --success:     #4dffa0;
+      --system-fg:   #3a3a52;
+      --radius:      6px;
+      --font:        'JetBrains Mono', 'Courier New', monospace;
+    }
+
+    html, body { height: 100%; overflow: hidden; }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 13px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Scrollbar ─────────────────────────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+    /* ── Utilities ─────────────────────────────────────────────────────────── */
+    .hidden { display: none !important; }
+
+    /* ── Auth Screen ───────────────────────────────────────────────────────── */
+    #auth-screen {
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background:
+        radial-gradient(ellipse 60% 40% at 50% 0%, rgba(139,126,245,0.06) 0%, transparent 70%),
+        var(--bg);
+    }
+
+    .auth-card {
+      width: 360px;
+      padding: 40px 36px 36px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+    }
+
+    .auth-logo {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .auth-logo .star {
+      display: inline-block;
+      font-size: 36px;
+      font-weight: 700;
+      color: var(--accent);
+      text-shadow: 0 0 24px var(--accent-glow), 0 0 48px rgba(139,126,245,0.1);
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+
+    .auth-logo .wordmark {
+      display: block;
+      font-size: 16px;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      color: var(--text);
+    }
+
+    .auth-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 24px;
+    }
+
+    .auth-tab {
+      flex: 1;
+      padding: 8px;
+      text-align: center;
+      font-family: var(--font);
+      font-size: 12px;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      background: none;
+      border: none;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      transition: color 0.15s, border-color 0.15s;
+    }
+
+    .auth-tab.active {
+      color: var(--text);
+      border-bottom-color: var(--accent);
+    }
+
+    .auth-form { display: flex; flex-direction: column; gap: 12px; }
+
+    .field label {
+      display: block;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 5px;
+    }
+
+    .field input {
+      width: 100%;
+      padding: 9px 12px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .field input:focus { border-color: var(--accent); }
+    .field input::placeholder { color: var(--muted); }
+
+    .auth-error {
+      font-size: 12px;
+      color: var(--danger);
+      min-height: 16px;
+      text-align: center;
+    }
+
+    .btn-primary {
+      width: 100%;
+      padding: 10px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius);
+      font-family: var(--font);
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.1s;
+      margin-top: 4px;
+    }
+
+    .btn-primary:hover:not(:disabled)  { opacity: 0.88; }
+    .btn-primary:active:not(:disabled) { transform: scale(0.98); }
+    .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* ── Chat Screen ───────────────────────────────────────────────────────── */
+    #chat-screen {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Header */
+    #chat-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 0 16px;
+      height: 46px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .header-logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .header-star {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--accent);
+      line-height: 1;
+    }
+
+    .header-name {
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      color: var(--text);
+    }
+
+    .header-sep {
+      width: 1px;
+      height: 18px;
+      background: var(--border);
+    }
+
+    #conn-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--muted);
+      transition: background 0.3s;
+      flex-shrink: 0;
+    }
+
+    .status-dot.connected    { background: var(--success); box-shadow: 0 0 6px rgba(77,255,160,0.4); }
+    .status-dot.connecting   { background: #f5c842; animation: pulse 1s ease-in-out infinite; }
+    .status-dot.disconnected { background: var(--danger); }
+
+    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+
+    .header-spacer { flex: 1; }
+
+    #header-user {
+      font-size: 12px;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    #header-username { font-weight: 500; }
+
+    #logout-btn {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-family: var(--font);
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      letter-spacing: 0.04em;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    #logout-btn:hover { color: var(--text); border-color: var(--border2); }
+
+    /* Main layout */
+    #chat-body {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+
+    /* Messages area */
+    #messages-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    #messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px 0 4px;
+      scroll-behavior: smooth;
+    }
+
+    /* Message rows */
+    .msg {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      padding: 3px 16px;
+      transition: background 0.1s;
+    }
+    .msg:hover { background: rgba(255,255,255,0.02); }
+
+    .msg-ts {
+      font-size: 10px;
+      color: var(--muted);
+      flex-shrink: 0;
+      width: 42px;
+      text-align: right;
+      padding-top: 1px;
+      user-select: none;
+    }
+
+    .msg-user {
+      font-size: 12px;
+      font-weight: 500;
+      flex-shrink: 0;
+      user-select: none;
+    }
+
+    .msg-sep {
+      color: var(--muted);
+      flex-shrink: 0;
+      user-select: none;
+    }
+
+    .msg-text {
+      flex: 1;
+      word-break: break-word;
+      white-space: pre-wrap;
+      color: var(--text);
+    }
+
+    /* System messages */
+    .msg-system {
+      padding: 4px 16px;
+      font-size: 11px;
+      color: var(--system-fg);
+      font-style: italic;
+      text-align: center;
+      user-select: none;
+    }
+
+    /* Input area */
+    #input-area {
+      flex-shrink: 0;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    #typing-bar {
+      height: 20px;
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      font-size: 11px;
+      color: var(--muted);
+      font-style: italic;
+      user-select: none;
+      transition: opacity 0.2s;
+    }
+
+    #typing-dots {
+      display: inline-block;
+      margin-left: 2px;
+      letter-spacing: 0.1em;
+      animation: dots 1.4s steps(1, end) infinite;
+    }
+
+    @keyframes dots {
+      0%   { content: ''; }
+      33%  { content: '.'; }
+      66%  { content: '..'; }
+      100% { content: '...'; }
+    }
+
+    /* Use pseudo-element trick for animated dots */
+    #typing-dots::after {
+      content: '';
+      animation: dot-anim 1.2s steps(4, end) infinite;
+    }
+    @keyframes dot-anim {
+      0%  { content: '.'; }
+      25% { content: '..'; }
+      50% { content: '...'; }
+      75% { content: ''; }
+    }
+
+    #input-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px 12px;
+    }
+
+    #msg-input {
+      flex: 1;
+      padding: 9px 13px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 13px;
+      outline: none;
+      resize: none;
+      transition: border-color 0.15s;
+      height: 38px;
+      max-height: 140px;
+      overflow-y: auto;
+    }
+
+    #msg-input:focus { border-color: var(--border2); }
+    #msg-input::placeholder { color: var(--muted); }
+
+    #send-btn {
+      flex-shrink: 0;
+      width: 38px;
+      height: 38px;
+      background: var(--accent);
+      border: none;
+      border-radius: var(--radius);
+      color: #fff;
+      font-size: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.15s;
+    }
+    #send-btn:hover:not(:disabled) { opacity: 0.85; }
+    #send-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    /* Users sidebar */
+    #users-panel {
+      width: 180px;
+      flex-shrink: 0;
+      border-left: 1px solid var(--border);
+      background: var(--surface);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    #users-header {
+      padding: 12px 14px 8px;
+      font-size: 10px;
+      letter-spacing: 0.14em;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    #users-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 0;
+    }
+
+    .user-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 14px;
+    }
+
+    .user-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .user-name {
+      font-size: 12px;
+      color: var(--text);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .user-name.is-you {
+      font-style: italic;
+      color: var(--muted);
+    }
+
+    /* ── Reconnect overlay ─────────────────────────────────────────────────── */
+    #reconnect-banner {
+      position: fixed;
+      bottom: 60px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      border-radius: var(--radius);
+      padding: 8px 18px;
+      font-size: 12px;
+      color: var(--muted);
+      z-index: 100;
+    }
+
+    /* ── Responsive ────────────────────────────────────────────────────────── */
+    @media (max-width: 600px) {
+      #users-panel { display: none; }
+      .auth-card { width: 100%; margin: 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Auth Screen ─────────────────────────────────────────────────────────── -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <span class="star">*</span>
+      <span class="wordmark">asterisk</span>
+    </div>
+
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tab-login"    onclick="switchTab('login')">login</button>
+      <button class="auth-tab"        id="tab-register" onclick="switchTab('register')">register</button>
+    </div>
+
+    <!-- Login form -->
+    <div id="form-login" class="auth-form">
+      <div class="field">
+        <label>USERNAME</label>
+        <input type="text" id="login-user" autocomplete="username" placeholder="username" spellcheck="false">
+      </div>
+      <div class="field">
+        <label>PASSWORD</label>
+        <input type="password" id="login-pass" autocomplete="current-password" placeholder="••••••••">
+      </div>
+      <div class="auth-error" id="login-error"></div>
+      <button class="btn-primary" id="login-btn" onclick="doLogin()">sign in</button>
+    </div>
+
+    <!-- Register form -->
+    <div id="form-register" class="auth-form hidden">
+      <div class="field">
+        <label>USERNAME</label>
+        <input type="text" id="reg-user" autocomplete="username" placeholder="2–20 chars, letters/numbers/_-" spellcheck="false">
+      </div>
+      <div class="field">
+        <label>PASSWORD</label>
+        <input type="password" id="reg-pass" autocomplete="new-password" placeholder="min 6 characters">
+      </div>
+      <div class="field">
+        <label>CONFIRM PASSWORD</label>
+        <input type="password" id="reg-pass2" autocomplete="new-password" placeholder="repeat password">
+      </div>
+      <div class="auth-error" id="reg-error"></div>
+      <button class="btn-primary" id="reg-btn" onclick="doRegister()">create account</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Chat Screen ─────────────────────────────────────────────────────────── -->
+<div id="chat-screen" class="hidden">
+  <div id="chat-header">
+    <div class="header-logo">
+      <span class="header-star">*</span>
+      <span class="header-name">asterisk</span>
+    </div>
+    <div class="header-sep"></div>
+    <div id="conn-status">
+      <span class="status-dot" id="status-dot"></span>
+      <span id="status-text">connecting</span>
+    </div>
+    <div class="header-spacer"></div>
+    <div id="header-user">
+      <span id="header-username"></span>
+      <button id="logout-btn" onclick="doLogout()">logout</button>
+    </div>
+  </div>
+
+  <div id="chat-body">
+    <div id="messages-panel">
+      <div id="messages"></div>
+      <div id="input-area">
+        <div id="typing-bar">
+          <span id="typing-text"></span><span id="typing-dots"></span>
+        </div>
+        <div id="input-row">
+          <textarea id="msg-input" placeholder="say something..." rows="1" maxlength="2000"></textarea>
+          <button id="send-btn" title="Send" onclick="sendMessage()">↑</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="users-panel">
+      <div id="users-header">ONLINE</div>
+      <div id="users-list"></div>
+    </div>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script>
+// ── Config ────────────────────────────────────────────────────────────────────
+const RAW_URL    = (typeof ASTERISK_CONFIG !== 'undefined' ? ASTERISK_CONFIG.BACKEND_URL : '').replace(/\/$/, '');
+const HTTP_BASE  = RAW_URL;
+const WS_BASE    = RAW_URL.replace(/^https/, 'wss').replace(/^http/, 'ws');
+const TOKEN_KEY  = 'asterisk_token';
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let ws             = null;
+let currentUser    = null;   // { username, color }
+let isTyping       = false;
+let typingTimeout  = null;
+let reconnectTimer = null;
+let shouldReconnect = true;
+let reconnectDelay  = 2000;
+
+// ── Token helpers ─────────────────────────────────────────────────────────────
+const getToken  = ()    => localStorage.getItem(TOKEN_KEY);
+const setToken  = (tok) => localStorage.setItem(TOKEN_KEY, tok);
+const clearToken = ()   => localStorage.removeItem(TOKEN_KEY);
+
+// ── Tab switching ─────────────────────────────────────────────────────────────
+function switchTab(tab) {
+  document.getElementById('tab-login').classList.toggle('active', tab === 'login');
+  document.getElementById('tab-register').classList.toggle('active', tab === 'register');
+  document.getElementById('form-login').classList.toggle('hidden', tab !== 'login');
+  document.getElementById('form-register').classList.toggle('hidden', tab !== 'register');
+  document.getElementById('login-error').textContent = '';
+  document.getElementById('reg-error').textContent = '';
+}
+
+// ── Auth API calls ────────────────────────────────────────────────────────────
+async function apiPost(path, body) {
+  const res  = await fetch(HTTP_BASE + path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Unknown error');
+  return data;
+}
+
+async function doLogin() {
+  const username = document.getElementById('login-user').value.trim();
+  const password = document.getElementById('login-pass').value;
+  const errEl    = document.getElementById('login-error');
+  const btn      = document.getElementById('login-btn');
+
+  if (!username || !password) { errEl.textContent = 'Fill in all fields.'; return; }
+  errEl.textContent = '';
+  btn.disabled = true;
+
+  try {
+    const { token, username: u, color } = await apiPost('/api/login', { username, password });
+    setToken(token);
+    enterChat({ username: u, color });
+  } catch (e) {
+    errEl.textContent = e.message;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function doRegister() {
+  const username = document.getElementById('reg-user').value.trim();
+  const password = document.getElementById('reg-pass').value;
+  const pass2    = document.getElementById('reg-pass2').value;
+  const errEl    = document.getElementById('reg-error');
+  const btn      = document.getElementById('reg-btn');
+
+  if (!username || !password || !pass2) { errEl.textContent = 'Fill in all fields.'; return; }
+  if (password !== pass2)               { errEl.textContent = 'Passwords do not match.'; return; }
+  errEl.textContent = '';
+  btn.disabled = true;
+
+  try {
+    const { token, username: u, color } = await apiPost('/api/register', { username, password });
+    setToken(token);
+    enterChat({ username: u, color });
+  } catch (e) {
+    errEl.textContent = e.message;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function doLogout() {
+  shouldReconnect = false;
+  if (ws) ws.close();
+  clearToken();
+  currentUser = null;
+  document.getElementById('chat-screen').classList.add('hidden');
+  document.getElementById('auth-screen').classList.remove('hidden');
+  document.getElementById('messages').innerHTML = '';
+  document.getElementById('users-list').innerHTML = '';
+  document.getElementById('login-user').value = '';
+  document.getElementById('login-pass').value = '';
+  switchTab('login');
+}
+
+// ── Auto-login on load ────────────────────────────────────────────────────────
+window.addEventListener('load', async () => {
+  const token = getToken();
+  if (!token) return;
+  try {
+    const res  = await fetch(HTTP_BASE + '/api/verify', {
+      headers: { Authorization: 'Bearer ' + token }
+    });
+    if (!res.ok) { clearToken(); return; }
+    const { username, color } = await res.json();
+    enterChat({ username, color });
+  } catch {
+    // Server unreachable — show auth screen (they'll log in again once backend is up)
+  }
+});
+
+// ── Enter chat ────────────────────────────────────────────────────────────────
+function enterChat(user) {
+  currentUser = user;
+  shouldReconnect = true;
+  reconnectDelay  = 2000;
+
+  document.getElementById('auth-screen').classList.add('hidden');
+  document.getElementById('chat-screen').classList.remove('hidden');
+  document.getElementById('header-username').textContent = user.username;
+  document.getElementById('header-username').style.color = user.color;
+
+  connectWS();
+  document.getElementById('msg-input').focus();
+}
+
+// ── WebSocket ─────────────────────────────────────────────────────────────────
+function connectWS() {
+  const token = getToken();
+  if (!token) return;
+  setStatus('connecting');
+
+  ws = new WebSocket(`${WS_BASE}/ws?token=${encodeURIComponent(token)}`);
+
+  ws.addEventListener('open', () => {
+    setStatus('connected');
+    reconnectDelay = 2000;
+  });
+
+  ws.addEventListener('message', e => {
+    let msg;
+    try { msg = JSON.parse(e.data); } catch { return; }
+    handleServerMessage(msg);
+  });
+
+  ws.addEventListener('close', e => {
+    setStatus('disconnected');
+    if (e.code === 1008) { doLogout(); return; } // kicked / unauthorized
+    if (shouldReconnect) scheduleReconnect();
+  });
+
+  ws.addEventListener('error', () => setStatus('disconnected'));
+}
+
+function scheduleReconnect() {
+  clearTimeout(reconnectTimer);
+  reconnectTimer = setTimeout(() => {
+    if (shouldReconnect) connectWS();
+  }, reconnectDelay);
+  reconnectDelay = Math.min(reconnectDelay * 1.5, 30000);
+}
+
+function setStatus(s) {
+  const dot  = document.getElementById('status-dot');
+  const text = document.getElementById('status-text');
+  dot.className  = 'status-dot ' + s;
+  text.textContent = s;
+}
+
+function sendWS(data) {
+  if (ws && ws.readyState === 1) ws.send(JSON.stringify(data));
+}
+
+// ── Handle server messages ────────────────────────────────────────────────────
+function handleServerMessage(msg) {
+  switch (msg.type) {
+    case 'history':
+      document.getElementById('messages').innerHTML = '';
+      msg.messages.forEach(renderMessage);
+      scrollToBottom();
+      break;
+    case 'message':
+    case 'system':
+      renderMessage(msg);
+      scrollToBottom();
+      break;
+    case 'user_list':
+      renderUserList(msg.users);
+      break;
+    case 'typing':
+      renderTyping(msg.users);
+      break;
+    case 'kicked':
+      doLogout();
+      break;
+  }
+}
+
+// ── Render message ────────────────────────────────────────────────────────────
+function renderMessage(msg) {
+  const container = document.getElementById('messages');
+
+  if (msg.type === 'system') {
+    const el = document.createElement('div');
+    el.className   = 'msg-system';
+    el.textContent = '— ' + msg.text + ' —';
+    container.appendChild(el);
+    return;
+  }
+
+  const ts   = new Date(msg.timestamp);
+  const time = ts.getHours().toString().padStart(2,'0') + ':' + ts.getMinutes().toString().padStart(2,'0');
+
+  const row = document.createElement('div');
+  row.className = 'msg';
+
+  const tsEl = document.createElement('span');
+  tsEl.className   = 'msg-ts';
+  tsEl.textContent = time;
+
+  const userEl = document.createElement('span');
+  userEl.className   = 'msg-user';
+  userEl.style.color = msg.color || '#888';
+  userEl.textContent = msg.username;
+
+  const sepEl = document.createElement('span');
+  sepEl.className   = 'msg-sep';
+  sepEl.textContent = '›';
+
+  const textEl = document.createElement('span');
+  textEl.className   = 'msg-text';
+  textEl.textContent = msg.text;
+
+  row.append(tsEl, userEl, sepEl, textEl);
+  container.appendChild(row);
+}
+
+// ── Scroll ────────────────────────────────────────────────────────────────────
+function scrollToBottom() {
+  const el = document.getElementById('messages');
+  // Only auto-scroll if user is near the bottom
+  const threshold = 120;
+  if (el.scrollHeight - el.scrollTop - el.clientHeight < threshold) {
+    el.scrollTop = el.scrollHeight;
+  }
+}
+
+// ── User list ─────────────────────────────────────────────────────────────────
+function renderUserList(users) {
+  const list = document.getElementById('users-list');
+  list.innerHTML = '';
+
+  // Sort: current user last (listed as "you")
+  const sorted = [...users].sort((a, b) => {
+    if (a.username === currentUser?.username) return 1;
+    if (b.username === currentUser?.username) return -1;
+    return a.username.localeCompare(b.username);
+  });
+
+  sorted.forEach(u => {
+    const item = document.createElement('div');
+    item.className = 'user-item';
+
+    const dot = document.createElement('span');
+    dot.className = 'user-dot';
+    dot.style.background = u.color;
+
+    const name = document.createElement('span');
+    name.className = 'user-name' + (u.username === currentUser?.username ? ' is-you' : '');
+    name.textContent = u.username === currentUser?.username ? u.username + ' (you)' : u.username;
+
+    item.append(dot, name);
+    list.appendChild(item);
+  });
+}
+
+// ── Typing indicator ──────────────────────────────────────────────────────────
+function renderTyping(users) {
+  const others  = users.filter(u => u !== currentUser?.username);
+  const textEl  = document.getElementById('typing-text');
+  const dotsEl  = document.getElementById('typing-dots');
+
+  if (others.length === 0) {
+    textEl.textContent = '';
+    dotsEl.style.display = 'none';
+    return;
+  }
+
+  dotsEl.style.display = 'inline';
+
+  if (others.length === 1) {
+    textEl.textContent = others[0] + ' is typing';
+  } else if (others.length === 2) {
+    textEl.textContent = others[0] + ' and ' + others[1] + ' are typing';
+  } else {
+    textEl.textContent = others.length + ' people are typing';
+  }
+}
+
+// ── Send message ──────────────────────────────────────────────────────────────
+function sendMessage() {
+  const input = document.getElementById('msg-input');
+  const text  = input.value.trim();
+  if (!text) return;
+
+  sendWS({ type: 'message', text });
+  input.value = '';
+  input.style.height = '';
+  stopTyping();
+}
+
+// ── Input handling ────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  const input = document.getElementById('msg-input');
+
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  });
+
+  input.addEventListener('input', () => {
+    // Auto-resize
+    input.style.height = 'auto';
+    input.style.height = Math.min(input.scrollHeight, 140) + 'px';
+
+    // Typing indicator
+    if (input.value.trim()) {
+      startTyping();
+    } else {
+      stopTyping();
+    }
+  });
+
+  // Focus input on login shortcuts
+  document.getElementById('login-pass').addEventListener('keydown', e => {
+    if (e.key === 'Enter') doLogin();
+  });
+  document.getElementById('login-user').addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('login-pass').focus();
+  });
+  document.getElementById('reg-pass').addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('reg-pass2').focus();
+  });
+  document.getElementById('reg-pass2').addEventListener('keydown', e => {
+    if (e.key === 'Enter') doRegister();
+  });
+});
+
+function startTyping() {
+  if (!isTyping) {
+    isTyping = true;
+    sendWS({ type: 'typing' });
+  }
+  clearTimeout(typingTimeout);
+  typingTimeout = setTimeout(stopTyping, 3000);
+}
+
+function stopTyping() {
+  if (isTyping) {
+    isTyping = false;
+    sendWS({ type: 'stop_typing' });
+  }
+  clearTimeout(typingTimeout);
+}
+</script>
+</body>
+</html>
