@@ -162,35 +162,56 @@ wss.on('connection', (ws, req) => {
 
     switch (msg.type) {
       case 'message': {
-      const text = msg.text?.trim();
-      if (!text || text.length > 2000) return;
+  const text = msg.text?.trim();
+  if (!text || text.length > 2000) return;
 
-      // ── RATE LIMIT ─────────────────────────────
-      const now = Date.now();
-      let rate = userRates.get(self.username);
+  // ── RATE LIMIT ─────────────────────────────
+  const now = Date.now();
+  let rate = userRates.get(self.username);
 
-      if (!rate || now > rate.resetTime) {
-        rate = { count: 0, resetTime: now + RATE_WINDOW };
-      }
+  if (!rate || now > rate.resetTime) {
+    rate = { count: 0, resetTime: now + RATE_WINDOW };
+  }
 
-      if (rate.count >= RATE_LIMIT) {
-        push(ws, {
-          type: 'rate_limit',
-          remaining: 0,
-          reset: rate.resetTime
-        });
-        return;
-      }
+  if (rate.count >= RATE_LIMIT) {
+    push(ws, {
+      type: 'rate_limit',
+      remaining: 0,
+      reset: rate.resetTime
+    });
+    return;
+  }
 
-      rate.count++;
-      userRates.set(self.username, rate);
+  rate.count++;
+  userRates.set(self.username, rate);
 
-      // send remaining to client
-      push(ws, {
-        type: 'rate_limit',
-        remaining: RATE_LIMIT - rate.count,
-        reset: rate.resetTime
-      });
+  // send remaining to client
+  push(ws, {
+    type: 'rate_limit',
+    remaining: RATE_LIMIT - rate.count,
+    reset: rate.resetTime
+  });
+
+  if (typingUsers.has(self.username)) {
+    clearTimeout(typingUsers.get(self.username));
+    typingUsers.delete(self.username);
+    syncTyping();
+  }
+
+  const m = {
+    type:      'message',
+    id:        Math.random().toString(36).slice(2),
+    username:  self.username,
+    color:     self.color,
+    text,
+    timestamp: Date.now()
+  };
+
+  appendMessage(m);
+  broadcastAll(m);
+
+  break;
+}
 
       case 'typing': {
         if (typingUsers.has(self.username)) clearTimeout(typingUsers.get(self.username));
