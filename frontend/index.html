@@ -789,9 +789,10 @@ function sendWS(data) {
 function handleServerMessage(msg) {
   switch (msg.type) {
     case 'history':
-      document.getElementById('messages').innerHTML = '';
+      const el = document.getElementById('messages');
+      el.innerHTML = '';
       msg.messages.forEach(renderMessage);
-      scrollToBottom();
+      el.scrollTop = el.scrollHeight; // FORCE scroll
       break;
 
     case 'message':
