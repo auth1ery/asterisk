@@ -569,6 +569,19 @@
     </div>
   </div>
 
+  <div id="rate-limit" style="
+    position: fixed;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 11px;
+    color: var(--muted);
+    opacity: 0.8;
+    pointer-events: none;
+  ">
+    25 messages / min
+  </div>
+  
   <div id="chat-body">
     <div id="messages-panel">
       <div id="messages"></div>
@@ -606,6 +619,8 @@ let typingTimeout  = null;
 let reconnectTimer = null;
 let shouldReconnect = true;
 let reconnectDelay  = 2000;
+let rateRemaining = 25;
+let rateReset = 0;
 
 // ── Token helpers ─────────────────────────────────────────────────────────────
 const getToken  = ()    => localStorage.getItem(TOKEN_KEY);
@@ -778,17 +793,25 @@ function handleServerMessage(msg) {
       msg.messages.forEach(renderMessage);
       scrollToBottom();
       break;
+
     case 'message':
     case 'system':
       renderMessage(msg);
       scrollToBottom();
       break;
+
     case 'user_list':
       renderUserList(msg.users);
       break;
+
     case 'typing':
       renderTyping(msg.users);
       break;
+
+    case 'rate_limit':
+      updateRateLimit(msg);
+      break;
+
     case 'kicked':
       doLogout();
       break;
@@ -898,6 +921,7 @@ function renderTyping(users) {
 
 // ── Send message ──────────────────────────────────────────────────────────────
 function sendMessage() {
+  if (rateRemaining <= 0) return;
   const input = document.getElementById('msg-input');
   const text  = input.value.trim();
   if (!text) return;
@@ -963,6 +987,38 @@ function stopTyping() {
   }
   clearTimeout(typingTimeout);
 }
+
+function updateRateLimit(data) {
+  rateRemaining = data.remaining;
+  rateReset = data.reset;
+
+  const el = document.getElementById('rate-limit');
+
+  if (rateRemaining <= 0) {
+    const seconds = Math.ceil((rateReset - Date.now()) / 1000);
+    el.textContent = `rate limit hit! resets in ${seconds}s`;
+  } else {
+    el.textContent = `${rateRemaining}/25 messages left`;
+  }
+}
+
+setInterval(() => {
+  if (!rateReset) return;
+
+  const el = document.getElementById('rate-limit');
+  const remainingTime = Math.max(0, rateReset - Date.now());
+
+  if (remainingTime <= 0) {
+    rateRemaining = 25;
+    el.textContent = `25/25 messages`;
+    return;
+  }
+
+  if (rateRemaining <= 0) {
+    const seconds = Math.ceil(remainingTime / 1000);
+    el.textContent = `rate limit hit! resets in ${seconds}s`;
+  }
+}, 500);
 </script>
 </body>
 </html>
