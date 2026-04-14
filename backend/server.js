@@ -117,6 +117,11 @@ function appendMessage(msg) {
   saveJSON(MESSAGES_FILE, messages);
 }
 
+const RATE_LIMIT = 20;
+const RATE_WINDOW = 60 * 1000; // 1 min
+
+const userRates = new Map();
+
 wss.on('connection', (ws, req) => {
   // Authenticate via ?token= in query string
   const params = new URL(req.url, 'http://x').searchParams;
@@ -157,28 +162,35 @@ wss.on('connection', (ws, req) => {
 
     switch (msg.type) {
       case 'message': {
-        const text = msg.text?.trim();
-        if (!text || text.length > 2000) return;
+      const text = msg.text?.trim();
+      if (!text || text.length > 2000) return;
 
-        // Clear typing state on send
-        if (typingUsers.has(self.username)) {
-          clearTimeout(typingUsers.get(self.username));
-          typingUsers.delete(self.username);
-          syncTyping();
-        }
+      // ── RATE LIMIT ─────────────────────────────
+      const now = Date.now();
+      let rate = userRates.get(self.username);
 
-        const m = {
-          type:      'message',
-          id:        Math.random().toString(36).slice(2),
-          username:  self.username,
-          color:     self.color,
-          text,
-          timestamp: Date.now()
-        };
-        appendMessage(m);
-        broadcastAll(m);
-        break;
+      if (!rate || now > rate.resetTime) {
+        rate = { count: 0, resetTime: now + RATE_WINDOW };
       }
+
+      if (rate.count >= RATE_LIMIT) {
+        push(ws, {
+          type: 'rate_limit',
+          remaining: 0,
+          reset: rate.resetTime
+        });
+        return;
+      }
+
+      rate.count++;
+      userRates.set(self.username, rate);
+
+      // send remaining to client
+      push(ws, {
+        type: 'rate_limit',
+        remaining: RATE_LIMIT - rate.count,
+        reset: rate.resetTime
+      });
 
       case 'typing': {
         if (typingUsers.has(self.username)) clearTimeout(typingUsers.get(self.username));
