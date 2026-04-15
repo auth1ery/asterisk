@@ -264,6 +264,35 @@
     }
     #logout-btn:hover { color: var(--text); border-color: var(--border2); }
 
+    /* ── Channel bar (shows DM context) ───────────────────────────────────── */
+    #channel-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 16px;
+      height: 32px;
+      background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    #channel-label { letter-spacing: 0.06em; }
+
+    #back-btn {
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-family: var(--font);
+      font-size: 11px;
+      cursor: pointer;
+      padding: 0;
+      letter-spacing: 0.04em;
+      transition: color 0.15s;
+    }
+    #back-btn:hover { color: var(--text); }
+
     /* Main layout */
     #chat-body {
       flex: 1;
@@ -326,6 +355,9 @@
       color: var(--text);
     }
 
+    /* DM sent by self — subtle dimming */
+    .msg-dm-out .msg-text { opacity: 0.7; }
+
     /* System messages */
     .msg-system {
       padding: 4px 16px;
@@ -355,21 +387,6 @@
       transition: opacity 0.2s;
     }
 
-    #typing-dots {
-      display: inline-block;
-      margin-left: 2px;
-      letter-spacing: 0.1em;
-      animation: dots 1.4s steps(1, end) infinite;
-    }
-
-    @keyframes dots {
-      0%   { content: ''; }
-      33%  { content: '.'; }
-      66%  { content: '..'; }
-      100% { content: '...'; }
-    }
-
-    /* Use pseudo-element trick for animated dots */
     #typing-dots::after {
       content: '';
       animation: dot-anim 1.2s steps(4, end) infinite;
@@ -426,9 +443,9 @@
     #send-btn:hover:not(:disabled) { opacity: 0.85; }
     #send-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 
-    /* Users sidebar */
-    #users-panel {
-      width: 180px;
+    /* ── Right panel (ONLINE + FRIENDS tabs) ───────────────────────────────── */
+    #right-panel {
+      width: 190px;
       flex-shrink: 0;
       border-left: 1px solid var(--border);
       background: var(--surface);
@@ -437,16 +454,49 @@
       overflow: hidden;
     }
 
-    #users-header {
-      padding: 12px 14px 8px;
-      font-size: 10px;
-      letter-spacing: 0.14em;
-      color: var(--muted);
+    #right-tabs {
+      display: flex;
       border-bottom: 1px solid var(--border);
       flex-shrink: 0;
     }
 
-    #users-list {
+    .right-tab {
+      flex: 1;
+      padding: 9px 4px;
+      font-family: var(--font);
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      background: none;
+      border: none;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      transition: color 0.15s, border-color 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+    }
+
+    .right-tab.active {
+      color: var(--text);
+      border-bottom-color: var(--accent);
+    }
+
+    .notif-badge {
+      background: var(--accent);
+      color: #fff;
+      font-size: 9px;
+      padding: 1px 5px;
+      border-radius: 8px;
+      font-weight: 700;
+      line-height: 1.4;
+      font-style: normal;
+    }
+
+    /* ── Online tab ─────────────────────────────────────────────────────────── */
+    #online-tab {
       flex: 1;
       overflow-y: auto;
       padding: 8px 0;
@@ -479,24 +529,219 @@
       color: var(--muted);
     }
 
-    /* ── Reconnect overlay ─────────────────────────────────────────────────── */
-    #reconnect-banner {
-      position: fixed;
-      bottom: 60px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: var(--surface2);
-      border: 1px solid var(--border2);
+    /* ── Friends tab ────────────────────────────────────────────────────────── */
+    #friends-tab {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #add-friend-area {
+      padding: 10px 10px 0;
+      flex-shrink: 0;
+    }
+
+    #add-friend-row {
+      display: flex;
+      gap: 6px;
+    }
+
+    #friend-input {
+      flex: 1;
+      padding: 6px 8px;
+      background: var(--bg);
+      border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 8px 18px;
-      font-size: 12px;
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 11px;
+      outline: none;
+      transition: border-color 0.15s;
+      min-width: 0;
+    }
+    #friend-input:focus { border-color: var(--accent); }
+    #friend-input::placeholder { color: var(--muted); }
+
+    #add-friend-btn {
+      flex-shrink: 0;
+      width: 28px;
+      height: 28px;
+      background: var(--accent);
+      border: none;
+      border-radius: var(--radius);
+      color: #fff;
+      font-size: 18px;
+      font-family: var(--font);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.15s;
+      line-height: 1;
+      padding-bottom: 2px;
+    }
+    #add-friend-btn:hover { opacity: 0.85; }
+
+    #add-friend-msg {
+      font-size: 10px;
+      min-height: 18px;
+      padding: 4px 2px 2px;
+    }
+    #add-friend-msg.err  { color: var(--danger); }
+    #add-friend-msg.ok   { color: var(--success); }
+
+    .friends-section {
+      flex-shrink: 0;
+    }
+
+    .friends-section-label {
+      padding: 8px 12px 4px;
+      font-size: 9px;
+      letter-spacing: 0.14em;
       color: var(--muted);
-      z-index: 100;
+      text-transform: uppercase;
+    }
+
+    /* Incoming request card */
+    .request-item {
+      padding: 6px 10px 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .request-from {
+      font-size: 11px;
+      font-weight: 500;
+      margin-bottom: 5px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .request-actions { display: flex; gap: 5px; }
+
+    .btn-accept, .btn-reject {
+      flex: 1;
+      padding: 3px 0;
+      font-family: var(--font);
+      font-size: 10px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      border: 1px solid;
+      transition: opacity 0.15s;
+      letter-spacing: 0.04em;
+    }
+    .btn-accept { background: rgba(77,255,160,0.08); border-color: rgba(77,255,160,0.25); color: var(--success); }
+    .btn-reject { background: rgba(255,77,106,0.07); border-color: rgba(255,77,106,0.22); color: var(--danger); }
+    .btn-accept:hover, .btn-reject:hover { opacity: 0.75; }
+
+    /* Outgoing request row */
+    .outgoing-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 12px 3px 12px;
+    }
+
+    .outgoing-name {
+      font-size: 11px;
+      color: var(--muted);
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-style: italic;
+    }
+
+    .btn-cancel-sm {
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 14px;
+      cursor: pointer;
+      line-height: 1;
+      padding: 0 2px;
+      transition: color 0.15s;
+      flex-shrink: 0;
+    }
+    .btn-cancel-sm:hover { color: var(--danger); }
+
+    /* Accepted friend row */
+    .friend-item {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 4px 10px 4px 12px;
+      cursor: default;
+      transition: background 0.1s;
+      position: relative;
+    }
+    .friend-item:hover { background: rgba(255,255,255,0.025); }
+    .friend-item:hover .friend-actions { opacity: 1; }
+
+    .friend-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .friend-name {
+      font-size: 12px;
+      color: var(--text);
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .friend-actions {
+      display: flex;
+      gap: 2px;
+      opacity: 0;
+      transition: opacity 0.15s;
+      flex-shrink: 0;
+    }
+
+    .friend-dm-btn {
+      background: none;
+      border: none;
+      font-family: var(--font);
+      font-size: 10px;
+      cursor: pointer;
+      padding: 2px 5px;
+      border-radius: 3px;
+      color: var(--accent);
+      transition: background 0.1s;
+      letter-spacing: 0.03em;
+    }
+    .friend-dm-btn:hover { background: var(--accent-glow); }
+
+    .friend-remove-btn {
+      background: none;
+      border: none;
+      font-family: var(--font);
+      font-size: 13px;
+      cursor: pointer;
+      padding: 0 3px;
+      border-radius: 3px;
+      color: var(--muted);
+      transition: color 0.1s;
+      line-height: 1.4;
+    }
+    .friend-remove-btn:hover { color: var(--danger); }
+
+    /* Empty state */
+    .friends-empty {
+      padding: 14px 12px;
+      font-size: 11px;
+      color: var(--muted);
+      font-style: italic;
     }
 
     /* ── Responsive ────────────────────────────────────────────────────────── */
     @media (max-width: 600px) {
-      #users-panel { display: none; }
+      #right-panel { display: none; }
       .auth-card { width: 100%; margin: 16px; }
     }
   </style>
@@ -563,25 +808,21 @@
       <span id="status-text">connecting</span>
     </div>
     <div class="header-spacer"></div>
+    <div id="rate-limit" style="font-size:11px;color:var(--muted);opacity:0.8;pointer-events:none;">
+      20 messages / min
+    </div>
+    <div class="header-sep" style="margin-left:6px;"></div>
     <div id="header-user">
       <span id="header-username"></span>
       <button id="logout-btn" onclick="doLogout()">logout</button>
     </div>
   </div>
 
-  <div id="rate-limit" style="
-    position: fixed;
-    top: 13px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 11px;
-    color: var(--muted);
-    opacity: 0.8;
-    pointer-events: none;
-  ">
-    20 messages / min
+  <!-- Channel context bar -->
+  <div id="channel-bar">
+    <span id="channel-label">global chat</span>
   </div>
-  
+
   <div id="chat-body">
     <div id="messages-panel">
       <div id="messages"></div>
@@ -596,9 +837,40 @@
       </div>
     </div>
 
-    <div id="users-panel">
-      <div id="users-header">ONLINE</div>
-      <div id="users-list"></div>
+    <!-- Right panel: ONLINE / FRIENDS tabs -->
+    <div id="right-panel">
+      <div id="right-tabs">
+        <button class="right-tab active" id="tab-online"  onclick="switchRightTab('online')">ONLINE</button>
+        <button class="right-tab"        id="tab-friends" onclick="switchRightTab('friends')">
+          FRIENDS <span id="friends-badge" class="notif-badge hidden"></span>
+        </button>
+      </div>
+
+      <!-- Online tab -->
+      <div id="online-tab">
+        <div id="users-list"></div>
+      </div>
+
+      <!-- Friends tab -->
+      <div id="friends-tab" class="hidden">
+        <div id="add-friend-area">
+          <div id="add-friend-row">
+            <input type="text" id="friend-input" placeholder="username" spellcheck="false"
+                   onkeydown="if(event.key==='Enter') sendFriendRequest()">
+            <button id="add-friend-btn" onclick="sendFriendRequest()" title="Send friend request">+</button>
+          </div>
+          <div id="add-friend-msg"></div>
+        </div>
+
+        <!-- Incoming requests -->
+        <div class="friends-section" id="section-incoming"></div>
+
+        <!-- Outgoing requests -->
+        <div class="friends-section" id="section-outgoing"></div>
+
+        <!-- Accepted friends -->
+        <div class="friends-section" id="section-friends"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -606,35 +878,49 @@
 <script src="config.js"></script>
 <script>
 // ── Config ────────────────────────────────────────────────────────────────────
-const RAW_URL    = (typeof ASTERISK_CONFIG !== 'undefined' ? ASTERISK_CONFIG.BACKEND_URL : '').replace(/\/$/, '');
-const HTTP_BASE  = RAW_URL;
-const WS_BASE    = RAW_URL.replace(/^https/, 'wss').replace(/^http/, 'ws');
-const TOKEN_KEY  = 'asterisk_token';
+const RAW_URL   = (typeof ASTERISK_CONFIG !== 'undefined' ? ASTERISK_CONFIG.BACKEND_URL
+                  : window.location.protocol !== 'file:' ? window.location.origin
+                  : 'http://localhost:3001').replace(/\/$/, '');
+const HTTP_BASE = RAW_URL;
+const WS_BASE   = RAW_URL.replace(/^https/, 'wss').replace(/^http/, 'ws');
+const TOKEN_KEY = 'asterisk_token';
 
 // ── State ─────────────────────────────────────────────────────────────────────
-let ws             = null;
-let currentUser    = null;   // { username, color }
-let isTyping       = false;
-let typingTimeout  = null;
-let reconnectTimer = null;
+let ws              = null;
+let currentUser     = null;   // { username, color }
+let currentDM       = null;   // username of open DM, or null for global chat
+let friendsState    = { friends: [], incoming: [], outgoing: [] };
+let dmCache         = {};     // { username: [messages] }
+
+let isTyping        = false;
+let typingTimeout   = null;
+let reconnectTimer  = null;
 let shouldReconnect = true;
 let reconnectDelay  = 2000;
-let rateRemaining = 25;
-let rateReset = 0;
+let rateRemaining   = 20;
+let rateReset       = 0;
 
 // ── Token helpers ─────────────────────────────────────────────────────────────
-const getToken  = ()    => localStorage.getItem(TOKEN_KEY);
-const setToken  = (tok) => localStorage.setItem(TOKEN_KEY, tok);
-const clearToken = ()   => localStorage.removeItem(TOKEN_KEY);
+const getToken   = ()    => localStorage.getItem(TOKEN_KEY);
+const setToken   = (tok) => localStorage.setItem(TOKEN_KEY, tok);
+const clearToken = ()    => localStorage.removeItem(TOKEN_KEY);
 
-// ── Tab switching ─────────────────────────────────────────────────────────────
+// ── Auth tab switching ────────────────────────────────────────────────────────
 function switchTab(tab) {
   document.getElementById('tab-login').classList.toggle('active', tab === 'login');
   document.getElementById('tab-register').classList.toggle('active', tab === 'register');
   document.getElementById('form-login').classList.toggle('hidden', tab !== 'login');
   document.getElementById('form-register').classList.toggle('hidden', tab !== 'register');
   document.getElementById('login-error').textContent = '';
-  document.getElementById('reg-error').textContent = '';
+  document.getElementById('reg-error').textContent   = '';
+}
+
+// ── Right panel tab switching ─────────────────────────────────────────────────
+function switchRightTab(tab) {
+  document.getElementById('tab-online').classList.toggle('active',  tab === 'online');
+  document.getElementById('tab-friends').classList.toggle('active', tab === 'friends');
+  document.getElementById('online-tab').classList.toggle('hidden',  tab !== 'online');
+  document.getElementById('friends-tab').classList.toggle('hidden', tab !== 'friends');
 }
 
 // ── Auth API calls ────────────────────────────────────────────────────────────
@@ -649,25 +935,44 @@ async function apiPost(path, body) {
   return data;
 }
 
+async function apiDelete(path) {
+  const res  = await fetch(HTTP_BASE + path, {
+    method: 'DELETE',
+    headers: { Authorization: 'Bearer ' + getToken() }
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Unknown error');
+  return data;
+}
+
+async function apiAuthPost(path, body) {
+  const res  = await fetch(HTTP_BASE + path, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: 'Bearer ' + getToken()
+    },
+    body: JSON.stringify(body)
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Unknown error');
+  return data;
+}
+
 async function doLogin() {
   const username = document.getElementById('login-user').value.trim();
   const password = document.getElementById('login-pass').value;
   const errEl    = document.getElementById('login-error');
   const btn      = document.getElementById('login-btn');
-
   if (!username || !password) { errEl.textContent = 'Fill in all fields.'; return; }
   errEl.textContent = '';
   btn.disabled = true;
-
   try {
     const { token, username: u, color } = await apiPost('/api/login', { username, password });
     setToken(token);
     enterChat({ username: u, color });
-  } catch (e) {
-    errEl.textContent = e.message;
-  } finally {
-    btn.disabled = false;
-  }
+  } catch (e) { errEl.textContent = e.message; }
+  finally      { btn.disabled = false; }
 }
 
 async function doRegister() {
@@ -676,21 +981,16 @@ async function doRegister() {
   const pass2    = document.getElementById('reg-pass2').value;
   const errEl    = document.getElementById('reg-error');
   const btn      = document.getElementById('reg-btn');
-
   if (!username || !password || !pass2) { errEl.textContent = 'Fill in all fields.'; return; }
   if (password !== pass2)               { errEl.textContent = 'Passwords do not match.'; return; }
   errEl.textContent = '';
   btn.disabled = true;
-
   try {
     const { token, username: u, color } = await apiPost('/api/register', { username, password });
     setToken(token);
     enterChat({ username: u, color });
-  } catch (e) {
-    errEl.textContent = e.message;
-  } finally {
-    btn.disabled = false;
-  }
+  } catch (e) { errEl.textContent = e.message; }
+  finally      { btn.disabled = false; }
 }
 
 function doLogout() {
@@ -698,12 +998,13 @@ function doLogout() {
   if (ws) ws.close();
   clearToken();
   currentUser = null;
+  currentDM   = null;
   document.getElementById('chat-screen').classList.add('hidden');
   document.getElementById('auth-screen').classList.remove('hidden');
-  document.getElementById('messages').innerHTML = '';
+  document.getElementById('messages').innerHTML   = '';
   document.getElementById('users-list').innerHTML = '';
-  document.getElementById('login-user').value = '';
-  document.getElementById('login-pass').value = '';
+  document.getElementById('login-user').value     = '';
+  document.getElementById('login-pass').value     = '';
   switchTab('login');
 }
 
@@ -712,20 +1013,18 @@ window.addEventListener('load', async () => {
   const token = getToken();
   if (!token) return;
   try {
-    const res  = await fetch(HTTP_BASE + '/api/verify', {
+    const res = await fetch(HTTP_BASE + '/api/verify', {
       headers: { Authorization: 'Bearer ' + token }
     });
     if (!res.ok) { clearToken(); return; }
     const { username, color } = await res.json();
     enterChat({ username, color });
-  } catch {
-    // Server unreachable — show auth screen (they'll log in again once backend is up)
-  }
+  } catch { /* server unreachable — show auth screen */ }
 });
 
 // ── Enter chat ────────────────────────────────────────────────────────────────
 function enterChat(user) {
-  currentUser = user;
+  currentUser     = user;
   shouldReconnect = true;
   reconnectDelay  = 2000;
 
@@ -743,7 +1042,6 @@ function connectWS() {
   const token = getToken();
   if (!token) return;
   setStatus('connecting');
-
   ws = new WebSocket(`${WS_BASE}/ws?token=${encodeURIComponent(token)}`);
 
   ws.addEventListener('open', () => {
@@ -759,7 +1057,7 @@ function connectWS() {
 
   ws.addEventListener('close', e => {
     setStatus('disconnected');
-    if (e.code === 1008) { doLogout(); return; } // kicked / unauthorized
+    if (e.code === 1008) { doLogout(); return; }
     if (shouldReconnect) scheduleReconnect();
   });
 
@@ -775,10 +1073,8 @@ function scheduleReconnect() {
 }
 
 function setStatus(s) {
-  const dot  = document.getElementById('status-dot');
-  const text = document.getElementById('status-text');
-  dot.className  = 'status-dot ' + s;
-  text.textContent = s;
+  document.getElementById('status-dot').className  = 'status-dot ' + s;
+  document.getElementById('status-text').textContent = s;
 }
 
 function sendWS(data) {
@@ -788,17 +1084,21 @@ function sendWS(data) {
 // ── Handle server messages ────────────────────────────────────────────────────
 function handleServerMessage(msg) {
   switch (msg.type) {
+
     case 'history':
+      if (currentDM) break; // don't stomp DM view with global history
       const el = document.getElementById('messages');
       el.innerHTML = '';
       msg.messages.forEach(renderMessage);
-      el.scrollTop = el.scrollHeight; // FORCE scroll
+      el.scrollTop = el.scrollHeight;
       break;
 
     case 'message':
     case 'system':
-      renderMessage(msg);
-      scrollToBottom();
+      if (!currentDM) {
+        renderMessage(msg);
+        scrollToBottom();
+      }
       break;
 
     case 'user_list':
@@ -806,7 +1106,7 @@ function handleServerMessage(msg) {
       break;
 
     case 'typing':
-      renderTyping(msg.users);
+      if (!currentDM) renderTyping(msg.users);
       break;
 
     case 'rate_limit':
@@ -816,10 +1116,63 @@ function handleServerMessage(msg) {
     case 'kicked':
       doLogout();
       break;
+
+    // ── Friends ──────────────────────────────────────────────────────────────
+    case 'friends_state':
+      friendsState = msg;
+      renderFriendsPanel();
+      break;
+
+    case 'friend_request':
+      friendsState.incoming = friendsState.incoming || [];
+      friendsState.incoming.push({ id: msg.id, from: msg.from, color: msg.color });
+      renderFriendsPanel();
+      break;
+
+    case 'friend_accepted':
+      // Move from outgoing to accepted
+      friendsState.outgoing = (friendsState.outgoing || []).filter(r => r.to !== msg.username);
+      friendsState.incoming = (friendsState.incoming || []).filter(r => r.from !== msg.username);
+      friendsState.friends  = friendsState.friends || [];
+      if (!friendsState.friends.find(f => f.username === msg.username))
+        friendsState.friends.push({ username: msg.username, color: msg.color });
+      renderFriendsPanel();
+      break;
+
+    case 'friend_removed':
+      friendsState.friends = (friendsState.friends || []).filter(f => f.username !== msg.username);
+      renderFriendsPanel();
+      if (currentDM === msg.username) closeDM();
+      break;
+
+    // ── DMs ──────────────────────────────────────────────────────────────────
+    case 'dm': {
+      const other = msg.from === currentUser?.username ? msg.to : msg.from;
+      if (!dmCache[other]) dmCache[other] = [];
+      dmCache[other].push(msg);
+      if (currentDM === other) {
+        renderDMMessage(msg);
+        scrollToBottom();
+      } else {
+        // Visual nudge on the friend's row in the panel
+        highlightFriend(other);
+      }
+      break;
+    }
+
+    case 'dm_history':
+      dmCache[msg.with] = msg.messages;
+      if (currentDM === msg.with) {
+        const container = document.getElementById('messages');
+        container.innerHTML = '';
+        msg.messages.forEach(renderDMMessage);
+        container.scrollTop = container.scrollHeight;
+      }
+      break;
   }
 }
 
-// ── Render message ────────────────────────────────────────────────────────────
+// ── Render global message ─────────────────────────────────────────────────────
 function renderMessage(msg) {
   const container = document.getElementById('messages');
 
@@ -834,10 +1187,10 @@ function renderMessage(msg) {
   const ts   = new Date(msg.timestamp);
   const time = ts.getHours().toString().padStart(2,'0') + ':' + ts.getMinutes().toString().padStart(2,'0');
 
-  const row = document.createElement('div');
+  const row    = document.createElement('div');
   row.className = 'msg';
 
-  const tsEl = document.createElement('span');
+  const tsEl   = document.createElement('span');
   tsEl.className   = 'msg-ts';
   tsEl.textContent = time;
 
@@ -846,7 +1199,7 @@ function renderMessage(msg) {
   userEl.style.color = msg.color || '#888';
   userEl.textContent = msg.username;
 
-  const sepEl = document.createElement('span');
+  const sepEl  = document.createElement('span');
   sepEl.className   = 'msg-sep';
   sepEl.textContent = '›';
 
@@ -858,14 +1211,113 @@ function renderMessage(msg) {
   container.appendChild(row);
 }
 
+// ── Render DM message ─────────────────────────────────────────────────────────
+function renderDMMessage(msg) {
+  const container = document.getElementById('messages');
+  const isSelf    = msg.from === currentUser?.username;
+
+  const ts   = new Date(msg.timestamp);
+  const time = ts.getHours().toString().padStart(2,'0') + ':' + ts.getMinutes().toString().padStart(2,'0');
+
+  const row    = document.createElement('div');
+  row.className = 'msg ' + (isSelf ? 'msg-dm-out' : 'msg-dm-in');
+
+  const tsEl   = document.createElement('span');
+  tsEl.className   = 'msg-ts';
+  tsEl.textContent = time;
+
+  const userEl = document.createElement('span');
+  userEl.className   = 'msg-user';
+  userEl.style.color = msg.color || '#888';
+  userEl.textContent = msg.from;
+
+  const sepEl  = document.createElement('span');
+  sepEl.className   = 'msg-sep';
+  sepEl.textContent = '›';
+
+  const textEl = document.createElement('span');
+  textEl.className   = 'msg-text';
+  textEl.textContent = msg.text;
+
+  row.append(tsEl, userEl, sepEl, textEl);
+  container.appendChild(row);
+}
+
+// ── Open / close DM view ──────────────────────────────────────────────────────
+function openDM(username) {
+  currentDM = username;
+
+  const friend = friendsState.friends?.find(f => f.username === username);
+  const color  = friend?.color || '#888';
+
+  // Update channel bar
+  const bar   = document.getElementById('channel-bar');
+  bar.innerHTML = '';
+  const back  = document.createElement('button');
+  back.id = 'back-btn';
+  back.textContent = '← back';
+  back.onclick = closeDM;
+  const label = document.createElement('span');
+  label.id = 'channel-label';
+  label.innerHTML = `dm — <span style="color:${color};font-weight:500">${username}</span>`;
+  bar.append(back, label);
+
+  // Update input placeholder
+  document.getElementById('msg-input').placeholder = `message ${username}...`;
+
+  // Clear messages and show DM history
+  const container = document.getElementById('messages');
+  container.innerHTML = '';
+
+  if (dmCache[username]) {
+    dmCache[username].forEach(renderDMMessage);
+    container.scrollTop = container.scrollHeight;
+  }
+
+  // Request history from server
+  sendWS({ type: 'dm_history', with: username });
+
+  // Clear unread highlight
+  const row = document.querySelector(`.friend-item[data-user="${username}"]`);
+  if (row) row.classList.remove('friend-unread');
+
+  document.getElementById('msg-input').focus();
+}
+
+function closeDM() {
+  currentDM = null;
+
+  // Restore channel bar
+  const bar   = document.getElementById('channel-bar');
+  bar.innerHTML = '<span id="channel-label">global chat</span>';
+
+  // Restore input placeholder
+  document.getElementById('msg-input').placeholder = 'say something...';
+
+  // Reload global history from cache (re-request on reconnect; for now restore what we have)
+  // We'll ask for global history by reconnecting or just clearing
+  const container = document.getElementById('messages');
+  container.innerHTML = '<div class="msg-system" style="padding:12px 16px;">— returned to global chat —</div>';
+
+  document.getElementById('msg-input').focus();
+}
+
+// ── Highlight friend row (unread indicator) ───────────────────────────────────
+function highlightFriend(username) {
+  const row = document.querySelector(`.friend-item[data-user="${username}"]`);
+  if (row) {
+    row.style.background = 'rgba(139,126,245,0.07)';
+  }
+  // Also switch to friends tab badge
+  updateFriendsBadge();
+}
+
 // ── Scroll ────────────────────────────────────────────────────────────────────
 function scrollToBottom() {
   const el = document.getElementById('messages');
-  // Only auto-scroll if user is near the bottom
   const threshold = 120;
-  if (el.scrollHeight - el.scrollTop - el.clientHeight < threshold) {
+  if (el.scrollHeight - el.scrollTop - el.clientHeight < threshold)
     el.scrollTop = el.scrollHeight;
-  }
 }
 
 // ── User list ─────────────────────────────────────────────────────────────────
@@ -873,7 +1325,6 @@ function renderUserList(users) {
   const list = document.getElementById('users-list');
   list.innerHTML = '';
 
-  // Sort: current user last (listed as "you")
   const sorted = [...users].sort((a, b) => {
     if (a.username === currentUser?.username) return 1;
     if (b.username === currentUser?.username) return -1;
@@ -884,12 +1335,12 @@ function renderUserList(users) {
     const item = document.createElement('div');
     item.className = 'user-item';
 
-    const dot = document.createElement('span');
+    const dot  = document.createElement('span');
     dot.className = 'user-dot';
     dot.style.background = u.color;
 
     const name = document.createElement('span');
-    name.className = 'user-name' + (u.username === currentUser?.username ? ' is-you' : '');
+    name.className   = 'user-name' + (u.username === currentUser?.username ? ' is-you' : '');
     name.textContent = u.username === currentUser?.username ? u.username + ' (you)' : u.username;
 
     item.append(dot, name);
@@ -899,35 +1350,35 @@ function renderUserList(users) {
 
 // ── Typing indicator ──────────────────────────────────────────────────────────
 function renderTyping(users) {
-  const others  = users.filter(u => u !== currentUser?.username);
-  const textEl  = document.getElementById('typing-text');
-  const dotsEl  = document.getElementById('typing-dots');
+  const others = users.filter(u => u !== currentUser?.username);
+  const textEl = document.getElementById('typing-text');
+  const dotsEl = document.getElementById('typing-dots');
 
   if (others.length === 0) {
-    textEl.textContent = '';
+    textEl.textContent   = '';
     dotsEl.style.display = 'none';
     return;
   }
 
   dotsEl.style.display = 'inline';
-
-  if (others.length === 1) {
-    textEl.textContent = others[0] + ' is typing';
-  } else if (others.length === 2) {
-    textEl.textContent = others[0] + ' and ' + others[1] + ' are typing';
-  } else {
-    textEl.textContent = others.length + ' people are typing';
-  }
+  if      (others.length === 1) textEl.textContent = others[0] + ' is typing';
+  else if (others.length === 2) textEl.textContent = others[0] + ' and ' + others[1] + ' are typing';
+  else                          textEl.textContent = others.length + ' people are typing';
 }
 
-// ── Send message ──────────────────────────────────────────────────────────────
+// ── Send message (routes to DM or global) ─────────────────────────────────────
 function sendMessage() {
   if (rateRemaining <= 0) return;
   const input = document.getElementById('msg-input');
   const text  = input.value.trim();
   if (!text) return;
 
-  sendWS({ type: 'message', text });
+  if (currentDM) {
+    sendWS({ type: 'dm', to: currentDM, text });
+  } else {
+    sendWS({ type: 'message', text });
+  }
+
   input.value = '';
   input.style.height = '';
   stopTyping();
@@ -938,26 +1389,17 @@ document.addEventListener('DOMContentLoaded', () => {
   const input = document.getElementById('msg-input');
 
   input.addEventListener('keydown', e => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
   });
 
   input.addEventListener('input', () => {
-    // Auto-resize
     input.style.height = 'auto';
     input.style.height = Math.min(input.scrollHeight, 140) + 'px';
-
-    // Typing indicator
-    if (input.value.trim()) {
-      startTyping();
-    } else {
-      stopTyping();
+    if (!currentDM) {
+      if (input.value.trim()) startTyping(); else stopTyping();
     }
   });
 
-  // Focus input on login shortcuts
   document.getElementById('login-pass').addEventListener('keydown', e => {
     if (e.key === 'Enter') doLogin();
   });
@@ -973,53 +1415,245 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function startTyping() {
-  if (!isTyping) {
-    isTyping = true;
-    sendWS({ type: 'typing' });
-  }
+  if (!isTyping) { isTyping = true; sendWS({ type: 'typing' }); }
   clearTimeout(typingTimeout);
   typingTimeout = setTimeout(stopTyping, 3000);
 }
 
 function stopTyping() {
-  if (isTyping) {
-    isTyping = false;
-    sendWS({ type: 'stop_typing' });
-  }
+  if (isTyping) { isTyping = false; sendWS({ type: 'stop_typing' }); }
   clearTimeout(typingTimeout);
 }
 
+// ── Rate limit display ────────────────────────────────────────────────────────
 function updateRateLimit(data) {
   rateRemaining = data.remaining;
-  rateReset = data.reset;
-
+  rateReset     = data.reset;
   const el = document.getElementById('rate-limit');
-
   if (rateRemaining <= 0) {
-    const seconds = Math.ceil((rateReset - Date.now()) / 1000);
-    el.textContent = `rate limit hit! resets in ${seconds}s`;
+    const secs = Math.ceil((rateReset - Date.now()) / 1000);
+    el.textContent = `rate limit — resets in ${secs}s`;
   } else {
-    el.textContent = `${rateRemaining}/25 messages left`;
+    el.textContent = `${rateRemaining}/20 left`;
   }
 }
 
 setInterval(() => {
   if (!rateReset) return;
-
   const el = document.getElementById('rate-limit');
-  const remainingTime = Math.max(0, rateReset - Date.now());
+  const remaining = Math.max(0, rateReset - Date.now());
+  if (remaining <= 0) {
+    rateRemaining  = 20;
+    el.textContent = '20 messages / min';
+    return;
+  }
+  if (rateRemaining <= 0) {
+    el.textContent = `rate limit — resets in ${Math.ceil(remaining / 1000)}s`;
+  }
+}, 500);
 
-  if (remainingTime <= 0) {
-    rateRemaining = 25;
-    el.textContent = `25/25 messages`;
+// ── Friends panel rendering ───────────────────────────────────────────────────
+function renderFriendsPanel() {
+  renderIncoming();
+  renderOutgoing();
+  renderFriendsList();
+  updateFriendsBadge();
+}
+
+function updateFriendsBadge() {
+  const count = (friendsState.incoming || []).length;
+  const badge = document.getElementById('friends-badge');
+  if (count > 0) {
+    badge.textContent = count;
+    badge.classList.remove('hidden');
+  } else {
+    badge.classList.add('hidden');
+  }
+}
+
+function renderIncoming() {
+  const section  = document.getElementById('section-incoming');
+  const incoming = friendsState.incoming || [];
+  section.innerHTML = '';
+  if (!incoming.length) return;
+
+  const label = document.createElement('div');
+  label.className   = 'friends-section-label';
+  label.textContent = 'INCOMING';
+  section.appendChild(label);
+
+  incoming.forEach(req => {
+    const item = document.createElement('div');
+    item.className = 'request-item';
+
+    const from = document.createElement('div');
+    from.className   = 'request-from';
+    from.style.color = req.color || '#888';
+    from.textContent = req.from;
+
+    const actions = document.createElement('div');
+    actions.className = 'request-actions';
+
+    const acc = document.createElement('button');
+    acc.className   = 'btn-accept';
+    acc.textContent = 'accept';
+    acc.onclick     = () => acceptFriendRequest(req.from);
+
+    const rej = document.createElement('button');
+    rej.className   = 'btn-reject';
+    rej.textContent = 'reject';
+    rej.onclick     = () => rejectFriendRequest(req.from);
+
+    actions.append(acc, rej);
+    item.append(from, actions);
+    section.appendChild(item);
+  });
+}
+
+function renderOutgoing() {
+  const section  = document.getElementById('section-outgoing');
+  const outgoing = friendsState.outgoing || [];
+  section.innerHTML = '';
+  if (!outgoing.length) return;
+
+  const label = document.createElement('div');
+  label.className   = 'friends-section-label';
+  label.textContent = 'PENDING';
+  section.appendChild(label);
+
+  outgoing.forEach(req => {
+    const item = document.createElement('div');
+    item.className = 'outgoing-item';
+
+    const name = document.createElement('span');
+    name.className   = 'outgoing-name';
+    name.textContent = req.to;
+
+    const cancel = document.createElement('button');
+    cancel.className   = 'btn-cancel-sm';
+    cancel.title       = 'cancel request';
+    cancel.textContent = '×';
+    cancel.onclick     = () => cancelFriendRequest(req.to);
+
+    item.append(name, cancel);
+    section.appendChild(item);
+  });
+}
+
+function renderFriendsList() {
+  const section = document.getElementById('section-friends');
+  const friends = friendsState.friends || [];
+  section.innerHTML = '';
+
+  const label = document.createElement('div');
+  label.className   = 'friends-section-label';
+  label.textContent = 'FRIENDS';
+  section.appendChild(label);
+
+  if (!friends.length) {
+    const empty = document.createElement('div');
+    empty.className   = 'friends-empty';
+    empty.textContent = 'no friends yet';
+    section.appendChild(empty);
     return;
   }
 
-  if (rateRemaining <= 0) {
-    const seconds = Math.ceil(remainingTime / 1000);
-    el.textContent = `rate limit hit! resets in ${seconds}s`;
+  [...friends]
+    .sort((a, b) => a.username.localeCompare(b.username))
+    .forEach(f => {
+      const item = document.createElement('div');
+      item.className        = 'friend-item';
+      item.dataset.user     = f.username;
+
+      const dot  = document.createElement('span');
+      dot.className = 'friend-dot';
+      dot.style.background = f.color || '#888';
+
+      const name = document.createElement('span');
+      name.className   = 'friend-name';
+      name.textContent = f.username;
+
+      const actions = document.createElement('div');
+      actions.className = 'friend-actions';
+
+      const dmBtn = document.createElement('button');
+      dmBtn.className   = 'friend-dm-btn';
+      dmBtn.textContent = 'dm';
+      dmBtn.title       = `DM ${f.username}`;
+      dmBtn.onclick     = (e) => { e.stopPropagation(); openDM(f.username); };
+
+      const removeBtn = document.createElement('button');
+      removeBtn.className   = 'friend-remove-btn';
+      removeBtn.textContent = '×';
+      removeBtn.title       = 'remove friend';
+      removeBtn.onclick     = (e) => { e.stopPropagation(); removeFriend(f.username); };
+
+      actions.append(dmBtn, removeBtn);
+      item.append(dot, name, actions);
+      item.ondblclick = () => openDM(f.username);
+      section.appendChild(item);
+    });
+}
+
+// ── Friends API actions ───────────────────────────────────────────────────────
+async function sendFriendRequest() {
+  const input = document.getElementById('friend-input');
+  const msgEl = document.getElementById('add-friend-msg');
+  const to    = input.value.trim();
+  if (!to) return;
+
+  msgEl.className   = '';
+  msgEl.textContent = '';
+
+  try {
+    const res = await apiAuthPost('/api/friends/request', { to });
+    input.value = '';
+    if (res.status === 'accepted') {
+      msgEl.className   = 'ok';
+      msgEl.textContent = `now friends with ${to}!`;
+    } else {
+      msgEl.className   = 'ok';
+      msgEl.textContent = `request sent to ${to}`;
+    }
+    setTimeout(() => { msgEl.textContent = ''; }, 3000);
+  } catch (e) {
+    msgEl.className   = 'err';
+    msgEl.textContent = e.message;
   }
-}, 500);
+}
+
+async function acceptFriendRequest(from) {
+  try {
+    await apiAuthPost('/api/friends/accept', { from });
+    friendsState.incoming = (friendsState.incoming || []).filter(r => r.from !== from);
+    renderFriendsPanel();
+  } catch (e) { console.error(e); }
+}
+
+async function rejectFriendRequest(from) {
+  try {
+    await apiAuthPost('/api/friends/reject', { from });
+    friendsState.incoming = (friendsState.incoming || []).filter(r => r.from !== from);
+    renderFriendsPanel();
+  } catch (e) { console.error(e); }
+}
+
+async function cancelFriendRequest(to) {
+  try {
+    await apiAuthPost('/api/friends/cancel', { to });
+    friendsState.outgoing = (friendsState.outgoing || []).filter(r => r.to !== to);
+    renderFriendsPanel();
+  } catch (e) { console.error(e); }
+}
+
+async function removeFriend(username) {
+  try {
+    await apiDelete('/api/friends/' + encodeURIComponent(username));
+    friendsState.friends = (friendsState.friends || []).filter(f => f.username !== username);
+    renderFriendsPanel();
+    if (currentDM === username) closeDM();
+  } catch (e) { console.error(e); }
+}
 </script>
 </body>
 </html>
