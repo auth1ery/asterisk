@@ -26,9 +26,9 @@ const MESSAGES_FILE = path.join(DATA_DIR, 'messages.json');
 const FRIENDS_FILE  = path.join(DATA_DIR, 'friends.json');
 const DMS_FILE      = path.join(DATA_DIR, 'dms.json');
 
-const MAX_MESSAGES    = 1000;
-const HISTORY_SEND    = 200;
-const MAX_DM_STORED   = 500;
+const MAX_MESSAGES    = 30000;
+const HISTORY_SEND    = 6000;
+const MAX_DM_STORED   = 5000;
 const DM_HISTORY_SEND = 100;
 const RATE_LIMIT      = 20;
 const RATE_WINDOW     = 60 * 1000;
