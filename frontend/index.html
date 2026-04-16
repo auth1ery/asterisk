@@ -842,6 +842,27 @@
   #mobile-online-panel,
   #mobile-friends-panel { display: none !important; }
 }
+
+#channel-tabs { display: flex; gap: 4px; }
+.ch-tab {
+  background: none;
+  border: none;
+  font-family: var(--font);
+  font-size: 11px;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: var(--radius);
+  transition: color 0.15s, background 0.15s;
+  letter-spacing: 0.04em;
+}
+.ch-tab:hover { color: var(--text); }
+.ch-tab.active { color: var(--accent); background: var(--accent-glow); }
+
+@media (max-width: 600px) {
+  #channel-tabs { gap: 2px; }
+  .ch-tab { font-size: 10px; padding: 2px 4px; }
+}
   </style>
 </head>
 <body>
@@ -919,6 +940,13 @@
   <!-- Channel context bar -->
   <div id="channel-bar">
     <span id="channel-label">global chat</span>
+    <div class="header-spacer"></div>
+    <div id="channel-tabs">
+      <button class="ch-tab active" onclick="switchChannel('global')">#global</button>
+      <button class="ch-tab" onclick="switchChannel('debate')">#debate</button>
+      <button class="ch-tab" onclick="switchChannel('gaming')">#gaming</button>
+      <button class="ch-tab" onclick="switchChannel('music')">#music</button>
+    </div>
   </div>
 
   <div id="chat-body">
@@ -1016,6 +1044,19 @@ let shouldReconnect = true;
 let reconnectDelay  = 2000;
 let rateRemaining   = 20;
 let rateReset       = 0;
+
+let currentChannel = 'global';
+
+function switchChannel(ch) {
+  if (currentDM) closeDM();
+  currentChannel = ch;
+  document.querySelectorAll('.ch-tab').forEach(b =>
+    b.classList.toggle('active', b.textContent === '#' + ch)
+  );
+  document.getElementById('channel-label').textContent = '#' + ch;
+  document.getElementById('messages').innerHTML = '';
+  sendWS({ type: 'join_channel', channel: ch });
+}
 
 // ── Token helpers ─────────────────────────────────────────────────────────────
 const getToken   = ()    => localStorage.getItem(TOKEN_KEY);
@@ -1205,7 +1246,8 @@ function handleServerMessage(msg) {
   switch (msg.type) {
 
     case 'history':
-      if (currentDM) break; // don't stomp DM view with global history
+      if (currentDM) break;
+      if (msg.channel && msg.channel !== currentChannel) break;
       const el = document.getElementById('messages');
       el.innerHTML = '';
       msg.messages.forEach(renderMessage);
@@ -1214,7 +1256,7 @@ function handleServerMessage(msg) {
 
     case 'message':
     case 'system':
-      if (!currentDM) {
+      if (!currentDM && (!msg.channel || msg.channel === currentChannel)) {
         renderMessage(msg);
         scrollToBottom();
       }
@@ -1495,7 +1537,7 @@ function sendMessage() {
   if (currentDM) {
     sendWS({ type: 'dm', to: currentDM, text });
   } else {
-    sendWS({ type: 'message', text });
+    sendWS({ type: 'message', text, channel: currentChannel });
   }
 
   input.value = '';
