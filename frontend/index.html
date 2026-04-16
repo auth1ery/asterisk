@@ -956,6 +956,10 @@
         <div id="typing-bar">
           <span id="typing-text"></span><span id="typing-dots"></span>
         </div>
+        <label id="attach-btn" title="Attach image" style="flex-shrink:0;width:38px;height:38px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);color:var(--muted);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;transition:color 0.15s;">
+  📎
+  <input type="file" id="file-input" accept="image/*" style="display:none">
+</label>
         <div id="input-row">
           <textarea id="msg-input" placeholder="say something..." rows="1" maxlength="2000"></textarea>
           <button id="send-btn" title="Send" onclick="sendMessage()">↑</button>
@@ -1368,6 +1372,14 @@ function renderMessage(msg) {
   textEl.className   = 'msg-text';
   textEl.textContent = msg.text;
 
+  if (msg.imageUrl) {
+  const img = document.createElement('img');
+  img.src = HTTP_BASE + msg.imageUrl;
+  img.style.cssText = 'display:block;max-width:260px;max-height:200px;margin-top:4px;border-radius:4px;cursor:pointer;';
+  img.onclick = () => window.open(img.src);
+  textEl.appendChild(img);
+}
+
   row.append(tsEl, userEl, sepEl, textEl);
   container.appendChild(row);
 }
@@ -1399,6 +1411,14 @@ function renderDMMessage(msg) {
   const textEl = document.createElement('span');
   textEl.className   = 'msg-text';
   textEl.textContent = msg.text;
+
+  if (msg.imageUrl) {
+  const img = document.createElement('img');
+  img.src = HTTP_BASE + msg.imageUrl;
+  img.style.cssText = 'display:block;max-width:260px;max-height:200px;margin-top:4px;border-radius:4px;cursor:pointer;';
+  img.onclick = () => window.open(img.src);
+  textEl.appendChild(img);
+}
 
   row.append(tsEl, userEl, sepEl, textEl);
   container.appendChild(row);
@@ -1528,23 +1548,37 @@ function renderTyping(users) {
 }
 
 // ── Send message (routes to DM or global) ─────────────────────────────────────
-function sendMessage() {
+async function sendMessage() {
   if (rateRemaining <= 0) return;
   const input = document.getElementById('msg-input');
-  const text  = input.value.trim();
-  if (!text) return;
+  const fileInput = document.getElementById('file-input');
+  const text = input.value.trim();
+  const file = fileInput.files[0];
+  if (!text && !file) return;
 
-  if (currentDM) {
-    sendWS({ type: 'dm', to: currentDM, text });
-  } else {
-    sendWS({ type: 'message', text, channel: currentChannel });
+  let imageUrl = null;
+  if (file) {
+    const form = new FormData();
+    form.append('file', file);
+    const res = await fetch(HTTP_BASE + '/api/upload', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + getToken() },
+      body: form
+    });
+    const data = await res.json();
+    imageUrl = data.url;
+    fileInput.value = '';
   }
+
+  const payload = { type: currentDM ? 'dm' : 'message', text: text || ' ', channel: currentChannel };
+  if (currentDM) payload.to = currentDM;
+  if (imageUrl) payload.imageUrl = imageUrl;
+  sendWS(payload);
 
   input.value = '';
   input.style.height = '';
   stopTyping();
 }
-
 // ── Input handling ────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   const input = document.getElementById('msg-input');
