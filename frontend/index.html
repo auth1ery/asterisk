@@ -740,10 +740,108 @@
     }
 
     /* ── Responsive ────────────────────────────────────────────────────────── */
-    @media (max-width: 600px) {
-      #right-panel { display: none; }
-      .auth-card { width: 100%; margin: 16px; }
-    }
+    /* ── Mobile Layout ─────────────────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .auth-card { width: 100%; margin: 16px; padding: 32px 20px 24px; }
+
+  /* Hide right panel — replaced by bottom nav */
+  #right-panel { display: none; }
+
+  /* Header tweaks */
+  #chat-header { padding: 0 10px; gap: 8px; }
+  #rate-limit  { display: none; }
+  .header-sep:last-of-type { display: none; }
+
+  /* Channel bar */
+  #channel-bar { padding: 0 10px; }
+
+  /* Push input area above bottom nav */
+  #chat-screen { padding-bottom: 48px; }
+
+  /* Bottom navigation bar */
+  #mobile-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: 48px;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    z-index: 100;
+  }
+
+  .mobile-nav-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-family: var(--font);
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    position: relative;
+    transition: color 0.15s;
+  }
+  .mobile-nav-btn.active { color: var(--accent); }
+  .mobile-nav-btn .nav-icon { font-size: 16px; line-height: 1; }
+
+  .mobile-nav-badge {
+    position: absolute;
+    top: 6px; right: calc(50% - 18px);
+    background: var(--accent);
+    color: #fff;
+    font-size: 9px;
+    padding: 1px 4px;
+    border-radius: 8px;
+    font-weight: 700;
+    line-height: 1.4;
+  }
+
+  /* Mobile panels (online + friends) overlay the messages area */
+  #mobile-online-panel,
+  #mobile-friends-panel {
+    display: none;
+    position: absolute;
+    top: 78px; /* header + channel bar */
+    bottom: 48px; /* above nav */
+    left: 0; right: 0;
+    background: var(--bg);
+    overflow-y: auto;
+    z-index: 50;
+    padding: 8px 0;
+  }
+
+  #mobile-friends-panel { padding: 0; }
+
+  #mobile-online-panel.visible,
+  #mobile-friends-panel.visible { display: block; }
+
+  /* Make chat body position:relative so panels overlay it */
+  #chat-body { position: relative; }
+
+  /* Touch-friendly sizing */
+  .msg      { padding: 4px 12px; }
+  .msg-ts   { display: none; } /* hide timestamps on mobile to save space */
+  #input-row { padding: 8px 10px 10px; }
+  #msg-input { font-size: 16px; } /* prevents iOS zoom */
+  #send-btn  { width: 42px; height: 42px; font-size: 18px; }
+
+  .friend-actions { opacity: 1; } /* always show on mobile (no hover) */
+  .user-item { padding: 6px 16px; }
+  .friend-item { padding: 6px 12px; }
+  .request-item { padding: 8px 14px 10px; }
+}
+
+/* Desktop: hide mobile-only elements */
+@media (min-width: 601px) {
+  #mobile-nav { display: none; }
+  #mobile-online-panel,
+  #mobile-friends-panel { display: none !important; }
+}
   </style>
 </head>
 <body>
@@ -874,6 +972,25 @@
     </div>
   </div>
 </div>
+
+
+<!-- Mobile bottom nav -->
+<div id="mobile-nav" class="hidden">
+  <button class="mobile-nav-btn active" id="mnav-chat" onclick="mobileNav('chat')">
+    <span class="nav-icon">💬</span>chat
+  </button>
+  <button class="mobile-nav-btn" id="mnav-online" onclick="mobileNav('online')">
+    <span class="nav-icon">●</span>online
+  </button>
+  <button class="mobile-nav-btn" id="mnav-friends" onclick="mobileNav('friends')">
+    <span class="nav-icon">★</span>friends
+    <span id="mobile-friends-badge" class="mobile-nav-badge hidden"></span>
+  </button>
+</div>
+
+<!-- Mobile overlay panels -->
+<div id="mobile-online-panel"></div>
+<div id="mobile-friends-panel"></div>
 
 <script src="config.js"></script>
 <script>
@@ -1034,6 +1151,7 @@ function enterChat(user) {
   document.getElementById('header-username').style.color = user.color;
 
   connectWS();
+  if (isMobile()) document.getElementById('mobile-nav').classList.remove('hidden');
   document.getElementById('msg-input').focus();
 }
 
@@ -1063,6 +1181,7 @@ function connectWS() {
 
   ws.addEventListener('error', () => setStatus('disconnected'));
 }
+
 
 function scheduleReconnect() {
   clearTimeout(reconnectTimer);
@@ -1654,6 +1773,58 @@ async function removeFriend(username) {
     if (currentDM === username) closeDM();
   } catch (e) { console.error(e); }
 }
+
+// ── Mobile nav ────────────────────────────────────────────────────────────────
+function isMobile() { return window.innerWidth <= 600; }
+
+function mobileNav(tab) {
+  if (!isMobile()) return;
+  document.getElementById('mnav-chat').classList.toggle('active',    tab === 'chat');
+  document.getElementById('mnav-online').classList.toggle('active',  tab === 'online');
+  document.getElementById('mnav-friends').classList.toggle('active', tab === 'friends');
+  document.getElementById('mobile-online-panel').classList.toggle('visible',  tab === 'online');
+  document.getElementById('mobile-friends-panel').classList.toggle('visible', tab === 'friends');
+
+  if (tab === 'online')  syncMobileOnline();
+  if (tab === 'friends') syncMobileFriends();
+}
+
+function syncMobileOnline() {
+  const panel = document.getElementById('mobile-online-panel');
+  panel.innerHTML = document.getElementById('users-list').innerHTML;
+}
+
+function syncMobileFriends() {
+  const panel = document.getElementById('mobile-friends-panel');
+  // Clone the full friends tab content
+  panel.innerHTML = document.getElementById('friends-tab').innerHTML;
+  // Re-wire buttons since they're clones
+  panel.querySelectorAll('.friend-dm-btn').forEach(btn => {
+    const user = btn.closest('.friend-item')?.dataset.user;
+    if (user) btn.onclick = (e) => { e.stopPropagation(); openDM(user); mobileNav('chat'); };
+  });
+  panel.querySelectorAll('.friend-remove-btn').forEach(btn => {
+    const user = btn.closest('.friend-item')?.dataset.user;
+    if (user) btn.onclick = (e) => { e.stopPropagation(); removeFriend(user); };
+  });
+  // Wire add-friend button in the cloned panel
+  const addBtn = panel.querySelector('#add-friend-btn');
+  const addInput = panel.querySelector('#friend-input');
+  if (addBtn) addBtn.onclick = async () => {
+    if (!addInput) return;
+    const to = addInput.value.trim();
+    const msgEl = panel.querySelector('#add-friend-msg');
+    if (!to) return;
+    try {
+      const res = await apiAuthPost('/api/friends/request', { to });
+      addInput.value = '';
+      msgEl.className = 'ok';
+      msgEl.textContent = res.status === 'accepted' ? `now friends with ${to}!` : `request sent to ${to}`;
+      setTimeout(() => { msgEl.textContent = ''; }, 3000);
+    } catch(e) { msgEl.className = 'err'; msgEl.textContent = e.message; }
+  };
+}
+
 </script>
 </body>
 </html>
