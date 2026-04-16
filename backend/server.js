@@ -22,7 +22,8 @@ const JWT_SECRET = process.env.JWT_SECRET || (() => {
 })();
 
 const ACCOUNTS_FILE = path.join(DATA_DIR, 'accounts.json');
-const MESSAGES_FILE = path.join(DATA_DIR, 'messages.json');
+const MESSAGES_FILE  = path.join(DATA_DIR, 'messages.json');
+const CHANNELS       = ['global', 'debate', 'gaming', 'music'];
 const FRIENDS_FILE  = path.join(DATA_DIR, 'friends.json');
 const DMS_FILE      = path.join(DATA_DIR, 'dms.json');
 
@@ -44,7 +45,8 @@ const saveJSON = (file, data) =>
   fs.writeFileSync(file, JSON.stringify(data, null, 2));
 
 let accounts    = loadJSON(ACCOUNTS_FILE, {});
-let messages    = loadJSON(MESSAGES_FILE, []);
+let messages = loadJSON(MESSAGES_FILE, {});
+CHANNELS.forEach(ch => { if (!messages[ch]) messages[ch] = []; });
 let friendships = loadJSON(FRIENDS_FILE, { requests: [], accepted: [] });
 let dms         = loadJSON(DMS_FILE, {});
 
@@ -94,10 +96,11 @@ function buildFriendsState(username) {
 }
 
 // ── Message helpers ───────────────────────────────────────────────────────────
-function appendMessage(msg) {
-  messages.push(msg);
-  if (messages.length > MAX_MESSAGES)
-    messages.splice(0, messages.length - MAX_MESSAGES);
+function appendMessage(msg, channel = 'global') {
+  if (!messages[channel]) messages[channel] = [];
+  messages[channel].push(msg);
+  if (messages[channel].length > MAX_MESSAGES)
+    messages[channel].splice(0, messages[channel].length - MAX_MESSAGES);
   saveJSON(MESSAGES_FILE, messages);
 }
 
@@ -305,7 +308,7 @@ wss.on('connection', (ws, req) => {
   clients.set(ws, { username: user.username, color: user.color });
 
   // Send initial state
-  push(ws, { type: 'history', messages: messages.slice(-HISTORY_SEND) });
+  push(ws, { type: 'history', messages: messages['global'].slice(-HISTORY_SEND), channel: 'global' });
   push(ws, buildFriendsState(user.username));
   syncUserList();
 
@@ -314,7 +317,7 @@ wss.on('connection', (ws, req) => {
     type: 'system', id: Math.random().toString(36).slice(2),
     text: `${user.username} joined`, timestamp: Date.now()
   };
-  appendMessage(joinMsg);
+  appendMessage(joinMsg, 'global');
   broadcast(joinMsg, ws);
 
   // ── Incoming messages ─────────────────────────────────────────────────────
@@ -328,6 +331,7 @@ wss.on('connection', (ws, req) => {
 
       case 'message': {
         const text = msg.text?.trim();
+        const channel =         CHANNELS.includes(msg.channel) ?  msg.channel : 'global';
         if (!text || text.length > 2000) return;
 
         const rate = checkRate(self.username);
@@ -342,12 +346,10 @@ wss.on('connection', (ws, req) => {
 
         const m = {
           type: 'message', id: Math.random().toString(36).slice(2),
-          username: self.username, color: self.color, text, timestamp: Date.now()
+          username: self.username, color: self.color, text, channel, timestamp: Date.now()
         };
-        appendMessage(m);
+        appendMessage(m, channel);
         broadcastAll(m);
-        break;
-      }
 
       case 'dm': {
         const { to, text } = msg;
@@ -396,6 +398,12 @@ wss.on('connection', (ws, req) => {
     }
   });
 
+  case 'join_channel': {
+        const ch = CHANNELS.includes(msg.channel) ? msg.channel : 'global';
+        push(ws, { type: 'history', messages: (messages[ch] || []).slice(-HISTORY_SEND), channel: ch });
+        break;
+      }
+
   // ── Disconnect ────────────────────────────────────────────────────────────
   ws.on('close', () => {
     const self = clients.get(ws);
@@ -414,7 +422,7 @@ wss.on('connection', (ws, req) => {
       type: 'system', id: Math.random().toString(36).slice(2),
       text: `${self.username} left`, timestamp: Date.now()
     };
-    appendMessage(leaveMsg);
+    appendMessage(leaveMsg, 'global');
     broadcastAll(leaveMsg);
   });
 
