@@ -352,7 +352,7 @@ wss.on('connection', (ws, req) => {
     case 'message': {
       const text = msg.text?.trim();
       const channel = CHANNELS.includes(msg.channel) ? msg.channel : 'global';
-      if (!text || text.length > 2000) return;
+      if ((!text && !msg.imageUrl) || text?.length > 2000) return;
 
       const rate = checkRate(self.username);
       push(ws, { type: 'rate_limit', remaining: rate.remaining, reset: rate.reset });
@@ -365,14 +365,15 @@ wss.on('connection', (ws, req) => {
       }
 
       const m = {
-        type: 'message',
-        id: Math.random().toString(36).slice(2),
-        username: self.username,
-        color: self.color,
-        text,
-        channel,
-        timestamp: Date.now()
-      };
+      type: 'message',
+      id: Math.random().toString(36).slice(2),
+      username: self.username,
+      color: self.color,
+      text,
+      channel,
+      imageUrl: msg.imageUrl || null,
+      timestamp: Date.now()
+    };
 
       appendMessage(m, channel);
       broadcastAll(m);
@@ -382,7 +383,7 @@ wss.on('connection', (ws, req) => {
 
     case 'dm': {
       const { to, text } = msg;
-      if (!to || !text?.trim() || text.trim().length > 2000) return;
+      if (!to || (!text?.trim() && !msg.imageUrl) || (text?.trim().length > 2000)) return;
       if (!areFriends(self.username, to)) return;
 
       const rate = checkRate(self.username);
@@ -390,14 +391,15 @@ wss.on('connection', (ws, req) => {
       if (!rate.allowed) return;
 
       const m = {
-        type: 'dm',
-        id: Math.random().toString(36).slice(2),
-        from: self.username,
-        to,
-        color: self.color,
-        text: text.trim(),
-        timestamp: Date.now()
-      };
+      type: 'dm',
+ w     id: Math.random().toString(36).slice(2),
+      from: self.username,
+      to,
+      color: self.color,
+      text: text.trim(),
+      imageUrl: msg.imageUrl || null, 
+      timestamp: Date.now()2w
+    };
 
       appendDM(self.username, to, m);
       push(ws, m);
