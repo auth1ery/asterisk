@@ -6,6 +6,7 @@ const jwt        = require('jsonwebtoken');
 const fs         = require('fs');
 const path       = require('path');
 const cors       = require('cors');
+const multer = require('multer');
 
 // ── Config ────────────────────────────────────────────────────────────────────
 const PORT         = process.env.PORT        || 3001;
@@ -143,6 +144,17 @@ const auth = (req, res, next) => {
   catch { res.status(401).json({ error: 'Invalid token' }); }
 };
 
+const upload = multer({
+  dest: path.join(DATA_DIR, 'uploads'),
+  limits: { fileSize: 8 * 1024 * 1024 }, // 8MB max
+  fileFilter: (req, file, cb) => {
+    const allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    cb(null, allowed.includes(file.mimetype));
+  }
+});
+
+app.use('/uploads', express.static(path.join(DATA_DIR, 'uploads')));
+
 // ── Register ──────────────────────────────────────────────────────────────────
 app.post('/api/register', async (req, res) => {
   const { username, password } = req.body || {};
@@ -179,6 +191,13 @@ app.post('/api/login', async (req, res) => {
 // ── Verify ────────────────────────────────────────────────────────────────────
 app.get('/api/verify', auth, (req, res) => {
   res.json({ username: req.user.username, color: req.user.color });
+});
+
+// the files
+
+app.post('/api/upload', auth, upload.single('file'), (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'No file uploaded.' });
+  res.json({ url: `/uploads/${req.file.filename}` });
 });
 
 // ── Friends: get ──────────────────────────────────────────────────────────────
