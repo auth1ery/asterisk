@@ -391,15 +391,15 @@ wss.on('connection', (ws, req) => {
       if (!rate.allowed) return;
 
       const m = {
-      type: 'dm',
- w     id: Math.random().toString(36).slice(2),
-      from: self.username,
-      to,
-      color: self.color,
-      text: text.trim(),
-      imageUrl: msg.imageUrl || null, 
-      timestamp: Date.now()2w
-    };
+        type: 'dm',
+        id: Math.random().toString(36).slice(2),
+        from: self.username,
+        to,
+        color: self.color,
+        text: text?.trim() || '',
+        imageUrl: msg.imageUrl || null,
+        timestamp: Date.now()
+      };
 
       appendDM(self.username, to, m);
       push(ws, m);
