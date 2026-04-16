@@ -322,87 +322,125 @@ wss.on('connection', (ws, req) => {
 
   // ── Incoming messages ─────────────────────────────────────────────────────
   ws.on('message', raw => {
-    let msg;
-    try { msg = JSON.parse(raw); } catch { return; }
-    const self = clients.get(ws);
-    if (!self) return;
+  let msg;
+  try { msg = JSON.parse(raw); } catch { return; }
 
-    switch (msg.type) {
+  const self = clients.get(ws);
+  if (!self) return;
 
-      case 'message': {
-        const text = msg.text?.trim();
-        const channel =         CHANNELS.includes(msg.channel) ?  msg.channel : 'global';
-        if (!text || text.length > 2000) return;
+  switch (msg.type) {
 
-        const rate = checkRate(self.username);
-        push(ws, { type: 'rate_limit', remaining: rate.remaining, reset: rate.reset });
-        if (!rate.allowed) return;
+    case 'message': {
+      const text = msg.text?.trim();
+      const channel = CHANNELS.includes(msg.channel) ? msg.channel : 'global';
+      if (!text || text.length > 2000) return;
 
-        if (typingUsers.has(self.username)) {
-          clearTimeout(typingUsers.get(self.username));
-          typingUsers.delete(self.username);
-          syncTyping();
-        }
+      const rate = checkRate(self.username);
+      push(ws, { type: 'rate_limit', remaining: rate.remaining, reset: rate.reset });
+      if (!rate.allowed) return;
 
-        const m = {
-          type: 'message', id: Math.random().toString(36).slice(2),
-          username: self.username, color: self.color, text, channel, timestamp: Date.now()
-        };
-        appendMessage(m, channel);
-        broadcastAll(m);
-
-      case 'dm': {
-        const { to, text } = msg;
-        if (!to || !text?.trim() || text.trim().length > 2000) return;
-        if (!areFriends(self.username, to)) return; // must be friends
-
-        const rate = checkRate(self.username);
-        push(ws, { type: 'rate_limit', remaining: rate.remaining, reset: rate.reset });
-        if (!rate.allowed) return;
-
-        const m = {
-          type: 'dm', id: Math.random().toString(36).slice(2),
-          from: self.username, to, color: self.color,
-          text: text.trim(), timestamp: Date.now()
-        };
-        appendDM(self.username, to, m);
-        push(ws, m);         // echo to sender
-        pushToUser(to, m);   // deliver to recipient
-        break;
-      }
-
-      case 'dm_history': {
-        if (!msg.with) return;
-        if (!areFriends(self.username, msg.with)) return;
-        const history = (dms[dmKey(self.username, msg.with)] || []).slice(-DM_HISTORY_SEND);
-        push(ws, { type: 'dm_history', with: msg.with, messages: history });
-        break;
-      }
-
-      case 'typing': {
-        if (typingUsers.has(self.username)) clearTimeout(typingUsers.get(self.username));
-        const t = setTimeout(() => { typingUsers.delete(self.username); syncTyping(); }, 3500);
-        typingUsers.set(self.username, t);
+      if (typingUsers.has(self.username)) {
+        clearTimeout(typingUsers.get(self.username));
+        typingUsers.delete(self.username);
         syncTyping();
-        break;
       }
 
-      case 'stop_typing': {
-        if (typingUsers.has(self.username)) {
-          clearTimeout(typingUsers.get(self.username));
-          typingUsers.delete(self.username);
-          syncTyping();
-        }
-        break;
-      }
+      const m = {
+        type: 'message',
+        id: Math.random().toString(36).slice(2),
+        username: self.username,
+        color: self.color,
+        text,
+        channel,
+        timestamp: Date.now()
+      };
+
+      appendMessage(m, channel);
+      broadcastAll(m);
+
+      break;
     }
-  });
 
-  case 'join_channel': {
-        const ch = CHANNELS.includes(msg.channel) ? msg.channel : 'global';
-        push(ws, { type: 'history', messages: (messages[ch] || []).slice(-HISTORY_SEND), channel: ch });
-        break;
+    case 'dm': {
+      const { to, text } = msg;
+      if (!to || !text?.trim() || text.trim().length > 2000) return;
+      if (!areFriends(self.username, to)) return;
+
+      const rate = checkRate(self.username);
+      push(ws, { type: 'rate_limit', remaining: rate.remaining, reset: rate.reset });
+      if (!rate.allowed) return;
+
+      const m = {
+        type: 'dm',
+        id: Math.random().toString(36).slice(2),
+        from: self.username,
+        to,
+        color: self.color,
+        text: text.trim(),
+        timestamp: Date.now()
+      };
+
+      appendDM(self.username, to, m);
+      push(ws, m);
+      pushToUser(to, m);
+
+      break;
+    }
+
+    case 'dm_history': {
+      if (!msg.with) return;
+      if (!areFriends(self.username, msg.with)) return;
+
+      const history =
+        (dms[dmKey(self.username, msg.with)] || []).slice(-DM_HISTORY_SEND);
+
+      push(ws, {
+        type: 'dm_history',
+        with: msg.with,
+        messages: history
+      });
+
+      break;
+    }
+
+    case 'typing': {
+      if (typingUsers.has(self.username)) {
+        clearTimeout(typingUsers.get(self.username));
       }
+
+      const t = setTimeout(() => {
+        typingUsers.delete(self.username);
+        syncTyping();
+      }, 3500);
+
+      typingUsers.set(self.username, t);
+      syncTyping();
+
+      break;
+    }
+
+    case 'stop_typing': {
+      if (typingUsers.has(self.username)) {
+        clearTimeout(typingUsers.get(self.username));
+        typingUsers.delete(self.username);
+        syncTyping();
+      }
+      break;
+    }
+
+    case 'join_channel': {
+      const ch = CHANNELS.includes(msg.channel) ? msg.channel : 'global';
+
+      push(ws, {
+        type: 'history',
+        messages: (messages[ch] || []).slice(-HISTORY_SEND),
+        channel: ch
+      });
+
+      break;
+    }
+  }
+});
 
   // ── Disconnect ────────────────────────────────────────────────────────────
   ws.on('close', () => {
