@@ -1443,7 +1443,7 @@ function renderMessage(msg) {
   }
 
   const ts   = new Date(msg.timestamp);
-  const time = ts.getHours().toString().padStart(2,'0') + ':' + ts.getMinutes().toString().padStart(2,'00');
+  const time = ts.getHours().toString().padStart(2,'0') + ':' + ts.getMinutes().toString().padStart(2,'0');
 
   const row    = document.createElement('div');
   row.className = 'msg';
@@ -1465,19 +1465,20 @@ function renderMessage(msg) {
   textEl.className   = 'msg-text';
   textEl.textContent = msg.text;
 
-  appendFilePreview(msg.fileUrl, msg.fileType, textEl);
+  if (msg.fileUrl) {
+    appendFilePreview(msg.fileUrl, msg.fileType, textEl);
+  }
 
   row.append(tsEl, userEl, sepEl, textEl);
   container.appendChild(row);
 }
-
 // ── Render DM message ─────────────────────────────────────────────────────────
 function renderDMMessage(msg) {
   const container = document.getElementById('messages');
   const isSelf    = msg.from === currentUser?.username;
 
   const ts   = new Date(msg.timestamp);
-  const time = ts.getHours().toString().padStart(2,'00') + ':' + ts.getMinutes().toString().padStart(2,'00');
+  const time = ts.getHours().toString().padStart(2,'0') + ':' + ts.getMinutes().toString().padStart(2,'0');
 
   const row    = document.createElement('div');
   row.className = 'msg ' + (isSelf ? 'msg-dm-out' : 'msg-dm-in');
@@ -1499,7 +1500,9 @@ function renderDMMessage(msg) {
   textEl.className   = 'msg-text';
   textEl.textContent = msg.text;
 
-  appendFilePreview(msg.fileUrl || msg.imageUrl, msg.fileType, textEl);
+  if (msg.fileUrl) {
+    appendFilePreview(msg.fileUrl, msg.fileType, textEl);
+  }
 
   row.append(tsEl, userEl, sepEl, textEl);
   container.appendChild(row);
@@ -1631,40 +1634,57 @@ function renderTyping(users) {
 // ── Send message (routes to DM or global) ─────────────────────────────────────
 async function sendMessage() {
   if (rateRemaining <= 0) return;
-  const input = document.getElementById('msg-input');
+  const input     = document.getElementById('msg-input');
   const fileInput = document.getElementById('file-input');
-  const text = input.value.trim();
-  const file = fileInput.files[0];
+  const text      = input.value.trim();
+  const file      = fileInput.files[0];
+
+  console.log('[send] text:', JSON.stringify(text), '| file:', file?.name ?? 'none');
   if (!text && !file) return;
 
-  let fileUrl = null;
+  let fileUrl  = null;
   let fileType = null;
 
   if (file) {
-    const form = new FormData();
-    form.append('file', file);
-    const res = await fetch(HTTP_BASE + '/api/upload', {
-      method: 'POST',
-      headers: { Authorization: 'Bearer ' + getToken() },
-      body: form
-    });
-    const data = await res.json();
-    fileUrl = data.url;
-    fileType = file.type;
-    fileInput.value = '';
-    document.getElementById('attachment-preview').classList.remove('visible');
-    document.getElementById('attachment-name').textContent = '';
+    console.log('[upload] uploading', file.name, file.type, file.size + 'B');
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      const res = await fetch(HTTP_BASE + '/api/upload', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer ' + getToken() },
+        body: form
+      });
+      console.log('[upload] status:', res.status, res.statusText);
+      const raw = await res.text();
+      console.log('[upload] raw response:', raw);
+      if (!res.ok) throw new Error('HTTP ' + res.status + ': ' + raw);
+      const data = JSON.parse(raw);
+      fileUrl  = data.url;
+      fileType = file.type;
+      console.log('[upload] fileUrl:', fileUrl);
+      fileInput.value = '';
+      document.getElementById('attachment-preview').classList.remove('visible');
+      document.getElementById('attachment-name').textContent = '';
+    } catch (e) {
+      console.error('[upload] FAILED:', e);
+      alert('Upload failed — check console for details.');
+      return;
+    }
   }
 
-  const payload = { type: currentDM ? 'dm' : 'message', text: text || ' ', channel: currentChannel };
+  const payload = {
+    type: currentDM ? 'dm' : 'message',
+    text: text || ' ',
+    channel: currentChannel
+  };
   if (currentDM) payload.to = currentDM;
-  if (fileUrl) {
-    payload.fileUrl = fileUrl;
-    payload.fileType = fileType;
-  }
+  if (fileUrl)   { payload.fileUrl = fileUrl; payload.fileType = fileType; }
+
+  console.log('[send] sending payload:', payload);
   sendWS(payload);
 
-  input.value = '';
+  input.value        = '';
   input.style.height = '';
   stopTyping();
 }
