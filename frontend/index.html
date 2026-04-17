@@ -1443,7 +1443,7 @@ function renderMessage(msg) {
   }
 
   const ts   = new Date(msg.timestamp);
-  const time = ts.getHours().toString().padStart(2,'0') + ':' + ts.getMinutes().toString().padStart(2,'0');
+  const time = ts.getHours().toString().padStart(2,'0') + ':' + ts.getMinutes().toString().padStart(2,'00');
 
   const row    = document.createElement('div');
   row.className = 'msg';
@@ -1465,9 +1465,10 @@ function renderMessage(msg) {
   textEl.className   = 'msg-text';
   textEl.textContent = msg.text;
 
-  if (msg.fileUrl) {
   appendFilePreview(msg.fileUrl, msg.fileType, textEl);
-  }
+
+  row.append(tsEl, userEl, sepEl, textEl);
+  container.appendChild(row);
 }
 
   row.append(tsEl, userEl, sepEl, textEl);
@@ -1480,7 +1481,7 @@ function renderDMMessage(msg) {
   const isSelf    = msg.from === currentUser?.username;
 
   const ts   = new Date(msg.timestamp);
-  const time = ts.getHours().toString().padStart(2,'0') + ':' + ts.getMinutes().toString().padStart(2,'0');
+  const time = ts.getHours().toString().padStart(2,'00') + ':' + ts.getMinutes().toString().padStart(2,'00');
 
   const row    = document.createElement('div');
   row.className = 'msg ' + (isSelf ? 'msg-dm-out' : 'msg-dm-in');
@@ -1502,9 +1503,7 @@ function renderDMMessage(msg) {
   textEl.className   = 'msg-text';
   textEl.textContent = msg.text;
 
-  if (msg.imageUrl) {
   appendFilePreview(msg.fileUrl || msg.imageUrl, msg.fileType, textEl);
-}
 
   row.append(tsEl, userEl, sepEl, textEl);
   container.appendChild(row);
