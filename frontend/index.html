@@ -379,7 +379,6 @@ const FILE_RENDERERS = [
     img.onclick = () => window.open(img.src);
     img.onload = () => scrollToBottom();  // ← re-scroll after image loads
     el.appendChild(img);
-  }
   },
   {
     test: t => t?.startsWith('video/'),
