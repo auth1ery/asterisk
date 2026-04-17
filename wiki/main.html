@@ -23,14 +23,22 @@
 
 <script>
 async function loadPage() {
-  const file = location.hash.slice(1) || 'index.md'
-  const res = await fetch(file)
+  let file = location.hash.slice(1) || 'index.md'
+
+  if (!file.endsWith('.md')) {
+    file = 'index.md'
+  }
+
+  const res = await fetch(`./${file}`)
+
+  if (!res.ok) {
+    document.getElementById('content').innerText = 'page not found'
+    return
+  }
+
   const text = await res.text()
   document.getElementById('content').innerHTML = marked.parse(text)
 }
-
-window.addEventListener('hashchange', loadPage)
-loadPage()
 </script>
 
 </body>
