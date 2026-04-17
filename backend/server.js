@@ -369,15 +369,16 @@ wss.on('connection', (ws, req) => {
       }
 
       const m = {
-      type: 'message',
-      id: Math.random().toString(36).slice(2),
-      username: self.username,
-      color: self.color,
-      text,
-      channel,
-      imageUrl: msg.imageUrl || null,
-      timestamp: Date.now()
-    };
+        type: 'message',
+        id: Math.random().toString(36).slice(2),
+        username: self.username,
+        color: self.color,
+        text,
+        channel,
+        fileUrl:  msg.fileUrl  || msg.imageUrl || null,   // accept both for compat
+        fileType: msg.fileType || null,           
+        timestamp: Date.now()
+      };
 
       appendMessage(m, channel);
       broadcastAll(m);
@@ -402,6 +403,7 @@ wss.on('connection', (ws, req) => {
         color: self.color,
         text: text?.trim() || '',
         imageUrl: msg.imageUrl || null,
+        fileType: msg.fileType || null,
         timestamp: Date.now()
       };
 
