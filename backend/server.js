@@ -148,7 +148,11 @@ const upload = multer({
   dest: path.join(DATA_DIR, 'uploads'),
   limits: { fileSize: 8 * 1024 * 1024 }, // 8MB max
   fileFilter: (req, file, cb) => {
-    const allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    const allowed = [
+      'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+      'video/mp4', 'video/webm', 'video/ogg',
+      'text/plain'
+    ];
     cb(null, allowed.includes(file.mimetype));
   }
 });
