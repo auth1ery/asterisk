@@ -1063,6 +1063,56 @@
 
 <script src="config.js"></script>
 <script>
+const FILE_RENDERERS = [
+  {
+    test: t => t?.startsWith('image/'),
+    render(url, el) {
+      const img = document.createElement('img');
+      img.src = url;
+      img.style.cssText = 'display:block;max-width:260px;margin-top:4px;border-radius:4px;cursor:pointer;';
+      img.onclick = () => window.open(img.src);
+      el.appendChild(img);
+    }
+  },
+  {
+    test: t => t?.startsWith('video/'),
+    render(url, el) {
+      const v = document.createElement('video');
+      v.src = url;
+      v.controls = true;
+      v.style.cssText = 'display:block;max-width:260px;margin-top:4px;border-radius:4px;';
+      el.appendChild(v);
+    }
+  },
+  {
+    test: t => t === 'text/plain',
+    render(url, el) {
+      const a = document.createElement('a');
+      a.href = url;
+      a.target = '_blank';
+      a.textContent = '📄 view text file';
+      a.style.marginTop = '4px';
+      el.appendChild(a);
+    }
+  }
+];
+
+function appendFilePreview(fileUrl, fileType, textEl) {
+  if (!fileUrl) return;
+  const url = HTTP_BASE + fileUrl;
+  const renderer = FILE_RENDERERS.find(r => r.test(fileType));
+  if (renderer) {
+    renderer.render(url, textEl);
+  } else {
+    const a = document.createElement('a');
+    a.href = url;
+    a.target = '_blank';
+    a.textContent = '⬇ download file';
+    a.style.marginTop = '4px';
+    textEl.appendChild(a);
+  }
+}
+  
 // ── Config ────────────────────────────────────────────────────────────────────
 const RAW_URL   = (typeof ASTERISK_CONFIG !== 'undefined' ? ASTERISK_CONFIG.BACKEND_URL
                   : window.location.protocol !== 'file:' ? window.location.origin
@@ -1416,34 +1466,7 @@ function renderMessage(msg) {
   textEl.textContent = msg.text;
 
   if (msg.fileUrl) {
-  const url = HTTP_BASE + msg.fileUrl;
-
-  if (msg.fileType.startsWith('image/')) {
-    const img = document.createElement('img');
-    img.src = url;
-    img.style.cssText = 'max-width:260px;margin-top:4px;border-radius:4px;';
-    textEl.appendChild(img);
-
-  } else if (msg.fileType.startsWith('video/')) {
-    const video = document.createElement('video');
-    video.src = url;
-    video.controls = true;
-    video.style.cssText = 'max-width:260px;margin-top:4px;border-radius:4px;';
-    textEl.appendChild(video);
-
-  } else if (msg.fileType === 'text/plain') {
-    const link = document.createElement('a');
-    link.href = url;
-    link.textContent = '📄 view text file';
-    link.target = '_blank';
-    textEl.appendChild(link);
-
-  } else {
-    const link = document.createElement('a');
-    link.href = url;
-    link.textContent = 'download file';
-    link.target = '_blank';
-    textEl.appendChild(link);
+  appendFilePreview(msg.fileUrl, msg.fileType, textEl);
   }
 }
 
@@ -1480,11 +1503,7 @@ function renderDMMessage(msg) {
   textEl.textContent = msg.text;
 
   if (msg.imageUrl) {
-  const img = document.createElement('img');
-  img.src = HTTP_BASE + msg.imageUrl;
-  img.style.cssText = 'display:block;max-width:260px;max-height:200px;margin-top:4px;border-radius:4px;cursor:pointer;';
-  img.onclick = () => window.open(img.src);
-  textEl.appendChild(img);
+  appendFilePreview(msg.fileUrl || msg.imageUrl, msg.fileType, textEl);
 }
 
   row.append(tsEl, userEl, sepEl, textEl);
@@ -1623,7 +1642,9 @@ async function sendMessage() {
   const file = fileInput.files[0];
   if (!text && !file) return;
 
-  let imageUrl = null;
+  let fileUrl = null;
+  let fileType = null;
+
   if (file) {
     const form = new FormData();
     form.append('file', file);
@@ -1633,18 +1654,18 @@ async function sendMessage() {
       body: form
     });
     const data = await res.json();
-    imageUrl = data.url;
+    fileUrl = data.url;
     fileType = file.type;
     fileInput.value = '';
- document.getElementById('attachment-preview').classList.remove('visible');
-document.getElementById('attachment-name').textContent = '';
+    document.getElementById('attachment-preview').classList.remove('visible');
+    document.getElementById('attachment-name').textContent = '';
   }
 
   const payload = { type: currentDM ? 'dm' : 'message', text: text || ' ', channel: currentChannel };
   if (currentDM) payload.to = currentDM;
-  if (imageUrl) {
-    payload.imageUrl = imageUrl;
-    payload.fileType = file.type;
+  if (fileUrl) {
+    payload.fileUrl = fileUrl;
+    payload.fileType = fileType;
   }
   sendWS(payload);
 
@@ -1652,6 +1673,7 @@ document.getElementById('attachment-name').textContent = '';
   input.style.height = '';
   stopTyping();
 }
+  
 // ── Input handling ────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   const input = document.getElementById('msg-input');
