@@ -895,6 +895,123 @@
   transition: color 0.15s;
 }
 #attachment-remove:hover { color: var(--danger); }
+
+  /* ── Settings Modal ─────────────────────────────────────────────────────────── */
+#settings-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.55);
+  z-index: 300;
+  display: flex; align-items: center; justify-content: center;
+}
+#settings-overlay.hidden { display: none !important; }
+
+#settings-modal {
+  width: 400px;
+  max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 64px);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+
+.s-head {
+  display: flex; align-items: center;
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.s-title {
+  flex: 1;
+  font-size: 12px; font-weight: 500; letter-spacing: 0.12em; color: var(--text);
+}
+.s-close {
+  background: none; border: none; color: var(--muted); font-family: var(--font);
+  font-size: 18px; cursor: pointer; padding: 0 4px; line-height: 1; transition: color 0.15s;
+}
+.s-close:hover { color: var(--danger); }
+
+.s-tabs {
+  display: flex; border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+.s-tab {
+  flex: 1; padding: 8px 4px;
+  font-family: var(--font); font-size: 10px; letter-spacing: 0.1em; color: var(--muted);
+  background: none; border: none; cursor: pointer;
+  border-bottom: 2px solid transparent; margin-bottom: -1px;
+  transition: color 0.15s, border-color 0.15s;
+}
+.s-tab.active { color: var(--text); border-bottom-color: var(--accent); }
+
+.s-body {
+  flex: 1; overflow-y: auto; padding: 16px 18px;
+  display: flex; flex-direction: column; gap: 18px;
+}
+.s-section-label {
+  font-size: 9px; letter-spacing: 0.16em; color: var(--muted);
+  text-transform: uppercase; margin-bottom: 12px;
+}
+.s-row {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; margin-bottom: 12px;
+}
+.s-row:last-child { margin-bottom: 0; }
+.s-row-info { flex: 1; }
+.s-row-label { font-size: 12px; color: var(--text); }
+.s-row-sub   { font-size: 10px; color: var(--muted); margin-top: 2px; }
+
+/* Toggle */
+.s-toggle { position: relative; width: 36px; height: 20px; flex-shrink: 0; }
+.s-toggle input { display: none; }
+.s-toggle-track {
+  display: block; width: 36px; height: 20px;
+  background: var(--muted2); border-radius: 10px; cursor: pointer;
+  transition: background 0.2s;
+}
+.s-toggle input:checked + .s-toggle-track { background: var(--accent); }
+.s-toggle-thumb {
+  position: absolute; top: 3px; left: 3px;
+  width: 14px; height: 14px; background: #fff; border-radius: 50%;
+  pointer-events: none; transition: transform 0.2s;
+}
+.s-toggle input:checked ~ .s-toggle-thumb { transform: translateX(16px); }
+
+/* Accent swatches */
+.s-swatches { display: flex; gap: 8px; flex-wrap: wrap; }
+.s-swatch {
+  width: 22px; height: 22px; border-radius: 50%;
+  border: 2px solid transparent; cursor: pointer;
+  transition: transform 0.1s, border-color 0.15s;
+}
+.s-swatch:hover { transform: scale(1.18); }
+.s-swatch.selected { border-color: var(--text); }
+
+/* Segmented controls (font size, density) */
+.s-seg { display: flex; gap: 4px; }
+.s-seg-btn {
+  padding: 3px 10px;
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: var(--radius); color: var(--muted);
+  font-family: var(--font); font-size: 11px; cursor: pointer;
+  letter-spacing: 0.04em; transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.s-seg-btn.active {
+  color: var(--accent); border-color: var(--accent); background: var(--accent-glow);
+}
+
+/* Settings gear button (header) */
+#settings-btn {
+  background: none; border: 1px solid var(--border); color: var(--muted);
+  font-family: var(--font); font-size: 14px; padding: 3px 8px;
+  border-radius: var(--radius); cursor: pointer; letter-spacing: 0.04em;
+  transition: color 0.15s, border-color 0.15s; line-height: 1.6;
+}
+#settings-btn:hover { color: var(--text); border-color: var(--border2); }
+
+@media (max-width: 600px) {
+  #settings-modal { max-height: calc(100vh - 96px); }
+}
   </style>
 </head>
 <body>
@@ -963,6 +1080,7 @@
       20 messages / min
     </div>
     <div class="header-sep" style="margin-left:6px;"></div>
+    <button id="settings-btn" onclick="openSettings()" title="Settings">⚙</button>
     <div id="header-user">
       <span id="header-username"></span>
       <button id="logout-btn" onclick="doLogout()">logout</button>
@@ -1055,12 +1173,196 @@
     <span class="nav-icon">★</span>friends
     <span id="mobile-friends-badge" class="mobile-nav-badge hidden"></span>
   </button>
+  <button class="mobile-nav-btn" id="mnav-settings" onclick="openSettings()">
+    <span class="nav-icon" style="font-size:15px;">⚙</span>settings
+  </button>
 </div>
 
 <!-- Mobile overlay panels -->
 <div id="mobile-online-panel"></div>
 <div id="mobile-friends-panel"></div>
 
+  <!-- ── Settings Modal ──────────────────────────────────────────────────────── -->
+<div id="settings-overlay" class="hidden" onclick="overlayClick(event)">
+  <div id="settings-modal">
+    <div class="s-head">
+      <span class="s-title">SETTINGS</span>
+      <button class="s-close" onclick="closeSettings()">×</button>
+    </div>
+
+    <div class="s-tabs">
+      <button class="s-tab active" onclick="switchSettingsTab('appearance')">APPEARANCE</button>
+      <button class="s-tab"        onclick="switchSettingsTab('notifications')">NOTIFS</button>
+      <button class="s-tab"        onclick="switchSettingsTab('behavior')">BEHAVIOR</button>
+    </div>
+
+    <!-- Appearance -->
+    <div class="s-body" id="s-tab-appearance">
+      <div>
+        <div class="s-section-label">accent color</div>
+        <div class="s-swatches" id="accent-swatches">
+          <span class="s-swatch" data-color="#8b7ef5" style="background:#8b7ef5" title="Purple"></span>
+          <span class="s-swatch" data-color="#5b9ef5" style="background:#5b9ef5" title="Blue"></span>
+          <span class="s-swatch" data-color="#4dffa0" style="background:#4dffa0" title="Green"></span>
+          <span class="s-swatch" data-color="#f5a742" style="background:#f5a742" title="Orange"></span>
+          <span class="s-swatch" data-color="#f55b9e" style="background:#f55b9e" title="Pink"></span>
+          <span class="s-swatch" data-color="#f5e642" style="background:#f5e642" title="Yellow"></span>
+        </div>
+      </div>
+
+      <div>
+        <div class="s-section-label">font size</div>
+        <div class="s-seg" id="seg-fontsize">
+          <button class="s-seg-btn" data-val="11px">small</button>
+          <button class="s-seg-btn active" data-val="13px">medium</button>
+          <button class="s-seg-btn" data-val="15px">large</button>
+        </div>
+      </div>
+
+      <div>
+        <div class="s-section-label">message density</div>
+        <div class="s-seg" id="seg-density">
+          <button class="s-seg-btn active" data-val="3px">compact</button>
+          <button class="s-seg-btn" data-val="7px">comfortable</button>
+          <button class="s-seg-btn" data-val="12px">spacious</button>
+        </div>
+      </div>
+
+      <div>
+        <div class="s-section-label">display</div>
+        <div class="s-row">
+          <div class="s-row-info">
+            <div class="s-row-label">show timestamps</div>
+            <div class="s-row-sub">time on each message</div>
+          </div>
+          <label class="s-toggle">
+            <input type="checkbox" id="tog-timestamps" checked onchange="applySetting('timestamps',this.checked)">
+            <span class="s-toggle-track"></span><span class="s-toggle-thumb"></span>
+          </label>
+        </div>
+        <div class="s-row">
+          <div class="s-row-info">
+            <div class="s-row-label">show usernames</div>
+            <div class="s-row-sub">colored name on each message</div>
+          </div>
+          <label class="s-toggle">
+            <input type="checkbox" id="tog-usernames" checked onchange="applySetting('usernames',this.checked)">
+            <span class="s-toggle-track"></span><span class="s-toggle-thumb"></span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notifications -->
+    <div class="s-body hidden" id="s-tab-notifications">
+      <div>
+        <div class="s-section-label">toast popups</div>
+        <div class="s-row">
+          <div class="s-row-info">
+            <div class="s-row-label">DM notifications</div>
+            <div class="s-row-sub">popup when you receive a DM</div>
+          </div>
+          <label class="s-toggle">
+            <input type="checkbox" id="tog-dm-notif" checked onchange="saveSetting('dmNotif',this.checked)">
+            <span class="s-toggle-track"></span><span class="s-toggle-thumb"></span>
+          </label>
+        </div>
+        <div class="s-row">
+          <div class="s-row-info">
+            <div class="s-row-label">friend requests</div>
+            <div class="s-row-sub">popup on incoming request</div>
+          </div>
+          <label class="s-toggle">
+            <input type="checkbox" id="tog-friend-notif" checked onchange="saveSetting('friendNotif',this.checked)">
+            <span class="s-toggle-track"></span><span class="s-toggle-thumb"></span>
+          </label>
+        </div>
+        <div class="s-row">
+          <div class="s-row-info">
+            <div class="s-row-label">mention alerts</div>
+            <div class="s-row-sub">popup when your name appears</div>
+          </div>
+          <label class="s-toggle">
+            <input type="checkbox" id="tog-mention-notif" checked onchange="saveSetting('mentionNotif',this.checked)">
+            <span class="s-toggle-track"></span><span class="s-toggle-thumb"></span>
+          </label>
+        </div>
+      </div>
+
+      <div>
+        <div class="s-section-label">notification sound</div>
+        <div class="s-seg" id="seg-sound">
+          <button class="s-seg-btn active" data-val="off">off</button>
+          <button class="s-seg-btn" data-val="soft">soft</button>
+          <button class="s-seg-btn" data-val="ping">ping</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Behavior -->
+    <div class="s-body hidden" id="s-tab-behavior">
+      <div>
+        <div class="s-section-label">input</div>
+        <div class="s-row">
+          <div class="s-row-info">
+            <div class="s-row-label">enter to send</div>
+            <div class="s-row-sub">shift+enter for newline</div>
+          </div>
+          <label class="s-toggle">
+            <input type="checkbox" id="tog-enter-send" checked onchange="saveSetting('enterSend',this.checked)">
+            <span class="s-toggle-track"></span><span class="s-toggle-thumb"></span>
+          </label>
+        </div>
+      </div>
+
+      <div>
+        <div class="s-section-label">chat</div>
+        <div class="s-row">
+          <div class="s-row-info">
+            <div class="s-row-label">typing indicators</div>
+            <div class="s-row-sub">show who's typing</div>
+          </div>
+          <label class="s-toggle">
+            <input type="checkbox" id="tog-typing" checked onchange="applySetting('typing',this.checked)">
+            <span class="s-toggle-track"></span><span class="s-toggle-thumb"></span>
+          </label>
+        </div>
+        <div class="s-row">
+          <div class="s-row-info">
+            <div class="s-row-label">smooth scrolling</div>
+            <div class="s-row-sub">animated scroll on new messages</div>
+          </div>
+          <label class="s-toggle">
+            <input type="checkbox" id="tog-smooth-scroll" checked onchange="saveSetting('smoothScroll',this.checked)">
+            <span class="s-toggle-track"></span><span class="s-toggle-thumb"></span>
+          </label>
+        </div>
+        <div class="s-row">
+          <div class="s-row-info">
+            <div class="s-row-label">compact right panel</div>
+            <div class="s-row-sub">narrower online/friends sidebar</div>
+          </div>
+          <label class="s-toggle">
+            <input type="checkbox" id="tog-compact-panel" onchange="applySetting('compactPanel',this.checked)">
+            <span class="s-toggle-track"></span><span class="s-toggle-thumb"></span>
+          </label>
+        </div>
+      </div>
+
+      <div>
+        <div class="s-section-label">data</div>
+        <div class="s-row">
+          <div class="s-row-info">
+            <div class="s-row-label">reset all settings</div>
+            <div class="s-row-sub">restore defaults</div>
+          </div>
+          <button class="s-seg-btn" onclick="resetSettings()" style="color:var(--danger);border-color:rgba(255,77,106,0.3)">reset</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+  
 <div id="toast-container" style="
   position: fixed;
   bottom: 16px;
@@ -1393,7 +1695,7 @@ function handleServerMessage(msg) {
       break;
 
     case 'friend_request':
-      showToast(`friend request from ${msg.from}`);
+      if (userSettings.friendNotif) showToast(`friend request from ${msg.from}`);
       friendsState.incoming = friendsState.incoming || [];
       friendsState.incoming.push({ id: msg.id, from: msg.from, color: msg.color });
       renderFriendsPanel();
@@ -1419,7 +1721,10 @@ function handleServerMessage(msg) {
     case 'dm': {
       const other = msg.from === currentUser?.username ? msg.to : msg.from;
       if (currentDM !== other) {
-        showToast(`${other}: ${msg.text}`);
+        if (userSettings.dmNotif) {
+          showToast(`${other}: ${msg.text}`);
+          if (userSettings.sound !== 'off') playNotifSound(userSettings.sound);
+        }
       }
       if (!dmCache[other]) dmCache[other] = [];
       dmCache[other].push(msg);
@@ -1709,7 +2014,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const input = document.getElementById('msg-input');
 
   input.addEventListener('keydown', e => {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+    if (e.key === 'Enter' && !e.shiftKey && userSettings.enterSend) { e.preventDefault(); sendMessage(); }
   });
 
   input.addEventListener('input', () => {
@@ -2055,6 +2360,232 @@ function showToast(text) {
     toast.remove();
   }, 3000);
 }
+
+// ── Settings ──────────────────────────────────────────────────────────────────
+const SETTINGS_KEY = 'asterisk_settings';
+
+const DEFAULT_SETTINGS = {
+  accentColor:  '#8b7ef5',
+  fontSize:     '13px',
+  density:      '3px',
+  timestamps:   true,
+  usernames:    true,
+  dmNotif:      true,
+  friendNotif:  true,
+  mentionNotif: true,
+  sound:        'off',
+  enterSend:    true,
+  typing:       true,
+  smoothScroll: true,
+  compactPanel: false,
+};
+
+let userSettings = { ...DEFAULT_SETTINGS };
+
+function loadSettings() {
+  try {
+    const stored = localStorage.getItem(SETTINGS_KEY);
+    if (stored) userSettings = { ...DEFAULT_SETTINGS, ...JSON.parse(stored) };
+  } catch {}
+  applyAllSettings();
+  syncSettingsUI();
+}
+
+function saveSetting(key, value) {
+  userSettings[key] = value;
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(userSettings));
+}
+
+function applySetting(key, value) {
+  saveSetting(key, value);
+  applyAllSettings();
+}
+
+function applyAllSettings() {
+  const s = userSettings;
+  const root = document.documentElement;
+
+  // Accent color + glow
+  root.style.setProperty('--accent', s.accentColor);
+  const hex = s.accentColor.replace('#','');
+  const r = parseInt(hex.slice(0,2),16), g = parseInt(hex.slice(2,4),16), b = parseInt(hex.slice(4,6),16);
+  root.style.setProperty('--accent-glow', `rgba(${r},${g},${b},0.2)`);
+
+  // Font size
+  document.body.style.fontSize = s.fontSize;
+
+  // Message density (vertical padding on .msg rows)
+  const sheet = getOrCreateSettingsSheet();
+  sheet.textContent = `
+    .msg { padding-top: ${s.density}; padding-bottom: ${s.density}; }
+    .msg-ts   { ${s.timestamps ? '' : 'display:none!important;'} }
+    .msg-user, .msg-sep { ${s.usernames ? '' : 'display:none!important;'} }
+    #typing-bar { ${s.typing ? '' : 'display:none!important;'} }
+    #right-panel { ${s.compactPanel ? 'width:150px;' : 'width:190px;'} }
+    #messages { scroll-behavior: ${s.smoothScroll ? 'smooth' : 'auto'}; }
+  `;
+}
+
+function getOrCreateSettingsSheet() {
+  let el = document.getElementById('settings-stylesheet');
+  if (!el) {
+    el = document.createElement('style');
+    el.id = 'settings-stylesheet';
+    document.head.appendChild(el);
+  }
+  return el;
+}
+
+function syncSettingsUI() {
+  const s = userSettings;
+
+  // Accent swatches
+  document.querySelectorAll('.s-swatch').forEach(sw => {
+    sw.classList.toggle('selected', sw.dataset.color === s.accentColor);
+  });
+
+  // Font size segment
+  document.querySelectorAll('#seg-fontsize .s-seg-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.val === s.fontSize);
+  });
+
+  // Density segment
+  document.querySelectorAll('#seg-density .s-seg-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.val === s.density);
+  });
+
+  // Sound segment
+  document.querySelectorAll('#seg-sound .s-seg-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.val === s.sound);
+  });
+
+  // Toggles
+  const map = {
+    'tog-timestamps':    s.timestamps,
+    'tog-usernames':     s.usernames,
+    'tog-dm-notif':      s.dmNotif,
+    'tog-friend-notif':  s.friendNotif,
+    'tog-mention-notif': s.mentionNotif,
+    'tog-enter-send':    s.enterSend,
+    'tog-typing':        s.typing,
+    'tog-smooth-scroll': s.smoothScroll,
+    'tog-compact-panel': s.compactPanel,
+  };
+  Object.entries(map).forEach(([id, val]) => {
+    const el = document.getElementById(id);
+    if (el) el.checked = val;
+  });
+}
+
+function resetSettings() {
+  userSettings = { ...DEFAULT_SETTINGS };
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(userSettings));
+  applyAllSettings();
+  syncSettingsUI();
+}
+
+// ── Settings modal open/close ──────────────────────────────────────────────────
+function openSettings() {
+  syncSettingsUI();
+  document.getElementById('settings-overlay').classList.remove('hidden');
+}
+
+function closeSettings() {
+  document.getElementById('settings-overlay').classList.add('hidden');
+}
+
+function overlayClick(e) {
+  if (e.target === document.getElementById('settings-overlay')) closeSettings();
+}
+
+// Close on Escape
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeSettings();
+});
+
+// ── Settings tab switching ────────────────────────────────────────────────────
+function switchSettingsTab(tab) {
+  ['appearance','notifications','behavior'].forEach(t => {
+    document.getElementById('s-tab-' + t).classList.toggle('hidden', t !== tab);
+  });
+  document.querySelectorAll('.s-tab').forEach((btn, i) => {
+    const tabs = ['appearance','notifications','behavior'];
+    btn.classList.toggle('active', tabs[i] === tab);
+  });
+}
+
+// ── Wire up swatch clicks ─────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.s-swatch').forEach(sw => {
+    sw.addEventListener('click', () => {
+      userSettings.accentColor = sw.dataset.color;
+      applySetting('accentColor', sw.dataset.color);
+      document.querySelectorAll('.s-swatch').forEach(s2 =>
+        s2.classList.toggle('selected', s2.dataset.color === sw.dataset.color)
+      );
+    });
+  });
+
+  // Segment buttons: font size
+  document.querySelectorAll('#seg-fontsize .s-seg-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#seg-fontsize .s-seg-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      applySetting('fontSize', btn.dataset.val);
+    });
+  });
+
+  // Segment buttons: density
+  document.querySelectorAll('#seg-density .s-seg-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#seg-density .s-seg-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      applySetting('density', btn.dataset.val);
+    });
+  });
+
+  // Segment buttons: sound
+  document.querySelectorAll('#seg-sound .s-seg-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#seg-sound .s-seg-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      saveSetting('sound', btn.dataset.val);
+      if (btn.dataset.val !== 'off') playNotifSound(btn.dataset.val);
+    });
+  });
+
+  loadSettings();
+});
+
+// ── Notification sound (Web Audio API, no files needed) ───────────────────────
+function playNotifSound(type) {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    if (type === 'soft') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(660, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.15);
+      gain.gain.setValueAtTime(0.12, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
+      osc.start(); osc.stop(ctx.currentTime + 0.2);
+    } else {
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(880, ctx.currentTime);
+      osc.frequency.setValueAtTime(1100, ctx.currentTime + 0.05);
+      gain.gain.setValueAtTime(0.15, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.18);
+      osc.start(); osc.stop(ctx.currentTime + 0.18);
+    }
+  } catch {}
+}
+
+// Call playNotifSound when a relevant toast fires.. maybe make that an option?????????????????/
+// In the 'dm' case: if (userSettings.dmNotif && currentDM !== other) { showToast(...); playNotifSound(userSettings.sound); }
   
 </script>
 </body>
