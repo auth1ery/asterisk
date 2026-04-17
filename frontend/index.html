@@ -1415,12 +1415,36 @@ function renderMessage(msg) {
   textEl.className   = 'msg-text';
   textEl.textContent = msg.text;
 
-  if (msg.imageUrl) {
-  const img = document.createElement('img');
-  img.src = HTTP_BASE + msg.imageUrl;
-  img.style.cssText = 'display:block;max-width:260px;max-height:200px;margin-top:4px;border-radius:4px;cursor:pointer;';
-  img.onclick = () => window.open(img.src);
-  textEl.appendChild(img);
+  if (msg.fileUrl) {
+  const url = HTTP_BASE + msg.fileUrl;
+
+  if (msg.fileType.startsWith('image/')) {
+    const img = document.createElement('img');
+    img.src = url;
+    img.style.cssText = 'max-width:260px;margin-top:4px;border-radius:4px;';
+    textEl.appendChild(img);
+
+  } else if (msg.fileType.startsWith('video/')) {
+    const video = document.createElement('video');
+    video.src = url;
+    video.controls = true;
+    video.style.cssText = 'max-width:260px;margin-top:4px;border-radius:4px;';
+    textEl.appendChild(video);
+
+  } else if (msg.fileType === 'text/plain') {
+    const link = document.createElement('a');
+    link.href = url;
+    link.textContent = '📄 view text file';
+    link.target = '_blank';
+    textEl.appendChild(link);
+
+  } else {
+    const link = document.createElement('a');
+    link.href = url;
+    link.textContent = 'download file';
+    link.target = '_blank';
+    textEl.appendChild(link);
+  }
 }
 
   row.append(tsEl, userEl, sepEl, textEl);
@@ -1610,6 +1634,7 @@ async function sendMessage() {
     });
     const data = await res.json();
     imageUrl = data.url;
+    fileType = file.type;
     fileInput.value = '';
  document.getElementById('attachment-preview').classList.remove('visible');
 document.getElementById('attachment-name').textContent = '';
@@ -1617,7 +1642,10 @@ document.getElementById('attachment-name').textContent = '';
 
   const payload = { type: currentDM ? 'dm' : 'message', text: text || ' ', channel: currentChannel };
   if (currentDM) payload.to = currentDM;
-  if (imageUrl) payload.imageUrl = imageUrl;
+  if (imageUrl) {
+    payload.imageUrl = imageUrl;
+    payload.fileType = file.type;
+  }
   sendWS(payload);
 
   input.value = '';
