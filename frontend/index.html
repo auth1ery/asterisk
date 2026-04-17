@@ -371,14 +371,15 @@
 <script>
 const FILE_RENDERERS = [
   {
-  test: t => t?.startsWith('image/'),
-  render(url, el) {
-    const img = document.createElement('img');
-    img.src = url;
-    img.style.cssText = 'display:block;max-width:260px;margin-top:4px;border-radius:4px;cursor:pointer;';
-    img.onclick = () => window.open(img.src);
-    img.onload = () => scrollToBottom();  // ← re-scroll after image loads
-    el.appendChild(img);
+    test: t => t?.startsWith('image/'),
+    render(url, el) {
+      const img = document.createElement('img');
+      img.src = url;
+      img.style.cssText = 'display:block;max-width:260px;margin-top:4px;border-radius:4px;cursor:pointer;';
+      img.onclick = () => window.open(img.src);
+      img.onload = () => scrollToBottom();
+      el.appendChild(img);
+    }
   },
   {
     test: t => t?.startsWith('video/'),
@@ -388,6 +389,7 @@ const FILE_RENDERERS = [
       v.controls = true;
       v.style.cssText = 'display:block;max-width:260px;margin-top:4px;border-radius:4px;';
       el.appendChild(v);
+    }
   },
   {
     test: t => t === 'text/plain',
@@ -395,13 +397,12 @@ const FILE_RENDERERS = [
       const a = document.createElement('a');
       a.href = url;
       a.target = '_blank';
-      a.textContent = '📄 view text file';
+      a.textContent = 'view text file';
       a.style.marginTop = '4px';
       el.appendChild(a);
     }
   }
 ];
-
 function appendFilePreview(fileUrl, fileType, textEl) {
   if (!fileUrl) return;
   const url = HTTP_BASE + fileUrl;
