@@ -356,7 +356,7 @@ wss.on('connection', (ws, req) => {
     case 'message': {
       const text = msg.text?.trim();
       const channel = CHANNELS.includes(msg.channel) ? msg.channel : 'global';
-      if ((!text && !msg.imageUrl) || text?.length > 2000) return;
+      if ((!text && !msg.fileUrl) || text?.length > 2000) return;
 
       const rate = checkRate(self.username);
       push(ws, { type: 'rate_limit', remaining: rate.remaining, reset: rate.reset });
@@ -388,7 +388,7 @@ wss.on('connection', (ws, req) => {
 
     case 'dm': {
       const { to, text } = msg;
-      if (!to || (!text?.trim() && !msg.imageUrl) || (text?.trim().length > 2000)) return;
+      if (!to || (!text?.trim() && !msg.fileUrl) || (text?.trim().length > 2000)) return;
       if (!areFriends(self.username, to)) return;
 
       const rate = checkRate(self.username);
@@ -402,7 +402,7 @@ wss.on('connection', (ws, req) => {
         to,
         color: self.color,
         text: text?.trim() || '',
-        imageUrl: msg.imageUrl || null,
+        fileUrl: msg.fileUrl || null,
         fileType: msg.fileType || null,
         timestamp: Date.now()
       };
