@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>wiki</title>
+  <base href="/wiki/">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    body { margin:0; font-family: sans-serif; display:flex }
+    #sidebar { width:220px; background:#111; color:#fff; padding:10px }
+    #sidebar a { color:#9cf; display:block; margin:5px 0; text-decoration:none }
+    #content { flex:1; padding:20px }
+  </style>
+</head>
+<body>
+
+<div id="sidebar">
+  <a href="#index.md">home</a>
+  <a href="#about.md">about</a>
+  <a href="#selfhost.md">self-host</a>
+</div>
+
+<div id="content">loading...</div>
+
+<script>
+async function loadPage() {
+  let file = location.hash.slice(1) || 'index.md'
+
+  if (!file.endsWith('.md')) {
+    file = 'index.md'
+  }
+
+  const res = await fetch(`./${file}`)
+
+  if (!res.ok) {
+    document.getElementById('content').innerText = 'page not found'
+    return
+  }
+
+  const text = await res.text()
+  document.getElementById('content').innerHTML = marked.parse(text)
+}
+</script>
+
+</body>
+</html>
