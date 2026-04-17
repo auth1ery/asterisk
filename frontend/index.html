@@ -1353,6 +1353,7 @@ function handleServerMessage(msg) {
 
     case 'message':
     case 'system':
+      console.log('[recv]', msg);
       if (!currentDM && (!msg.channel || msg.channel === currentChannel)) {
         renderMessage(msg);
         scrollToBottom();
