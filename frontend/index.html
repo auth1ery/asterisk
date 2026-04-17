@@ -10,18 +10,10 @@
 </head>
 <body>
 
-<!-- ── Background Layers ──────────────────────────────────────────────────── -->
-<div id="bg" aria-hidden="true">
-  <div id="bg-glow-1"></div>
-  <div id="bg-glow-2"></div>
-  <div id="bg-grain"></div>
-</div>
-
 <!-- ── Auth Screen ─────────────────────────────────────────────────────────── -->
 <div id="auth-screen">
   <div class="auth-card">
     <div class="auth-logo">
-      <div class="logo-glow"></div>
       <span class="star">*</span>
       <span class="wordmark">asterisk</span>
     </div>
@@ -42,7 +34,7 @@
         <input type="password" id="login-pass" autocomplete="current-password" placeholder="••••••••">
       </div>
       <div class="auth-error" id="login-error"></div>
-      <button class="btn-primary" id="login-btn" onclick="doLogin()">sign in →</button>
+      <button class="btn-primary" id="login-btn" onclick="doLogin()">sign in</button>
     </div>
 
     <!-- Register form -->
@@ -60,15 +52,13 @@
         <input type="password" id="reg-pass2" autocomplete="new-password" placeholder="repeat password">
       </div>
       <div class="auth-error" id="reg-error"></div>
-      <button class="btn-primary" id="reg-btn" onclick="doRegister()">create account →</button>
+      <button class="btn-primary" id="reg-btn" onclick="doRegister()">create account</button>
     </div>
   </div>
 </div>
 
 <!-- ── Chat Screen ─────────────────────────────────────────────────────────── -->
 <div id="chat-screen" class="hidden">
-
-  <!-- Header -->
   <div id="chat-header">
     <div class="header-logo">
       <span class="header-star">*</span>
@@ -80,21 +70,18 @@
       <span id="status-text">connecting</span>
     </div>
     <div class="header-spacer"></div>
-    <div id="rate-limit">20 / min</div>
-    <div class="header-sep"></div>
-    <button id="settings-btn" onclick="openSettings()" title="Settings">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="12" cy="12" r="3"/>
-        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-      </svg>
-    </button>
+    <div id="rate-limit" style="font-size:11px;color:var(--muted);opacity:0.8;pointer-events:none;">
+      20 messages / min
+    </div>
+    <div class="header-sep" style="margin-left:6px;"></div>
+    <button id="settings-btn" onclick="openSettings()" title="Settings">⚙</button>
     <div id="header-user">
       <span id="header-username"></span>
-      <button id="logout-btn" onclick="doLogout()">out</button>
+      <button id="logout-btn" onclick="doLogout()">logout</button>
     </div>
   </div>
 
-  <!-- Channel bar -->
+  <!-- Channel context bar -->
   <div id="channel-bar">
     <span id="channel-label">global chat</span>
     <div class="header-spacer"></div>
@@ -109,31 +96,24 @@
   <div id="chat-body">
     <div id="messages-panel">
       <div id="messages"></div>
-      <div id="input-area">
-        <div id="typing-bar">
-          <span id="typing-text"></span><span id="typing-dots"></span>
-        </div>
-        <div id="attachment-preview">
-          <span>📎</span>
-          <span id="attachment-name"></span>
-          <button id="attachment-remove" title="Remove attachment" onclick="removeAttachment()">×</button>
-        </div>
-        <div id="input-row">
-          <label id="attach-btn" title="Attach file">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
-            </svg>
-            <input type="file" id="file-input" accept="image/*,video/mp4,video/webm,video/ogg,text/plain" style="display:none">
-          </label>
-          <textarea id="msg-input" placeholder="say something..." rows="1" maxlength="2000"></textarea>
-          <button id="send-btn" title="Send" onclick="sendMessage()">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <line x1="12" y1="19" x2="12" y2="5"/>
-              <polyline points="5 12 12 5 19 12"/>
-            </svg>
-          </button>
-        </div>
-      </div>
+        <div id="input-area">
+  <div id="typing-bar">
+    <span id="typing-text"></span><span id="typing-dots"></span>
+  </div>
+<div id="attachment-preview">
+  <span>📎</span>
+  <span id="attachment-name"></span>
+  <button id="attachment-remove" title="Remove attachment" onclick="removeAttachment()">×</button>
+</div>
+  <div id="input-row">
+    <label id="attach-btn" title="Attach image" style="flex-shrink:0;width:38px;height:38px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);color:var(--muted);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;transition:color 0.15s;">
+      📎
+       <input type="file" id="file-input" accept="image/*,video/mp4,video/webm,video/ogg,text/plain" style="display:none">
+    </label>
+    <textarea id="msg-input" placeholder="say something..." rows="1" maxlength="2000"></textarea>
+    <button id="send-btn" title="Send" onclick="sendMessage()">↑</button>
+  </div>
+</div>
     </div>
 
     <!-- Right panel: ONLINE / FRIENDS tabs -->
@@ -144,9 +124,13 @@
           FRIENDS <span id="friends-badge" class="notif-badge hidden"></span>
         </button>
       </div>
+
+      <!-- Online tab -->
       <div id="online-tab">
         <div id="users-list"></div>
       </div>
+
+      <!-- Friends tab -->
       <div id="friends-tab" class="hidden">
         <div id="add-friend-area">
           <div id="add-friend-row">
@@ -156,45 +140,35 @@
           </div>
           <div id="add-friend-msg"></div>
         </div>
+
+        <!-- Incoming requests -->
         <div class="friends-section" id="section-incoming"></div>
+
+        <!-- Outgoing requests -->
         <div class="friends-section" id="section-outgoing"></div>
+
+        <!-- Accepted friends -->
         <div class="friends-section" id="section-friends"></div>
       </div>
     </div>
   </div>
 </div>
 
+
 <!-- Mobile bottom nav -->
 <div id="mobile-nav" class="hidden">
   <button class="mobile-nav-btn active" id="mnav-chat" onclick="mobileNav('chat')">
-    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-    </svg>
-    <span>chat</span>
+    <span class="nav-icon">💬</span>chat
   </button>
   <button class="mobile-nav-btn" id="mnav-online" onclick="mobileNav('online')">
-    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-      <circle cx="12" cy="8" r="4"/>
-      <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
-    </svg>
-    <span>online</span>
+    <span class="nav-icon">●</span>online
   </button>
   <button class="mobile-nav-btn" id="mnav-friends" onclick="mobileNav('friends')">
-    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-      <circle cx="9" cy="7" r="4"/>
-      <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-      <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-    </svg>
-    <span>friends</span>
+    <span class="nav-icon">★</span>friends
     <span id="mobile-friends-badge" class="mobile-nav-badge hidden"></span>
   </button>
   <button class="mobile-nav-btn" id="mnav-settings" onclick="openSettings()">
-    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-      <circle cx="12" cy="12" r="3"/>
-      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-    </svg>
-    <span>settings</span>
+    <span class="nav-icon" style="font-size:15px;">⚙</span>settings
   </button>
 </div>
 
@@ -202,7 +176,7 @@
 <div id="mobile-online-panel"></div>
 <div id="mobile-friends-panel"></div>
 
-<!-- ── Settings Modal ──────────────────────────────────────────────────────── -->
+  <!-- ── Settings Modal ──────────────────────────────────────────────────────── -->
 <div id="settings-overlay" class="hidden" onclick="overlayClick(event)">
   <div id="settings-modal">
     <div class="s-head">
@@ -229,6 +203,7 @@
           <span class="s-swatch" data-color="#f5e642" style="background:#f5e642" title="Yellow"></span>
         </div>
       </div>
+
       <div>
         <div class="s-section-label">font size</div>
         <div class="s-seg" id="seg-fontsize">
@@ -237,6 +212,7 @@
           <button class="s-seg-btn" data-val="15px">large</button>
         </div>
       </div>
+
       <div>
         <div class="s-section-label">message density</div>
         <div class="s-seg" id="seg-density">
@@ -245,6 +221,7 @@
           <button class="s-seg-btn" data-val="12px">spacious</button>
         </div>
       </div>
+
       <div>
         <div class="s-section-label">display</div>
         <div class="s-row">
@@ -305,6 +282,7 @@
           </label>
         </div>
       </div>
+
       <div>
         <div class="s-section-label">notification sound</div>
         <div class="s-seg" id="seg-sound">
@@ -330,6 +308,7 @@
           </label>
         </div>
       </div>
+
       <div>
         <div class="s-section-label">chat</div>
         <div class="s-row">
@@ -354,8 +333,8 @@
         </div>
         <div class="s-row">
           <div class="s-row-info">
-            <div class="s-row-label">compact sidebar</div>
-            <div class="s-row-sub">narrower online/friends panel</div>
+            <div class="s-row-label">compact right panel</div>
+            <div class="s-row-sub">narrower online/friends sidebar</div>
           </div>
           <label class="s-toggle">
             <input type="checkbox" id="tog-compact-panel" onchange="applySetting('compactPanel',this.checked)">
@@ -363,6 +342,7 @@
           </label>
         </div>
       </div>
+
       <div>
         <div class="s-section-label">data</div>
         <div class="s-row">
@@ -370,15 +350,23 @@
             <div class="s-row-label">reset all settings</div>
             <div class="s-row-sub">restore defaults</div>
           </div>
-          <button class="s-seg-btn" onclick="resetSettings()" style="color:var(--danger);border-color:rgba(255,85,119,0.3)">reset</button>
+          <button class="s-seg-btn" onclick="resetSettings()" style="color:var(--danger);border-color:rgba(255,77,106,0.3)">reset</button>
         </div>
       </div>
     </div>
   </div>
 </div>
-
-<div id="toast-container"></div>
-
+  
+<div id="toast-container" style="
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 9999;
+"></div>
+  
 <script src="config.js"></script>
 <script>
 const FILE_RENDERERS = [
@@ -387,7 +375,7 @@ const FILE_RENDERERS = [
     render(url, el) {
       const img = document.createElement('img');
       img.src = url;
-      img.style.cssText = 'display:block;max-width:260px;margin-top:4px;border-radius:6px;cursor:pointer;';
+      img.style.cssText = 'display:block;max-width:260px;margin-top:4px;border-radius:4px;cursor:pointer;';
       img.onclick = () => window.open(img.src);
       el.appendChild(img);
     }
@@ -398,7 +386,7 @@ const FILE_RENDERERS = [
       const v = document.createElement('video');
       v.src = url;
       v.controls = true;
-      v.style.cssText = 'display:block;max-width:260px;margin-top:4px;border-radius:6px;';
+      v.style.cssText = 'display:block;max-width:260px;margin-top:4px;border-radius:4px;';
       el.appendChild(v);
     }
   },
@@ -430,7 +418,7 @@ function appendFilePreview(fileUrl, fileType, textEl) {
     textEl.appendChild(a);
   }
 }
-
+  
 // ── Config ────────────────────────────────────────────────────────────────────
 const RAW_URL   = (typeof ASTERISK_CONFIG !== 'undefined' ? ASTERISK_CONFIG.BACKEND_URL
                   : window.location.protocol !== 'file:' ? window.location.origin
@@ -441,10 +429,10 @@ const TOKEN_KEY = 'asterisk_token';
 
 // ── State ─────────────────────────────────────────────────────────────────────
 let ws              = null;
-let currentUser     = null;
-let currentDM       = null;
+let currentUser     = null;   // { username, color }
+let currentDM       = null;   // username of open DM, or null for global chat
 let friendsState    = { friends: [], incoming: [], outgoing: [] };
-let dmCache         = {};
+let dmCache         = {};     // { username: [messages] }
 
 let isTyping        = false;
 let typingTimeout   = null;
@@ -540,13 +528,12 @@ async function doLogin() {
   if (!username || !password) { errEl.textContent = 'Fill in all fields.'; return; }
   errEl.textContent = '';
   btn.disabled = true;
-  btn.textContent = 'signing in...';
   try {
     const { token, username: u, color } = await apiPost('/api/login', { username, password });
     setToken(token);
     enterChat({ username: u, color });
   } catch (e) { errEl.textContent = e.message; }
-  finally      { btn.disabled = false; btn.textContent = 'sign in →'; }
+  finally      { btn.disabled = false; }
 }
 
 async function doRegister() {
@@ -559,13 +546,12 @@ async function doRegister() {
   if (password !== pass2)               { errEl.textContent = 'Passwords do not match.'; return; }
   errEl.textContent = '';
   btn.disabled = true;
-  btn.textContent = 'creating...';
   try {
     const { token, username: u, color } = await apiPost('/api/register', { username, password });
     setToken(token);
     enterChat({ username: u, color });
   } catch (e) { errEl.textContent = e.message; }
-  finally      { btn.disabled = false; btn.textContent = 'create account →'; }
+  finally      { btn.disabled = false; }
 }
 
 function doLogout() {
@@ -594,7 +580,7 @@ window.addEventListener('load', async () => {
     if (!res.ok) { clearToken(); return; }
     const { username, color } = await res.json();
     enterChat({ username, color });
-  } catch { /* server unreachable */ }
+  } catch { /* server unreachable — show auth screen */ }
 });
 
 // ── Enter chat ────────────────────────────────────────────────────────────────
@@ -640,6 +626,7 @@ function connectWS() {
   ws.addEventListener('error', () => setStatus('disconnected'));
 }
 
+
 function scheduleReconnect() {
   clearTimeout(reconnectTimer);
   reconnectTimer = setTimeout(() => {
@@ -672,6 +659,7 @@ function handleServerMessage(msg) {
 
     case 'message':
     case 'system':
+      console.log('[recv]', msg);
       if (!currentDM && (!msg.channel || msg.channel === currentChannel)) {
         renderMessage(msg);
         scrollToBottom();
@@ -694,6 +682,7 @@ function handleServerMessage(msg) {
       doLogout();
       break;
 
+    // ── Friends ──────────────────────────────────────────────────────────────
     case 'friends_state':
       friendsState = msg;
       renderFriendsPanel();
@@ -707,6 +696,7 @@ function handleServerMessage(msg) {
       break;
 
     case 'friend_accepted':
+      // Move from outgoing to accepted
       friendsState.outgoing = (friendsState.outgoing || []).filter(r => r.to !== msg.username);
       friendsState.incoming = (friendsState.incoming || []).filter(r => r.from !== msg.username);
       friendsState.friends  = friendsState.friends || [];
@@ -721,6 +711,7 @@ function handleServerMessage(msg) {
       if (currentDM === msg.username) closeDM();
       break;
 
+    // ── DMs ──────────────────────────────────────────────────────────────────
     case 'dm': {
       const other = msg.from === currentUser?.username ? msg.to : msg.from;
       if (currentDM !== other) {
@@ -735,6 +726,7 @@ function handleServerMessage(msg) {
         renderDMMessage(msg);
         scrollToBottom();
       } else {
+        // Visual nudge on the friend's row in the panel
         highlightFriend(other);
       }
       break;
@@ -787,12 +779,13 @@ function renderMessage(msg) {
   textEl.className   = 'msg-text';
   textEl.textContent = msg.text;
 
-  if (msg.fileUrl) appendFilePreview(msg.fileUrl, msg.fileType, textEl);
+  if (msg.fileUrl) {
+    appendFilePreview(msg.fileUrl, msg.fileType, textEl);
+  }
 
   row.append(tsEl, userEl, sepEl, textEl);
   container.appendChild(row);
 }
-
 // ── Render DM message ─────────────────────────────────────────────────────────
 function renderDMMessage(msg) {
   const container = document.getElementById('messages');
@@ -821,7 +814,9 @@ function renderDMMessage(msg) {
   textEl.className   = 'msg-text';
   textEl.textContent = msg.text;
 
-  if (msg.fileUrl) appendFilePreview(msg.fileUrl, msg.fileType, textEl);
+  if (msg.fileUrl) {
+    appendFilePreview(msg.fileUrl, msg.fileType, textEl);
+  }
 
   row.append(tsEl, userEl, sepEl, textEl);
   container.appendChild(row);
@@ -834,6 +829,7 @@ function openDM(username) {
   const friend = friendsState.friends?.find(f => f.username === username);
   const color  = friend?.color || '#888';
 
+  // Update channel bar
   const bar   = document.getElementById('channel-bar');
   bar.innerHTML = '';
   const back  = document.createElement('button');
@@ -845,8 +841,10 @@ function openDM(username) {
   label.innerHTML = `dm — <span style="color:${color};font-weight:500">${username}</span>`;
   bar.append(back, label);
 
+  // Update input placeholder
   document.getElementById('msg-input').placeholder = `message ${username}...`;
 
+  // Clear messages and show DM history
   const container = document.getElementById('messages');
   container.innerHTML = '';
 
@@ -855,8 +853,10 @@ function openDM(username) {
     container.scrollTop = container.scrollHeight;
   }
 
+  // Request history from server
   sendWS({ type: 'dm_history', with: username });
 
+  // Clear unread highlight
   const row = document.querySelector(`.friend-item[data-user="${username}"]`);
   if (row) row.classList.remove('friend-unread');
 
@@ -866,21 +866,28 @@ function openDM(username) {
 function closeDM() {
   currentDM = null;
 
-  const bar = document.getElementById('channel-bar');
+  // Restore channel bar
+  const bar   = document.getElementById('channel-bar');
   bar.innerHTML = '<span id="channel-label">global chat</span>';
 
+  // Restore input placeholder
   document.getElementById('msg-input').placeholder = 'say something...';
 
+  // Reload global history from cache (re-request on reconnect; for now restore what we have)
+  // We'll ask for global history by reconnecting or just clearing
   const container = document.getElementById('messages');
-  container.innerHTML = '<div class="msg-system">— returned to global chat —</div>';
+  container.innerHTML = '<div class="msg-system" style="padding:12px 16px;">— returned to global chat —</div>';
 
   document.getElementById('msg-input').focus();
 }
 
-// ── Highlight friend row ──────────────────────────────────────────────────────
+// ── Highlight friend row (unread indicator) ───────────────────────────────────
 function highlightFriend(username) {
   const row = document.querySelector(`.friend-item[data-user="${username}"]`);
-  if (row) row.classList.add('friend-unread');
+  if (row) {
+    row.style.background = 'rgba(139,126,245,0.07)';
+  }
+  // Also switch to friends tab badge
   updateFriendsBadge();
 }
 
@@ -910,7 +917,6 @@ function renderUserList(users) {
     const dot  = document.createElement('span');
     dot.className = 'user-dot';
     dot.style.background = u.color;
-    dot.style.boxShadow  = u.color + '66 0 0 6px';
 
     const name = document.createElement('span');
     name.className   = 'user-name' + (u.username === currentUser?.username ? ' is-you' : '');
@@ -939,7 +945,7 @@ function renderTyping(users) {
   else                          textEl.textContent = others.length + ' people are typing';
 }
 
-// ── Send message ──────────────────────────────────────────────────────────────
+// ── Send message (routes to DM or global) ─────────────────────────────────────
 async function sendMessage() {
   if (rateRemaining <= 0) return;
   const input     = document.getElementById('msg-input');
@@ -947,12 +953,14 @@ async function sendMessage() {
   const text      = input.value.trim();
   const file      = fileInput.files[0];
 
+  console.log('[send] text:', JSON.stringify(text), '| file:', file?.name ?? 'none');
   if (!text && !file) return;
 
   let fileUrl  = null;
   let fileType = null;
 
   if (file) {
+    console.log('[upload] uploading', file.name, file.type, file.size + 'B');
     try {
       const form = new FormData();
       form.append('file', file);
@@ -961,16 +969,20 @@ async function sendMessage() {
         headers: { Authorization: 'Bearer ' + getToken() },
         body: form
       });
+      console.log('[upload] status:', res.status, res.statusText);
       const raw = await res.text();
+      console.log('[upload] raw response:', raw);
       if (!res.ok) throw new Error('HTTP ' + res.status + ': ' + raw);
       const data = JSON.parse(raw);
       fileUrl  = data.url;
       fileType = file.type;
+      console.log('[upload] fileUrl:', fileUrl);
       fileInput.value = '';
       document.getElementById('attachment-preview').classList.remove('visible');
       document.getElementById('attachment-name').textContent = '';
     } catch (e) {
-      alert('Upload failed.');
+      console.error('[upload] FAILED:', e);
+      alert('Upload failed — check console for details.');
       return;
     }
   }
@@ -983,13 +995,14 @@ async function sendMessage() {
   if (currentDM) payload.to = currentDM;
   if (fileUrl)   { payload.fileUrl = fileUrl; payload.fileType = fileType; }
 
+  console.log('[send] sending payload:', payload);
   sendWS(payload);
 
   input.value        = '';
   input.style.height = '';
   stopTyping();
 }
-
+  
 // ── Input handling ────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   const input = document.getElementById('msg-input');
@@ -1026,7 +1039,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('attachment-preview').classList.add('visible');
   });
 });
-
+  
 function startTyping() {
   if (!isTyping) { isTyping = true; sendWS({ type: 'typing' }); }
   clearTimeout(typingTimeout);
@@ -1045,9 +1058,9 @@ function updateRateLimit(data) {
   const el = document.getElementById('rate-limit');
   if (rateRemaining <= 0) {
     const secs = Math.ceil((rateReset - Date.now()) / 1000);
-    el.textContent = `limited — ${secs}s`;
+    el.textContent = `rate limit — resets in ${secs}s`;
   } else {
-    el.textContent = `${rateRemaining} / min`;
+    el.textContent = `${rateRemaining}/20 left`;
   }
 }
 
@@ -1057,15 +1070,15 @@ setInterval(() => {
   const remaining = Math.max(0, rateReset - Date.now());
   if (remaining <= 0) {
     rateRemaining  = 20;
-    el.textContent = '20 / min';
+    el.textContent = '20 messages / min';
     return;
   }
   if (rateRemaining <= 0) {
-    el.textContent = `limited — ${Math.ceil(remaining / 1000)}s`;
+    el.textContent = `rate limit — resets in ${Math.ceil(remaining / 1000)}s`;
   }
 }, 500);
 
-// ── Friends panel ─────────────────────────────────────────────────────────────
+// ── Friends panel rendering ───────────────────────────────────────────────────
 function renderFriendsPanel() {
   renderIncoming();
   renderOutgoing();
@@ -1076,14 +1089,11 @@ function renderFriendsPanel() {
 function updateFriendsBadge() {
   const count = (friendsState.incoming || []).length;
   const badge = document.getElementById('friends-badge');
-  const mbadge = document.getElementById('mobile-friends-badge');
   if (count > 0) {
-    badge.textContent  = count;
+    badge.textContent = count;
     badge.classList.remove('hidden');
-    if (mbadge) { mbadge.textContent = count; mbadge.classList.remove('hidden'); }
   } else {
     badge.classList.add('hidden');
-    if (mbadge) mbadge.classList.add('hidden');
   }
 }
 
@@ -1178,8 +1188,8 @@ function renderFriendsList() {
     .sort((a, b) => a.username.localeCompare(b.username))
     .forEach(f => {
       const item = document.createElement('div');
-      item.className    = 'friend-item';
-      item.dataset.user = f.username;
+      item.className        = 'friend-item';
+      item.dataset.user     = f.username;
 
       const dot  = document.createElement('span');
       dot.className = 'friend-dot';
@@ -1293,7 +1303,9 @@ function syncMobileOnline() {
 
 function syncMobileFriends() {
   const panel = document.getElementById('mobile-friends-panel');
+  // Clone the full friends tab content
   panel.innerHTML = document.getElementById('friends-tab').innerHTML;
+  // Re-wire buttons since they're clones
   panel.querySelectorAll('.friend-dm-btn').forEach(btn => {
     const user = btn.closest('.friend-item')?.dataset.user;
     if (user) btn.onclick = (e) => { e.stopPropagation(); openDM(user); mobileNav('chat'); };
@@ -1302,11 +1314,12 @@ function syncMobileFriends() {
     const user = btn.closest('.friend-item')?.dataset.user;
     if (user) btn.onclick = (e) => { e.stopPropagation(); removeFriend(user); };
   });
-  const addBtn   = panel.querySelector('#add-friend-btn');
+  // Wire add-friend button in the cloned panel
+  const addBtn = panel.querySelector('#add-friend-btn');
   const addInput = panel.querySelector('#friend-input');
   if (addBtn) addBtn.onclick = async () => {
     if (!addInput) return;
-    const to    = addInput.value.trim();
+    const to = addInput.value.trim();
     const msgEl = panel.querySelector('#add-friend-msg');
     if (!to) return;
     try {
@@ -1319,32 +1332,27 @@ function syncMobileFriends() {
   };
 }
 
-// ── Toast ─────────────────────────────────────────────────────────────────────
 function showToast(text) {
   const container = document.getElementById('toast-container');
+
   const toast = document.createElement('div');
   toast.textContent = text;
   toast.style.cssText = `
-    background: rgba(14,14,26,0.95);
-    border: 1px solid rgba(255,255,255,0.1);
-    padding: 9px 14px;
-    border-radius: 8px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    border-radius: var(--radius);
     font-size: 12px;
-    color: #ddddf0;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.03) inset;
-    animation: toastSlide 0.2s cubic-bezier(0.16,1,0.3,1) both;
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    cursor: pointer;
-    max-width: 260px;
-    font-family: var(--font);
+    color: var(--text);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    animation: fadeIn 0.15s ease;
   `;
-  toast.onclick = () => toast.remove();
+
   container.appendChild(toast);
+
   setTimeout(() => {
-    toast.style.animation = 'toastOut 0.18s ease forwards';
-    setTimeout(() => toast.remove(), 180);
-  }, 3500);
+    toast.remove();
+  }, 3000);
 }
 
 // ── Settings ──────────────────────────────────────────────────────────────────
@@ -1391,21 +1399,23 @@ function applyAllSettings() {
   const s = userSettings;
   const root = document.documentElement;
 
+  // Accent color + glow
   root.style.setProperty('--accent', s.accentColor);
   const hex = s.accentColor.replace('#','');
   const r = parseInt(hex.slice(0,2),16), g = parseInt(hex.slice(2,4),16), b = parseInt(hex.slice(4,6),16);
   root.style.setProperty('--accent-glow', `rgba(${r},${g},${b},0.2)`);
-  root.style.setProperty('--accent-soft', `rgba(${r},${g},${b},0.08)`);
 
+  // Font size
   document.body.style.fontSize = s.fontSize;
 
+  // Message density (vertical padding on .msg rows)
   const sheet = getOrCreateSettingsSheet();
   sheet.textContent = `
     .msg { padding-top: ${s.density}; padding-bottom: ${s.density}; }
     .msg-ts   { ${s.timestamps ? '' : 'display:none!important;'} }
     .msg-user, .msg-sep { ${s.usernames ? '' : 'display:none!important;'} }
     #typing-bar { ${s.typing ? '' : 'display:none!important;'} }
-    #right-panel { ${s.compactPanel ? 'width:150px;' : 'width:210px;'} }
+    #right-panel { ${s.compactPanel ? 'width:150px;' : 'width:190px;'} }
     #messages { scroll-behavior: ${s.smoothScroll ? 'smooth' : 'auto'}; }
   `;
 }
@@ -1423,22 +1433,27 @@ function getOrCreateSettingsSheet() {
 function syncSettingsUI() {
   const s = userSettings;
 
+  // Accent swatches
   document.querySelectorAll('.s-swatch').forEach(sw => {
     sw.classList.toggle('selected', sw.dataset.color === s.accentColor);
   });
 
+  // Font size segment
   document.querySelectorAll('#seg-fontsize .s-seg-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.val === s.fontSize);
   });
 
+  // Density segment
   document.querySelectorAll('#seg-density .s-seg-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.val === s.density);
   });
 
+  // Sound segment
   document.querySelectorAll('#seg-sound .s-seg-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.val === s.sound);
   });
 
+  // Toggles
   const map = {
     'tog-timestamps':    s.timestamps,
     'tog-usernames':     s.usernames,
@@ -1463,6 +1478,7 @@ function resetSettings() {
   syncSettingsUI();
 }
 
+// ── Settings modal open/close ──────────────────────────────────────────────────
 function openSettings() {
   syncSettingsUI();
   document.getElementById('settings-overlay').classList.remove('hidden');
@@ -1476,10 +1492,12 @@ function overlayClick(e) {
   if (e.target === document.getElementById('settings-overlay')) closeSettings();
 }
 
+// Close on Escape
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') closeSettings();
 });
 
+// ── Settings tab switching ────────────────────────────────────────────────────
 function switchSettingsTab(tab) {
   ['appearance','notifications','behavior'].forEach(t => {
     document.getElementById('s-tab-' + t).classList.toggle('hidden', t !== tab);
@@ -1490,9 +1508,11 @@ function switchSettingsTab(tab) {
   });
 }
 
+// ── Wire up swatch clicks ─────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('.s-swatch').forEach(sw => {
     sw.addEventListener('click', () => {
+      userSettings.accentColor = sw.dataset.color;
       applySetting('accentColor', sw.dataset.color);
       document.querySelectorAll('.s-swatch').forEach(s2 =>
         s2.classList.toggle('selected', s2.dataset.color === sw.dataset.color)
@@ -1500,6 +1520,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  // Segment buttons: font size
   document.querySelectorAll('#seg-fontsize .s-seg-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('#seg-fontsize .s-seg-btn').forEach(b => b.classList.remove('active'));
@@ -1508,6 +1529,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  // Segment buttons: density
   document.querySelectorAll('#seg-density .s-seg-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('#seg-density .s-seg-btn').forEach(b => b.classList.remove('active'));
@@ -1516,6 +1538,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  // Segment buttons: sound
   document.querySelectorAll('#seg-sound .s-seg-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('#seg-sound .s-seg-btn').forEach(b => b.classList.remove('active'));
@@ -1528,11 +1551,11 @@ document.addEventListener('DOMContentLoaded', () => {
   loadSettings();
 });
 
-// ── Notification sound ────────────────────────────────────────────────────────
+// ── Notification sound (Web Audio API, no files needed) ───────────────────────
 function playNotifSound(type) {
   try {
-    const ctx  = new (window.AudioContext || window.webkitAudioContext)();
-    const osc  = ctx.createOscillator();
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.connect(gain);
     gain.connect(ctx.destination);
@@ -1554,6 +1577,10 @@ function playNotifSound(type) {
     }
   } catch {}
 }
+
+// Call playNotifSound when a relevant toast fires.. maybe make that an option?????????????????/
+// In the 'dm' case: if (userSettings.dmNotif && currentDM !== other) { showToast(...); playNotifSound(userSettings.sound); }
+  
 </script>
 </body>
-</html>
+  </html>
