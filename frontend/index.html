@@ -996,7 +996,7 @@
   <div id="input-row">
     <label id="attach-btn" title="Attach image" style="flex-shrink:0;width:38px;height:38px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);color:var(--muted);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;transition:color 0.15s;">
       📎
-      <input type="file" id="file-input" accept="image/*" style="display:none">
+       <input type="file" id="file-input" accept="image/*,video/mp4,video/webm,video/ogg,text/plain" style="display:none">
     </label>
     <textarea id="msg-input" placeholder="say something..." rows="1" maxlength="2000"></textarea>
     <button id="send-btn" title="Send" onclick="sendMessage()">↑</button>
