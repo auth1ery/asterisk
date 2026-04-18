@@ -56,6 +56,27 @@ let nodes       = loadJSON(NODES_FILE,    {});
 
 CHANNELS.forEach(ch => { if (!messages[ch]) messages[ch] = []; });
 
+// ── Migrate existing nodes to per-channel messages ────────────────────────────
+let nodesDirty = false, msgsDirty = false;
+Object.values(nodes).forEach(node => {
+  if (!node.channels) {
+    node.channels = ['general'];
+    nodesDirty = true;
+  }
+  const oldKey = `node:${node.id}`;
+  const newKey = `node:${node.id}:general`;
+  if (messages[oldKey] && !messages[newKey]) {
+    messages[newKey] = messages[oldKey];
+    delete messages[oldKey];
+    msgsDirty = true;
+  } else if (!messages[newKey]) {
+    messages[newKey] = [];
+    msgsDirty = true;
+  }
+});
+if (nodesDirty) saveJSON(NODES_FILE, nodes);
+if (msgsDirty)  saveJSON(MESSAGES_FILE, messages);
+
 // ── In-memory state ───────────────────────────────────────────────────────────
 const clients     = new Map();  // ws → { username, color }
 const typingUsers = new Map();  // username → timeoutId
@@ -340,8 +361,12 @@ app.post('/api/nodes', auth, (req, res) => {
   if (all.filter(n => n.members.includes(me)).length >= 4)
     return res.status(400).json({ error: 'Max 4 nodes joined.' });
   const id = require('crypto').randomBytes(6).toString('hex');
-  nodes[id] = { id, name: name.trim(), owner: me, members: [me], banned: [], invites: [] };
-  messages[`node:${id}`] = [];
+  nodes[id] = {
+    id, name: name.trim(), owner: me,
+    members: [me], banned: [], invites: [],
+    channels: ['general']         
+  };
+  messages[`node:${id}:general`] = [];
   saveJSON(NODES_FILE, nodes);
   saveJSON(MESSAGES_FILE, messages);
   res.json(nodes[id]);
@@ -365,8 +390,50 @@ app.get('/api/nodes/:id', auth, (req, res) => {
   if (!node || !node.members.includes(me)) return res.status(404).json({ error: 'Not found.' });
   res.json({
     id: node.id, name: node.name, owner: node.owner,
-    members: node.members.map(u => ({ username: u, color: accounts[u?.toLowerCase()]?.color || '#888' }))
+    channels: node.channels || ['general'], 
+    members: node.members.map(u => ({
+      username: u,
+      color: accounts[u?.toLowerCase()]?.color || '#888'
+    }))
   });
+});
+
+// ── Node channels: create ─────────────────────────────────────────────────────
+app.post('/api/nodes/:id/channels', auth, (req, res) => {
+  const me   = req.user.username;
+  const node = nodes[req.params.id];
+  if (!node || node.owner !== me) return res.status(403).json({ error: 'Not owner.' });
+  if (!node.channels) node.channels = ['general'];
+  if (node.channels.length >= 10) return res.status(400).json({ error: 'Max 10 channels.' });
+
+  const raw   = req.body?.name?.trim() || '';
+  const cname = raw.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').slice(0, 24);
+  if (cname.length < 2)            return res.status(400).json({ error: 'Name too short.' });
+  if (node.channels.includes(cname)) return res.status(409).json({ error: 'Channel already exists.' });
+
+  node.channels.push(cname);
+  messages[`node:${node.id}:${cname}`] = [];
+  saveJSON(NODES_FILE, nodes);
+  saveJSON(MESSAGES_FILE, messages);
+  pushToNodeMembers(node.id, { type: 'node_channel_created', nodeId: node.id, channel: cname });
+  res.json({ channel: cname });
+});
+
+// ── Node channels: delete ─────────────────────────────────────────────────────
+app.delete('/api/nodes/:id/channels/:channel', auth, (req, res) => {
+  const me      = req.user.username;
+  const node    = nodes[req.params.id];
+  const channel = req.params.channel;
+  if (!node || node.owner !== me)      return res.status(403).json({ error: 'Not owner.' });
+  if (channel === 'general')           return res.status(400).json({ error: "Can't delete #general." });
+  if (!node.channels?.includes(channel)) return res.status(404).json({ error: 'Channel not found.' });
+
+  node.channels = node.channels.filter(c => c !== channel);
+  delete messages[`node:${node.id}:${channel}`];
+  saveJSON(NODES_FILE, nodes);
+  saveJSON(MESSAGES_FILE, messages);
+  pushToNodeMembers(node.id, { type: 'node_channel_deleted', nodeId: node.id, channel });
+  res.json({ status: 'deleted' });
 });
 
 // Must come before /:id/join
@@ -610,8 +677,9 @@ wss.on('connection', (ws, req) => {
     case 'node_message': {
   const node = nodes[msg.nodeId];
   if (!node || !node.members.includes(self.username)) return;
-  const text = msg.text?.trim();
+  const text    = msg.text?.trim();
   if (!text && !msg.fileUrl) return;
+  const channel = node.channels?.includes(msg.channel) ? msg.channel : 'general';  // ← scoped
 
   const rate = checkRate(self.username);
   push(ws, { type: 'rate_limit', remaining: rate.remaining, reset: rate.reset });
@@ -619,24 +687,29 @@ wss.on('connection', (ws, req) => {
 
   const m = {
     type: 'node_message', id: Math.random().toString(36).slice(2),
-    nodeId: msg.nodeId, username: self.username, color: self.color,
+    nodeId: msg.nodeId, channel,                    // ← included in message
+    username: self.username, color: self.color,
     text: text || '', fileUrl: msg.fileUrl || null, fileType: msg.fileType || null,
     timestamp: Date.now()
   };
-  const key = `node:${msg.nodeId}`;
+  const key = `node:${msg.nodeId}:${channel}`;     // ← new key format
   if (!messages[key]) messages[key] = [];
   messages[key].push(m);
-  if (messages[key].length > MAX_MESSAGES) messages[key].splice(0, messages[key].length - MAX_MESSAGES);
+  if (messages[key].length > MAX_MESSAGES)
+    messages[key].splice(0, messages[key].length - MAX_MESSAGES);
   saveJSON(MESSAGES_FILE, messages);
   pushToNodeMembers(msg.nodeId, m);
   break;
 }
 
 case 'node_history': {
-  const node = nodes[msg.nodeId];
+  const node    = nodes[msg.nodeId];
   if (!node || !node.members.includes(self.username)) return;
-  push(ws, { type: 'node_history', nodeId: msg.nodeId,
-    messages: (messages[`node:${msg.nodeId}`] || []).slice(-HISTORY_SEND) });
+  const channel = node.channels?.includes(msg.channel) ? msg.channel : 'general';
+  push(ws, {
+    type: 'node_history', nodeId: msg.nodeId, channel,
+    messages: (messages[`node:${msg.nodeId}:${channel}`] || []).slice(-HISTORY_SEND)
+  });
   break;
 }
 
