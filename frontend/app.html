@@ -93,6 +93,11 @@
     </div>
   </div>
 
+  <!-- Node channel tabs (visible when inside a node) -->
+  <div id="node-channels-bar">
+  <!-- populated by JS -->
+  </div>
+  
   <div id="chat-body">
     <div id="messages-panel">
       <div id="messages"></div>
@@ -481,6 +486,8 @@ let currentNode     = null; // { id, name, owner }
 let currentNodeInfo = null; // { members: [...] } — owner only
 let myNodes         = [];
 let discoverOpen    = false;
+let activeNodeChannel = 'general';
+let activeNodeData    = null;   // { id, name, owner, channels, members }
 
 function switchChannel(ch) {
   if (currentDM) closeDM();
@@ -523,6 +530,19 @@ function switchRightTab(tab) {
   if (tab === 'nodes') renderNodesPanel();
 }
 
+function switchNodeChannel(channel) {
+  activeNodeChannel = channel;
+
+  // update tab highlight
+  document.querySelectorAll('.node-ch-tab').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.ch === channel);
+  });
+
+  // clear messages and request history for this channel
+  document.getElementById('messages').innerHTML = '';
+  ws.send(JSON.stringify({ type: 'node_history', nodeId: activeNodeData.id, channel }));
+}
+  
 // ── Auth API calls ────────────────────────────────────────────────────────────
 async function apiPost(path, body) {
   const res  = await fetch(HTTP_BASE + path, {
@@ -593,6 +613,28 @@ async function doRegister() {
   finally      { btn.disabled = false; }
 }
 
+async function promptCreateNodeChannel(nodeId) {
+  const name = prompt('channel name (letters, numbers, hyphens):');
+  if (!name) return;
+  const res = await fetch(`${HTTP_BASE}/api/nodes/${nodeId}/channels`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + getToken() },
+    body: JSON.stringify({ name })
+  });
+  const data = await res.json();
+  if (!res.ok) { alert(data.error); return; }
+}
+
+async function deleteNodeChannel(nodeId, channel) {
+  if (!confirm(`delete #${channel}? this is permanent.`)) return;
+  const res = await fetch(`${HTTP_BASE}/api/nodes/${nodeId}/channels/${encodeURIComponent(channel)}`, {
+    method: 'DELETE',
+    headers: { Authorization: 'Bearer ' + getToken() }
+  });
+  const data = await res.json();
+  if (!res.ok) alert(data.error);
+}
+  
 function doLogout() {
   shouldReconnect = false;
   if (ws) ws.close();
@@ -757,13 +799,19 @@ function handleServerMessage(msg) {
       if (currentDM === msg.username) closeDM();
       break;
 
-    case 'node_message':
-  if (currentNode?.id === msg.nodeId) { renderNodeMessage(msg); scrollToBottom(); }
-  else highlightNode(msg.nodeId);
+case 'node_message':
+  if (currentNode?.id === msg.nodeId) {
+    if (msg.channel === activeNodeChannel) {
+      renderNodeMessage(msg);
+      scrollToBottom();
+    }
+  } else {
+    highlightNode(msg.nodeId);
+  }
   break;
 
 case 'node_history':
-  if (currentNode?.id === msg.nodeId) {
+  if (currentNode?.id === msg.nodeId && msg.channel === activeNodeChannel) {
     const c = document.getElementById('messages');
     c.innerHTML = '';
     msg.messages.forEach(renderNodeMessage);
@@ -781,6 +829,26 @@ case 'node_kicked':
 case 'node_message_deleted':
   if (currentNode?.id === msg.nodeId) {
     document.querySelector(`.msg[data-msgid="${msg.msgId}"]`)?.remove();
+  }
+  break;
+
+  case 'node_channel_created':
+  if (activeNodeData && msg.nodeId === activeNodeData.id) {
+    if (!activeNodeData.channels.includes(msg.channel))
+      activeNodeData.channels.push(msg.channel);
+    renderNodeChannelBar(activeNodeData);
+  }
+  break;
+
+case 'node_channel_deleted':
+  if (activeNodeData && msg.nodeId === activeNodeData.id) {
+    activeNodeData.channels = activeNodeData.channels.filter(c => c !== msg.channel);
+    if (activeNodeChannel === msg.channel) {
+      activeNodeChannel = 'general';
+      document.getElementById('messages').innerHTML = '';
+      sendWS({ type: 'node_history', nodeId: activeNodeData.id, channel: 'general' });
+    }
+    renderNodeChannelBar(activeNodeData);
   }
   break;
 
@@ -895,6 +963,55 @@ function renderDMMessage(msg) {
   container.appendChild(row);
 }
 
+function renderNodeChannelBar(node) {
+  const bar     = document.getElementById('node-channels-bar');
+  const isOwner = node.owner === currentUser?.username;
+  bar.innerHTML = '';
+
+  (node.channels || ['general']).forEach(ch => {
+    const btn = document.createElement('button');
+    btn.className = 'node-ch-tab' + (ch === activeNodeChannel ? ' active' : '');
+    btn.dataset.ch = ch;
+
+    const inner = document.createElement('span');
+    inner.className = 'node-ch-tab-inner';
+    inner.textContent = '#' + ch;
+
+    if (isOwner && ch !== 'general') {
+      const del = document.createElement('span');
+      del.className   = 'node-ch-del';
+      del.textContent = '×';
+      del.title       = 'Delete channel';
+      del.addEventListener('click', e => {
+        e.stopPropagation();
+        deleteNodeChannel(node.id, ch);
+      });
+      inner.appendChild(del);
+    }
+
+    btn.appendChild(inner);
+    btn.addEventListener('click', () => switchNodeChannel(ch));
+    bar.appendChild(btn);
+  });
+
+  if (isOwner && (node.channels || []).length < 10) {
+    const addBtn  = document.createElement('button');
+    addBtn.id     = 'node-add-ch-btn';
+    addBtn.title  = 'New channel';
+    addBtn.textContent = '+';
+    addBtn.addEventListener('click', () => promptCreateNodeChannel(node.id));
+    bar.appendChild(addBtn);
+  }
+
+  bar.classList.add('visible');
+}
+
+function hideNodeChannelBar() {
+  const bar = document.getElementById('node-channels-bar');
+  bar.classList.remove('visible');
+  bar.innerHTML = '';
+}
+  
 // ── Open / close DM view ──────────────────────────────────────────────────────
 function openDM(username) {
   currentDM = username;
@@ -1048,6 +1165,9 @@ function renderNodeMembers() {
 
 async function openNode(n) {
   currentNode = n; currentDM = null; currentNodeInfo = null;
+  activeNodeChannel = 'general';    // ← reset channel
+  activeNodeData    = null;
+
   const bar = document.getElementById('channel-bar');
   bar.innerHTML = '';
   const back = document.createElement('button');
@@ -1062,15 +1182,24 @@ async function openNode(n) {
     inv.onclick = () => makeInvite(n.id);
     bar.appendChild(inv);
   }
+
   document.getElementById('msg-input').placeholder = `message in ${n.name}...`;
   document.getElementById('messages').innerHTML = '';
-  sendWS({ type: 'node_history', nodeId: n.id });
-  if (n.owner === currentUser?.username) {
-    try {
-      const res = await fetch(`${HTTP_BASE}/api/nodes/${n.id}`, { headers: { Authorization: 'Bearer ' + getToken() } });
-      currentNodeInfo = await res.json();
-    } catch {}
+
+  // ← fetch full node data (includes channels)
+  try {
+    const res = await fetch(`${HTTP_BASE}/api/nodes/${n.id}`, {
+      headers: { Authorization: 'Bearer ' + getToken() }
+    });
+    activeNodeData = await res.json();
+    if (n.owner === currentUser?.username) currentNodeInfo = activeNodeData;
+  } catch {
+    activeNodeData = { ...n, channels: ['general'] };
   }
+
+  renderNodeChannelBar(activeNodeData);   // ← show channel tabs
+  sendWS({ type: 'node_history', nodeId: n.id, channel: 'general' });   // ← include channel
+
   renderNodesPanel();
   switchRightTab('nodes');
   document.getElementById('msg-input').focus();
@@ -1078,6 +1207,10 @@ async function openNode(n) {
 
 function closeNode() {
   currentNode = null; currentNodeInfo = null;
+  activeNodeData    = null;
+  activeNodeChannel = 'general';
+  hideNodeChannelBar();
+
   document.getElementById('channel-bar').innerHTML =
     '<span id="channel-label">global chat</span><div class="header-spacer"></div><div id="channel-tabs"><button class="ch-tab active" onclick="switchChannel(\'global\')">#global</button><button class="ch-tab" onclick="switchChannel(\'debate\')">#debate</button><button class="ch-tab" onclick="switchChannel(\'gaming\')">#gaming</button><button class="ch-tab" onclick="switchChannel(\'music\')">#music</button></div>';
   document.getElementById('msg-input').placeholder = 'say something...';
@@ -1347,7 +1480,7 @@ async function sendMessage() {
 
 let payload;
 if (currentNode) {
-  payload = { type: 'node_message', nodeId: currentNode.id, text: text || ' ' };
+  payload = { type: 'node_message', nodeId: currentNode.id, channel: activeNodeChannel, text: text || ' ' };
 } else {
   payload = { type: currentDM ? 'dm' : 'message', text: text || ' ', channel: currentChannel };
   if (currentDM) payload.to = currentDM;
@@ -2114,7 +2247,7 @@ function sendGif(g) {
   if (rateRemaining <= 0) return;
   let payload;
   if (currentNode) {
-    payload = { type: 'node_message', nodeId: currentNode.id, text: '' };
+    payload = { type: 'node_message', nodeId: currentNode.id, channel: activeNodeChannel, text: '' };
   } else {
     payload = { type: currentDM ? 'dm' : 'message', text: '', channel: currentChannel };
     if (currentDM) payload.to = currentDM;
