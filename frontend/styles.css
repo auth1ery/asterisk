@@ -1053,6 +1053,125 @@
 }
 .msg:hover .node-del-btn { opacity: 1; }
 .node-del-btn:hover { color: var(--danger); }
+
+/* ── GIF button ───────────────────────────────────────────────── */
+#gif-btn {
+  flex-shrink: 0;
+  width: 38px; height: 38px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--accent);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+#gif-btn:hover { background: var(--accent); color: #fff; }
+#gif-btn.active { background: var(--accent); color: #fff; }
+
+/* ── GIF picker panel ─────────────────────────────────────────── */
+#gif-picker {
+  position: absolute;
+  bottom: calc(100% + 6px); /* sits above the input area */
+  left: 0; right: 0;
+  height: 320px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 200;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+/* #input-area needs relative positioning for the picker to anchor correctly */
+#input-area { position: relative; }
+
+#gif-picker-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+#gif-search {
+  flex: 1;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  padding: 5px 8px;
+  font-size: 12px;
+  outline: none;
+}
+#gif-search:focus { border-color: var(--accent); }
+
+#gif-tabs { display: flex; gap: 4px; }
+.gif-tab {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--muted);
+  font-size: 11px;
+  padding: 3px 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.gif-tab.active, .gif-tab:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+#gif-grid {
+  flex: 1;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 3px;
+  padding: 6px;
+}
+.gif-thumb {
+  width: 100%;
+  aspect-ratio: 4/3;
+  object-fit: cover;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+  background: var(--surface2);
+}
+.gif-thumb:hover { opacity: 0.85; transform: scale(1.02); }
+.gif-fave-star {
+  position: absolute;
+  top: 3px; right: 4px;
+  font-size: 13px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+}
+.gif-item { position: relative; }
+.gif-item:hover .gif-fave-star { opacity: 1; }
+.gif-fave-star.faved { opacity: 1; color: gold; }
+
+#gif-attribution {
+  display: flex;
+  justify-content: flex-end;
+  padding: 4px 8px;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+/* empty / loading states */
+.gif-empty {
+  grid-column: 1/-1;
+  text-align: center;
+  color: var(--muted);
+  font-size: 12px;
+  padding: 32px 0;
+}
 #settings-btn:hover { color: var(--text); border-color: var(--border2); }
 
 @media (max-width: 600px) {
