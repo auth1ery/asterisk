@@ -1,0 +1,2259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>asterisk</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ── Auth Screen ─────────────────────────────────────────────────────────── -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <span class="star">*</span>
+      <span class="wordmark">asterisk</span>
+    </div>
+
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tab-login"    onclick="switchTab('login')">login</button>
+      <button class="auth-tab"        id="tab-register" onclick="switchTab('register')">register</button>
+    </div>
+
+    <!-- Login form -->
+    <div id="form-login" class="auth-form">
+      <div class="field">
+        <label>USERNAME</label>
+        <input type="text" id="login-user" autocomplete="username" placeholder="username" spellcheck="false">
+      </div>
+      <div class="field">
+        <label>PASSWORD</label>
+        <input type="password" id="login-pass" autocomplete="current-password" placeholder="••••••••">
+      </div>
+      <div class="auth-error" id="login-error"></div>
+      <button class="btn-primary" id="login-btn" onclick="doLogin()">sign in</button>
+    </div>
+
+    <!-- Register form -->
+    <div id="form-register" class="auth-form hidden">
+      <div class="field">
+        <label>USERNAME</label>
+        <input type="text" id="reg-user" autocomplete="username" placeholder="2–20 chars, letters/numbers/_-" spellcheck="false">
+      </div>
+      <div class="field">
+        <label>PASSWORD</label>
+        <input type="password" id="reg-pass" autocomplete="new-password" placeholder="min 6 characters">
+      </div>
+      <div class="field">
+        <label>CONFIRM PASSWORD</label>
+        <input type="password" id="reg-pass2" autocomplete="new-password" placeholder="repeat password">
+      </div>
+      <div class="auth-error" id="reg-error"></div>
+      <button class="btn-primary" id="reg-btn" onclick="doRegister()">create account</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Chat Screen ─────────────────────────────────────────────────────────── -->
+<div id="chat-screen" class="hidden">
+  <div id="chat-header">
+    <div class="header-logo">
+      <span class="header-star">*</span>
+      <span class="header-name">asterisk</span>
+    </div>
+    <div class="header-sep"></div>
+    <div id="conn-status">
+      <span class="status-dot" id="status-dot"></span>
+      <span id="status-text">connecting</span>
+    </div>
+    <div class="header-spacer"></div>
+    <div id="rate-limit" style="font-size:11px;color:var(--muted);opacity:0.8;pointer-events:none;">
+      20 messages / min
+    </div>
+    <div class="header-sep" style="margin-left:6px;"></div>
+    <button id="settings-btn" onclick="openSettings()" title="Settings">⚙</button>
+    <div id="header-user">
+      <span id="header-username"></span>
+      <button id="logout-btn" onclick="doLogout()">logout</button>
+    </div>
+  </div>
+
+  <!-- Channel context bar -->
+  <div id="channel-bar">
+    <span id="channel-label">global chat</span>
+    <div class="header-spacer"></div>
+    <div id="channel-tabs">
+      <button class="ch-tab active" onclick="switchChannel('global')">#global</button>
+      <button class="ch-tab" onclick="switchChannel('debate')">#debate</button>
+      <button class="ch-tab" onclick="switchChannel('gaming')">#gaming</button>
+      <button class="ch-tab" onclick="switchChannel('music')">#music</button>
+    </div>
+  </div>
+
+  <!-- Node channel tabs (visible when inside a node) -->
+  <div id="node-channels-bar">
+  <!-- populated by JS -->
+  </div>
+  
+  <div id="chat-body">
+    <div id="messages-panel">
+      <div id="messages"></div>
+      <div id="input-area">
+        <div id="typing-bar">
+          <span id="typing-text"></span><span id="typing-dots"></span>
+        </div>
+        <div id="attachment-preview">
+          <span>📎</span>
+          <span id="attachment-name"></span>
+          <button id="attachment-remove" title="Remove attachment" onclick="removeAttachment()">×</button>
+        </div>
+        <div id="gif-picker" class="hidden">
+          <div id="gif-picker-header">
+            <input id="gif-search" type="text" placeholder="search giphy…" spellcheck="false">
+            <div id="gif-tabs">
+              <button class="gif-tab active" id="gtab-trending" onclick="gifSwitchTab('trending')">trending</button>
+              <button class="gif-tab" id="gtab-faves" onclick="gifSwitchTab('faves')">★ faves</button>
+            </div>
+          </div>
+          <div id="gif-grid"></div>
+          <div id="gif-attribution">
+            <span style="font-size:10px;color:var(--muted);opacity:0.6;">powered by GIPHY</span>
+          </div>
+        </div>
+        <div id="input-row">
+          <label id="attach-btn" title="Attach image" style="flex-shrink:0;width:38px;height:38px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);color:var(--muted);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;transition:color 0.15s;">
+            📎
+            <input type="file" id="file-input" accept="image/*,video/mp4,video/webm,video/ogg,text/plain" style="display:none">
+          </label>
+          <button id="gif-btn" title="Send a GIF" onclick="toggleGifPicker()">GIF</button>
+          <textarea id="msg-input" placeholder="say something..." rows="1" maxlength="2000"></textarea>
+          <button id="send-btn" title="Send" onclick="sendMessage()">↑</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right panel -->
+    <div id="right-panel">
+      <div id="right-tabs">
+        <button class="right-tab active" id="tab-online"  onclick="switchRightTab('online')">ONLINE</button>
+        <button class="right-tab"        id="tab-friends" onclick="switchRightTab('friends')">
+          FRIENDS <span id="friends-badge" class="notif-badge hidden"></span>
+        </button>
+        <button class="right-tab"        id="tab-nodes"   onclick="switchRightTab('nodes')">NODES</button>
+      </div>
+
+      <div id="online-tab">
+        <div id="users-list"></div>
+      </div>
+
+      <div id="friends-tab" class="hidden">
+        <div id="add-friend-area">
+          <div id="add-friend-row">
+            <input type="text" id="friend-input" placeholder="username" spellcheck="false"
+                   onkeydown="if(event.key==='Enter') sendFriendRequest()">
+            <button id="add-friend-btn" onclick="sendFriendRequest()" title="Send friend request">+</button>
+          </div>
+          <div id="add-friend-msg"></div>
+        </div>
+        <div class="friends-section" id="section-incoming"></div>
+        <div class="friends-section" id="section-outgoing"></div>
+        <div class="friends-section" id="section-friends"></div>
+      </div>
+
+      <div id="nodes-tab" class="hidden">
+        <div id="nodes-create-area">
+          <div id="nodes-create-row">
+            <input type="text" id="node-name-input" placeholder="node name" maxlength="32" spellcheck="false"
+                   onkeydown="if(event.key==='Enter') createNode()">
+            <button id="node-create-btn" onclick="createNode()" title="Create node">+</button>
+          </div>
+          <div id="nodes-invite-row">
+            <input type="text" id="node-invite-input" placeholder="invite code" spellcheck="false"
+                   onkeydown="if(event.key==='Enter') joinByInvite()">
+            <button id="node-invite-btn" onclick="joinByInvite()" title="Join by invite">→</button>
+          </div>
+          <div id="nodes-msg"></div>
+        </div>
+        <div id="nodes-my-list"></div>
+        <div id="nodes-discover-section">
+          <div class="friends-section-label discover-toggle" onclick="toggleDiscover()">
+            DISCOVER <span id="discover-arrow">▶</span>
+          </div>
+          <div id="nodes-discover-list" class="hidden"></div>
+        </div>
+        <div id="node-members-section" class="hidden">
+          <div class="friends-section-label">MEMBERS</div>
+          <div id="node-members-list"></div>
+        </div>
+      </div>
+    </div><!-- /#right-panel -->
+
+  </div><!-- /#chat-body -->
+
+<!-- Mobile bottom nav -->
+<div id="mobile-nav" class="hidden">
+  <button class="mobile-nav-btn active" id="mnav-chat" onclick="mobileNav('chat')">
+    <span class="nav-icon">💬</span>chat
+  </button>
+  <button class="mobile-nav-btn" id="mnav-online" onclick="mobileNav('online')">
+    <span class="nav-icon">●</span>online
+  </button>
+  <button class="mobile-nav-btn" id="mnav-friends" onclick="mobileNav('friends')">
+    <span class="nav-icon">★</span>friends
+    <span id="mobile-friends-badge" class="mobile-nav-badge hidden"></span>
+  </button>
+</div>
+
+<!-- Mobile overlay panels -->
+<div id="mobile-online-panel"></div>
+<div id="mobile-friends-panel"></div>
+
+  <!-- ── Settings Modal ──────────────────────────────────────────────────────── -->
+<div id="settings-overlay" class="hidden" onclick="overlayClick(event)">
+  <div id="settings-modal">
+    <div class="s-head">
+      <span class="s-title">SETTINGS</span>
+      <button class="s-close" onclick="closeSettings()">×</button>
+    </div>
+
+    <div class="s-tabs">
+      <button class="s-tab active" onclick="switchSettingsTab('appearance')">APPEARANCE</button>
+      <button class="s-tab"        onclick="switchSettingsTab('notifications')">NOTIFS</button>
+      <button class="s-tab"        onclick="switchSettingsTab('behavior')">BEHAVIOR</button>
+    </div>
+
+    <!-- Appearance -->
+    <div class="s-body" id="s-tab-appearance">
+      <div>
+        <div class="s-section-label">accent color</div>
+        <div class="s-swatches" id="accent-swatches">
+          <span class="s-swatch" data-color="#8b7ef5" style="background:#8b7ef5" title="Purple"></span>
+          <span class="s-swatch" data-color="#5b9ef5" style="background:#5b9ef5" title="Blue"></span>
+          <span class="s-swatch" data-color="#4dffa0" style="background:#4dffa0" title="Green"></span>
+          <span class="s-swatch" data-color="#f5a742" style="background:#f5a742" title="Orange"></span>
+          <span class="s-swatch" data-color="#f55b9e" style="background:#f55b9e" title="Pink"></span>
+          <span class="s-swatch" data-color="#f5e642" style="background:#f5e642" title="Yellow"></span>
+        </div>
+      </div>
+
+      <div>
+        <div class="s-section-label">font size</div>
+        <div class="s-seg" id="seg-fontsize">
+          <button class="s-seg-btn" data-val="11px">small</button>
+          <button class="s-seg-btn active" data-val="13px">medium</button>
+          <button class="s-seg-btn" data-val="15px">large</button>
+        </div>
+      </div>
+
+      <div>
+        <div class="s-section-label">message density</div>
+        <div class="s-seg" id="seg-density">
+          <button class="s-seg-btn active" data-val="3px">compact</button>
+          <button class="s-seg-btn" data-val="7px">comfortable</button>
+          <button class="s-seg-btn" data-val="12px">spacious</button>
+        </div>
+      </div>
+
+      <div>
+        <div class="s-section-label">display</div>
+        <div class="s-row">
+          <div class="s-row-info">
+            <div class="s-row-label">show timestamps</div>
+            <div class="s-row-sub">time on each message</div>
+          </div>
+          <label class="s-toggle">
+            <input type="checkbox" id="tog-timestamps" checked onchange="applySetting('timestamps',this.checked)">
+            <span class="s-toggle-track"></span><span class="s-toggle-thumb"></span>
+          </label>
+        </div>
+        <div class="s-row">
+          <div class="s-row-info">
+            <div class="s-row-label">show usernames</div>
+            <div class="s-row-sub">colored name on each message</div>
+          </div>
+          <label class="s-toggle">
+            <input type="checkbox" id="tog-usernames" checked onchange="applySetting('usernames',this.checked)">
+            <span class="s-toggle-track"></span><span class="s-toggle-thumb"></span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notifications -->
+    <div class="s-body hidden" id="s-tab-notifications">
+      <div>
+        <div class="s-section-label">toast popups</div>
+        <div class="s-row">
+          <div class="s-row-info">
+            <div class="s-row-label">DM notifications</div>
+            <div class="s-row-sub">popup when you receive a DM</div>
+          </div>
+          <label class="s-toggle">
+            <input type="checkbox" id="tog-dm-notif" checked onchange="saveSetting('dmNotif',this.checked)">
+            <span class="s-toggle-track"></span><span class="s-toggle-thumb"></span>
+          </label>
+        </div>
+        <div class="s-row">
+          <div class="s-row-info">
+            <div class="s-row-label">friend requests</div>
+            <div class="s-row-sub">popup on incoming request</div>
+          </div>
+          <label class="s-toggle">
+            <input type="checkbox" id="tog-friend-notif" checked onchange="saveSetting('friendNotif',this.checked)">
+            <span class="s-toggle-track"></span><span class="s-toggle-thumb"></span>
+          </label>
+        </div>
+        <div class="s-row">
+          <div class="s-row-info">
+            <div class="s-row-label">mention alerts</div>
+            <div class="s-row-sub">popup when your name appears</div>
+          </div>
+          <label class="s-toggle">
+            <input type="checkbox" id="tog-mention-notif" checked onchange="saveSetting('mentionNotif',this.checked)">
+            <span class="s-toggle-track"></span><span class="s-toggle-thumb"></span>
+          </label>
+        </div>
+      </div>
+
+      <div>
+        <div class="s-section-label">notification sound</div>
+        <div class="s-seg" id="seg-sound">
+          <button class="s-seg-btn active" data-val="off">off</button>
+          <button class="s-seg-btn" data-val="soft">soft</button>
+          <button class="s-seg-btn" data-val="ping">ping</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Behavior -->
+    <div class="s-body hidden" id="s-tab-behavior">
+      <div>
+        <div class="s-section-label">input</div>
+        <div class="s-row">
+          <div class="s-row-info">
+            <div class="s-row-label">enter to send</div>
+            <div class="s-row-sub">shift+enter for newline</div>
+          </div>
+          <label class="s-toggle">
+            <input type="checkbox" id="tog-enter-send" checked onchange="saveSetting('enterSend',this.checked)">
+            <span class="s-toggle-track"></span><span class="s-toggle-thumb"></span>
+          </label>
+        </div>
+      </div>
+
+      <div>
+        <div class="s-section-label">chat</div>
+        <div class="s-row">
+          <div class="s-row-info">
+            <div class="s-row-label">typing indicators</div>
+            <div class="s-row-sub">show who's typing</div>
+          </div>
+          <label class="s-toggle">
+            <input type="checkbox" id="tog-typing" checked onchange="applySetting('typing',this.checked)">
+            <span class="s-toggle-track"></span><span class="s-toggle-thumb"></span>
+          </label>
+        </div>
+        <div class="s-row">
+          <div class="s-row-info">
+            <div class="s-row-label">smooth scrolling</div>
+            <div class="s-row-sub">animated scroll on new messages</div>
+          </div>
+          <label class="s-toggle">
+            <input type="checkbox" id="tog-smooth-scroll" checked onchange="saveSetting('smoothScroll',this.checked)">
+            <span class="s-toggle-track"></span><span class="s-toggle-thumb"></span>
+          </label>
+        </div>
+        <div class="s-row">
+          <div class="s-row-info">
+            <div class="s-row-label">compact right panel</div>
+            <div class="s-row-sub">narrower online/friends sidebar</div>
+          </div>
+          <label class="s-toggle">
+            <input type="checkbox" id="tog-compact-panel" onchange="applySetting('compactPanel',this.checked)">
+            <span class="s-toggle-track"></span><span class="s-toggle-thumb"></span>
+          </label>
+        </div>
+      </div>
+
+      <div>
+        <div class="s-section-label">data</div>
+        <div class="s-row">
+          <div class="s-row-info">
+            <div class="s-row-label">reset all settings</div>
+            <div class="s-row-sub">restore defaults</div>
+          </div>
+          <button class="s-seg-btn" onclick="resetSettings()" style="color:var(--danger);border-color:rgba(255,77,106,0.3)">reset</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container" style="
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 9999;
+"></div>
+  
+<script src="config.js"></script>
+<script>
+const FILE_RENDERERS = [
+  {
+    test: t => t?.startsWith('image/'),
+    render(url, el) {
+      const img = document.createElement('img');
+      img.src = url;
+      img.style.cssText = 'display:block;max-width:260px;margin-top:4px;border-radius:4px;cursor:pointer;';
+      img.onclick = () => window.open(img.src);
+      img.onload = () => scrollToBottom();
+      el.appendChild(img);
+    }
+  },
+  {
+    test: t => t?.startsWith('video/'),
+    render(url, el) {
+      const v = document.createElement('video');
+      v.src = url;
+      v.controls = true;
+      v.style.cssText = 'display:block;max-width:260px;margin-top:4px;border-radius:4px;';
+      el.appendChild(v);
+    }
+  },
+  {
+    test: t => t === 'text/plain',
+    render(url, el) {
+      const a = document.createElement('a');
+      a.href = url;
+      a.target = '_blank';
+      a.textContent = 'view text file';
+      a.style.marginTop = '4px';
+      el.appendChild(a);
+    }
+  }
+];
+function appendFilePreview(fileUrl, fileType, textEl) {
+  if (!fileUrl) return;
+  const url = fileUrl.startsWith('http') ? fileUrl : HTTP_BASE + fileUrl; 
+  const renderer = FILE_RENDERERS.find(r => r.test(fileType));
+  if (renderer) {
+    renderer.render(url, textEl);
+  } else {
+    const a = document.createElement('a');
+    a.href = url;
+    a.target = '_blank';
+    a.textContent = '⬇ download file';
+    a.style.marginTop = '4px';
+    textEl.appendChild(a);
+  }
+}
+  
+// ── Config ────────────────────────────────────────────────────────────────────
+const RAW_URL   = (typeof ASTERISK_CONFIG !== 'undefined' ? ASTERISK_CONFIG.BACKEND_URL
+                  : window.location.protocol !== 'file:' ? window.location.origin
+                  : 'http://localhost:3001').replace(/\/$/, '');
+const HTTP_BASE = RAW_URL;
+const WS_BASE   = RAW_URL.replace(/^https/, 'wss').replace(/^http/, 'ws');
+const TOKEN_KEY = 'asterisk_token';
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let ws              = null;
+let currentUser     = null;   // { username, color }
+let currentDM       = null;   // username of open DM, or null for global chat
+let friendsState    = { friends: [], incoming: [], outgoing: [] };
+let dmCache         = {};     // { username: [messages] }
+
+let isTyping        = false;
+let typingTimeout   = null;
+let reconnectTimer  = null;
+let shouldReconnect = true;
+let reconnectDelay  = 2000;
+let rateRemaining   = 20;
+let rateReset       = 0;
+
+let currentChannel = 'global';
+
+let currentNode     = null; // { id, name, owner }
+let currentNodeInfo = null; // { members: [...] } — owner only
+let myNodes         = [];
+let discoverOpen    = false;
+let activeNodeChannel = 'general';
+let activeNodeData    = null;   // { id, name, owner, channels, members }
+
+function switchChannel(ch) {
+  if (currentDM) closeDM();
+  currentChannel = ch;
+  document.querySelectorAll('.ch-tab').forEach(b =>
+    b.classList.toggle('active', b.textContent === '#' + ch)
+  );
+  document.getElementById('channel-label').textContent = '#' + ch;
+  document.getElementById('messages').innerHTML = '';
+  sendWS({ type: 'join_channel', channel: ch });
+}
+
+function removeAttachment() {
+  document.getElementById('file-input').value = '';
+  document.getElementById('attachment-preview').classList.remove('visible');
+  document.getElementById('attachment-name').textContent = '';
+}
+
+// ── Token helpers ─────────────────────────────────────────────────────────────
+const getToken   = ()    => localStorage.getItem(TOKEN_KEY);
+const setToken   = (tok) => localStorage.setItem(TOKEN_KEY, tok);
+const clearToken = ()    => localStorage.removeItem(TOKEN_KEY);
+
+// ── Auth tab switching ────────────────────────────────────────────────────────
+function switchTab(tab) {
+  document.getElementById('tab-login').classList.toggle('active', tab === 'login');
+  document.getElementById('tab-register').classList.toggle('active', tab === 'register');
+  document.getElementById('form-login').classList.toggle('hidden', tab !== 'login');
+  document.getElementById('form-register').classList.toggle('hidden', tab !== 'register');
+  document.getElementById('login-error').textContent = '';
+  document.getElementById('reg-error').textContent   = '';
+}
+
+// ── Right panel tab switching ─────────────────────────────────────────────────
+function switchRightTab(tab) {
+  ['online','friends','nodes'].forEach(t => {
+    document.getElementById('tab-' + t)?.classList.toggle('active', t === tab);
+    document.getElementById(t + '-tab')?.classList.toggle('hidden', t !== tab);
+  });
+  if (tab === 'nodes') renderNodesPanel();
+}
+
+function switchNodeChannel(channel) {
+  activeNodeChannel = channel;
+
+  // update tab highlight
+  document.querySelectorAll('.node-ch-tab').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.ch === channel);
+  });
+
+  // clear messages and request history for this channel
+  document.getElementById('messages').innerHTML = '';
+  ws.send(JSON.stringify({ type: 'node_history', nodeId: activeNodeData.id, channel }));
+}
+  
+// ── Auth API calls ────────────────────────────────────────────────────────────
+async function apiPost(path, body) {
+  const res  = await fetch(HTTP_BASE + path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Unknown error');
+  return data;
+}
+
+async function apiDelete(path) {
+  const res  = await fetch(HTTP_BASE + path, {
+    method: 'DELETE',
+    headers: { Authorization: 'Bearer ' + getToken() }
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Unknown error');
+  return data;
+}
+
+async function apiAuthPost(path, body) {
+  const res  = await fetch(HTTP_BASE + path, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: 'Bearer ' + getToken()
+    },
+    body: JSON.stringify(body)
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Unknown error');
+  return data;
+}
+
+async function doLogin() {
+  const username = document.getElementById('login-user').value.trim();
+  const password = document.getElementById('login-pass').value;
+  const errEl    = document.getElementById('login-error');
+  const btn      = document.getElementById('login-btn');
+  if (!username || !password) { errEl.textContent = 'Fill in all fields.'; return; }
+  errEl.textContent = '';
+  btn.disabled = true;
+  try {
+    const { token, username: u, color } = await apiPost('/api/login', { username, password });
+    setToken(token);
+    enterChat({ username: u, color });
+  } catch (e) { errEl.textContent = e.message; }
+  finally      { btn.disabled = false; }
+}
+
+async function doRegister() {
+  const username = document.getElementById('reg-user').value.trim();
+  const password = document.getElementById('reg-pass').value;
+  const pass2    = document.getElementById('reg-pass2').value;
+  const errEl    = document.getElementById('reg-error');
+  const btn      = document.getElementById('reg-btn');
+  if (!username || !password || !pass2) { errEl.textContent = 'Fill in all fields.'; return; }
+  if (password !== pass2)               { errEl.textContent = 'Passwords do not match.'; return; }
+  errEl.textContent = '';
+  btn.disabled = true;
+  try {
+    const { token, username: u, color } = await apiPost('/api/register', { username, password });
+    setToken(token);
+    enterChat({ username: u, color });
+  } catch (e) { errEl.textContent = e.message; }
+  finally      { btn.disabled = false; }
+}
+
+async function promptCreateNodeChannel(nodeId) {
+  const name = prompt('channel name (letters, numbers, hyphens):');
+  if (!name) return;
+  const res = await fetch(`${HTTP_BASE}/api/nodes/${nodeId}/channels`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + getToken() },
+    body: JSON.stringify({ name })
+  });
+  const data = await res.json();
+  if (!res.ok) { alert(data.error); return; }
+}
+
+async function deleteNodeChannel(nodeId, channel) {
+  if (!confirm(`delete #${channel}? this is permanent.`)) return;
+  const res = await fetch(`${HTTP_BASE}/api/nodes/${nodeId}/channels/${encodeURIComponent(channel)}`, {
+    method: 'DELETE',
+    headers: { Authorization: 'Bearer ' + getToken() }
+  });
+  const data = await res.json();
+  if (!res.ok) alert(data.error);
+}
+  
+function doLogout() {
+  shouldReconnect = false;
+  if (ws) ws.close();
+  clearToken();
+  currentUser = null;
+  currentDM   = null;
+  document.getElementById('chat-screen').classList.add('hidden');
+  document.getElementById('auth-screen').classList.remove('hidden');
+  document.getElementById('messages').innerHTML   = '';
+  document.getElementById('users-list').innerHTML = '';
+  document.getElementById('login-user').value     = '';
+  document.getElementById('login-pass').value     = '';
+  switchTab('login');
+}
+
+// ── Auto-login on load ────────────────────────────────────────────────────────
+window.addEventListener('load', async () => {
+  const token = getToken();
+  if (!token) return;
+  try {
+    const res = await fetch(HTTP_BASE + '/api/verify', {
+      headers: { Authorization: 'Bearer ' + token }
+    });
+    if (!res.ok) { clearToken(); return; }
+    const { username, color } = await res.json();
+    enterChat({ username, color });
+  } catch { /* server unreachable — show auth screen */ }
+});
+
+// ── Enter chat ────────────────────────────────────────────────────────────────
+function enterChat(user) {
+  currentUser     = user;
+  shouldReconnect = true;
+  reconnectDelay  = 2000;
+
+  document.getElementById('auth-screen').classList.add('hidden');
+  document.getElementById('chat-screen').classList.remove('hidden');
+  document.getElementById('header-username').textContent = user.username;
+  document.getElementById('header-username').style.color = user.color;
+
+  checkRelease();
+
+  connectWS();
+
+  fetchMyNodes();
+  const _inv = new URLSearchParams(location.search).get('invite');
+  if (_inv) setTimeout(() => joinByInviteCode(_inv), 800);
+  
+  if (isMobile()) document.getElementById('mobile-nav').classList.remove('hidden');
+  document.getElementById('msg-input').focus();
+}
+
+// ── WebSocket ─────────────────────────────────────────────────────────────────
+function connectWS() {
+  const token = getToken();
+  if (!token) return;
+  setStatus('connecting');
+  ws = new WebSocket(`${WS_BASE}/ws?token=${encodeURIComponent(token)}`);
+
+  ws.addEventListener('open', () => {
+    setStatus('connected');
+    reconnectDelay = 2000;
+  });
+
+  ws.addEventListener('message', e => {
+    let msg;
+    try { msg = JSON.parse(e.data); } catch { return; }
+    handleServerMessage(msg);
+  });
+
+  ws.addEventListener('close', e => {
+    setStatus('disconnected');
+    if (e.code === 1008) { doLogout(); return; }
+    if (shouldReconnect) scheduleReconnect();
+  });
+
+  ws.addEventListener('error', () => setStatus('disconnected'));
+}
+
+
+function scheduleReconnect() {
+  clearTimeout(reconnectTimer);
+  reconnectTimer = setTimeout(() => {
+    if (shouldReconnect) connectWS();
+  }, reconnectDelay);
+  reconnectDelay = Math.min(reconnectDelay * 1.5, 30000);
+}
+
+function setStatus(s) {
+  document.getElementById('status-dot').className  = 'status-dot ' + s;
+  document.getElementById('status-text').textContent = s;
+}
+
+function sendWS(data) {
+  if (ws && ws.readyState === 1) ws.send(JSON.stringify(data));
+}
+
+// ── Handle server messages ────────────────────────────────────────────────────
+function handleServerMessage(msg) {
+  switch (msg.type) {
+
+    case 'history':
+      if (currentDM) break;
+      if (msg.channel && msg.channel !== currentChannel) break;
+      const el = document.getElementById('messages');
+      el.innerHTML = '';
+      msg.messages.forEach(renderMessage);
+      el.scrollTop = el.scrollHeight;
+      break;
+
+    case 'message':
+    case 'system':
+      console.log('[recv]', msg);
+      if (!currentDM && (!msg.channel || msg.channel === currentChannel)) {
+        renderMessage(msg);
+        scrollToBottom();
+      }
+      break;
+
+    case 'user_list':
+      renderUserList(msg.users);
+      break;
+
+    case 'typing':
+      if (!currentDM) renderTyping(msg.users);
+      break;
+
+    case 'rate_limit':
+      updateRateLimit(msg);
+      break;
+
+    case 'kicked':
+      doLogout();
+      break;
+
+    // ── Friends ──────────────────────────────────────────────────────────────
+    case 'friends_state':
+      friendsState = msg;
+      renderFriendsPanel();
+      break;
+
+    case 'friend_request':
+      if (userSettings.friendNotif) showToast(`friend request from ${msg.from}`);
+      friendsState.incoming = friendsState.incoming || [];
+      friendsState.incoming.push({ id: msg.id, from: msg.from, color: msg.color });
+      renderFriendsPanel();
+      break;
+
+    case 'friend_accepted':
+      // Move from outgoing to accepted
+      friendsState.outgoing = (friendsState.outgoing || []).filter(r => r.to !== msg.username);
+      friendsState.incoming = (friendsState.incoming || []).filter(r => r.from !== msg.username);
+      friendsState.friends  = friendsState.friends || [];
+      if (!friendsState.friends.find(f => f.username === msg.username))
+        friendsState.friends.push({ username: msg.username, color: msg.color });
+      renderFriendsPanel();
+      break;
+
+    case 'friend_removed':
+      friendsState.friends = (friendsState.friends || []).filter(f => f.username !== msg.username);
+      renderFriendsPanel();
+      if (currentDM === msg.username) closeDM();
+      break;
+
+case 'node_message':
+  if (currentNode?.id === msg.nodeId) {
+    if (msg.channel === activeNodeChannel) {
+      renderNodeMessage(msg);
+      scrollToBottom();
+    }
+  } else {
+    highlightNode(msg.nodeId);
+  }
+  break;
+
+case 'node_history':
+  if (currentNode?.id === msg.nodeId && msg.channel === activeNodeChannel) {
+    const c = document.getElementById('messages');
+    c.innerHTML = '';
+    msg.messages.forEach(renderNodeMessage);
+    c.scrollTop = c.scrollHeight;
+  }
+  break;
+
+case 'node_kicked':
+  myNodes = myNodes.filter(n => n.id !== msg.nodeId);
+  if (currentNode?.id === msg.nodeId) closeNode();
+  showToast(`Removed from node: ${msg.nodeName}`);
+  renderNodesPanel();
+  break;
+
+case 'node_message_deleted':
+  if (currentNode?.id === msg.nodeId) {
+    document.querySelector(`.msg[data-msgid="${msg.msgId}"]`)?.remove();
+  }
+  break;
+
+  case 'node_channel_created':
+  if (activeNodeData && msg.nodeId === activeNodeData.id) {
+    if (!activeNodeData.channels.includes(msg.channel))
+      activeNodeData.channels.push(msg.channel);
+    renderNodeChannelBar(activeNodeData);
+  }
+  break;
+
+case 'node_channel_deleted':
+  if (activeNodeData && msg.nodeId === activeNodeData.id) {
+    activeNodeData.channels = activeNodeData.channels.filter(c => c !== msg.channel);
+    if (activeNodeChannel === msg.channel) {
+      activeNodeChannel = 'general';
+      document.getElementById('messages').innerHTML = '';
+      sendWS({ type: 'node_history', nodeId: activeNodeData.id, channel: 'general' });
+    }
+    renderNodeChannelBar(activeNodeData);
+  }
+  break;
+
+    // ── DMs ──────────────────────────────────────────────────────────────────
+    case 'dm': {
+      const other = msg.from === currentUser?.username ? msg.to : msg.from;
+      if (currentDM !== other) {
+        if (userSettings.dmNotif) {
+          showToast(`${other}: ${msg.text}`);
+          if (userSettings.sound !== 'off') playNotifSound(userSettings.sound);
+        }
+      }
+      if (!dmCache[other]) dmCache[other] = [];
+      dmCache[other].push(msg);
+      if (currentDM === other) {
+        renderDMMessage(msg);
+        scrollToBottom();
+      } else {
+        // Visual nudge on the friend's row in the panel
+        highlightFriend(other);
+      }
+      break;
+    }
+
+    case 'dm_history':
+      dmCache[msg.with] = msg.messages;
+      if (currentDM === msg.with) {
+        const container = document.getElementById('messages');
+        container.innerHTML = '';
+        msg.messages.forEach(renderDMMessage);
+        container.scrollTop = container.scrollHeight;
+      }
+      break;
+  }
+}
+
+// ── Render global message ─────────────────────────────────────────────────────
+function renderMessage(msg) {
+  const container = document.getElementById('messages');
+
+  if (msg.type === 'system') {
+    const el = document.createElement('div');
+    el.className   = 'msg-system';
+    el.textContent = '— ' + msg.text + ' —';
+    container.appendChild(el);
+    return;
+  }
+
+  const ts   = new Date(msg.timestamp);
+  const time = ts.getHours().toString().padStart(2,'0') + ':' + ts.getMinutes().toString().padStart(2,'0');
+
+  const row    = document.createElement('div');
+  row.className = 'msg';
+
+  const tsEl   = document.createElement('span');
+  tsEl.className   = 'msg-ts';
+  tsEl.textContent = time;
+
+  const userEl = document.createElement('span');
+  userEl.className   = 'msg-user';
+  userEl.style.color = msg.color || '#888';
+  userEl.textContent = msg.username;
+
+  const sepEl  = document.createElement('span');
+  sepEl.className   = 'msg-sep';
+  sepEl.textContent = '›';
+
+  const textEl = document.createElement('span');
+  textEl.className   = 'msg-text';
+  textEl.textContent = msg.text;
+
+  if (msg.fileUrl) {
+    appendFilePreview(msg.fileUrl, msg.fileType, textEl);
+  }
+
+  row.append(tsEl, userEl, sepEl, textEl);
+  container.appendChild(row);
+}
+// ── Render DM message ─────────────────────────────────────────────────────────
+function renderDMMessage(msg) {
+  const container = document.getElementById('messages');
+  const isSelf    = msg.from === currentUser?.username;
+
+  const ts   = new Date(msg.timestamp);
+  const time = ts.getHours().toString().padStart(2,'0') + ':' + ts.getMinutes().toString().padStart(2,'0');
+
+  const row    = document.createElement('div');
+  row.className = 'msg ' + (isSelf ? 'msg-dm-out' : 'msg-dm-in');
+
+  const tsEl   = document.createElement('span');
+  tsEl.className   = 'msg-ts';
+  tsEl.textContent = time;
+
+  const userEl = document.createElement('span');
+  userEl.className   = 'msg-user';
+  userEl.style.color = msg.color || '#888';
+  userEl.textContent = msg.from;
+
+  const sepEl  = document.createElement('span');
+  sepEl.className   = 'msg-sep';
+  sepEl.textContent = '›';
+
+  const textEl = document.createElement('span');
+  textEl.className   = 'msg-text';
+  textEl.textContent = msg.text;
+
+  if (msg.fileUrl) {
+    appendFilePreview(msg.fileUrl, msg.fileType, textEl);
+  }
+
+  row.append(tsEl, userEl, sepEl, textEl);
+  container.appendChild(row);
+}
+
+function renderNodeChannelBar(node) {
+  const bar     = document.getElementById('node-channels-bar');
+  const isOwner = node.owner === currentUser?.username;
+  bar.innerHTML = '';
+
+  (node.channels || ['general']).forEach(ch => {
+    const btn = document.createElement('button');
+    btn.className = 'node-ch-tab' + (ch === activeNodeChannel ? ' active' : '');
+    btn.dataset.ch = ch;
+
+    const inner = document.createElement('span');
+    inner.className = 'node-ch-tab-inner';
+    inner.textContent = '#' + ch;
+
+    if (isOwner && ch !== 'general') {
+      const del = document.createElement('span');
+      del.className   = 'node-ch-del';
+      del.textContent = '×';
+      del.title       = 'Delete channel';
+      del.addEventListener('click', e => {
+        e.stopPropagation();
+        deleteNodeChannel(node.id, ch);
+      });
+      inner.appendChild(del);
+    }
+
+    btn.appendChild(inner);
+    btn.addEventListener('click', () => switchNodeChannel(ch));
+    bar.appendChild(btn);
+  });
+
+  if (isOwner && (node.channels || []).length < 10) {
+    const addBtn  = document.createElement('button');
+    addBtn.id     = 'node-add-ch-btn';
+    addBtn.title  = 'New channel';
+    addBtn.textContent = '+';
+    addBtn.addEventListener('click', () => promptCreateNodeChannel(node.id));
+    bar.appendChild(addBtn);
+  }
+
+  bar.classList.add('visible');
+}
+
+function hideNodeChannelBar() {
+  const bar = document.getElementById('node-channels-bar');
+  bar.classList.remove('visible');
+  bar.innerHTML = '';
+}
+  
+// ── Open / close DM view ──────────────────────────────────────────────────────
+function openDM(username) {
+  currentDM = username;
+
+  const friend = friendsState.friends?.find(f => f.username === username);
+  const color  = friend?.color || '#888';
+
+  // Update channel bar
+  const bar   = document.getElementById('channel-bar');
+  bar.innerHTML = '';
+  const back  = document.createElement('button');
+  back.id = 'back-btn';
+  back.textContent = '← back';
+  back.onclick = closeDM;
+  const label = document.createElement('span');
+  label.id = 'channel-label';
+  label.innerHTML = `dm — <span style="color:${color};font-weight:500">${username}</span>`;
+  bar.append(back, label);
+
+  // Update input placeholder
+  document.getElementById('msg-input').placeholder = `message ${username}...`;
+
+  // Clear messages and show DM history
+  const container = document.getElementById('messages');
+  container.innerHTML = '';
+
+  if (dmCache[username]) {
+    dmCache[username].forEach(renderDMMessage);
+    container.scrollTop = container.scrollHeight;
+  }
+
+  // Request history from server
+  sendWS({ type: 'dm_history', with: username });
+
+  // Clear unread highlight
+  const row = document.querySelector(`.friend-item[data-user="${username}"]`);
+  if (row) row.classList.remove('friend-unread');
+
+  document.getElementById('msg-input').focus();
+}
+
+function closeDM() {
+  currentDM = null;
+
+  // Restore channel bar
+  const bar   = document.getElementById('channel-bar');
+  bar.innerHTML = '<span id="channel-label">global chat</span>';
+
+  // Restore input placeholder
+  document.getElementById('msg-input').placeholder = 'say something...';
+
+  // Reload global history from cache (re-request on reconnect; for now restore what we have)
+  // We'll ask for global history by reconnecting or just clearing
+  const container = document.getElementById('messages');
+  container.innerHTML = '<div class="msg-system" style="padding:12px 16px;">— returned to global chat —</div>';
+
+  document.getElementById('msg-input').focus();
+}
+
+// ── Nodes ─────────────────────────────────────────────────────────────────────
+async function fetchMyNodes() {
+  try {
+    const res = await fetch(HTTP_BASE + '/api/nodes/mine', { headers: { Authorization: 'Bearer ' + getToken() } });
+    myNodes = await res.json();
+    renderNodesPanel();
+  } catch {}
+}
+
+function renderNodesPanel() {
+  const myList = document.getElementById('nodes-my-list');
+  if (!myList) return;
+  myList.innerHTML = '';
+
+  if (!myNodes.length) {
+    const empty = document.createElement('div');
+    empty.className = 'friends-empty';
+    empty.textContent = 'no nodes yet';
+    myList.appendChild(empty);
+  } else {
+    const label = document.createElement('div');
+    label.className = 'friends-section-label';
+    label.textContent = 'YOUR NODES';
+    myList.appendChild(label);
+
+    myNodes.forEach(n => {
+      const item = document.createElement('div');
+      item.className = 'friend-item node-item' + (currentNode?.id === n.id ? ' active-node' : '');
+      item.dataset.nodeId = n.id;
+
+      const dot = document.createElement('span');
+      dot.className = 'user-dot'; dot.style.background = 'var(--accent)';
+
+      const name = document.createElement('span');
+      name.className = 'friend-name';
+      name.textContent = (n.owner === currentUser?.username ? '♛ ' : '') + n.name;
+
+      const actions = document.createElement('div');
+      actions.className = 'friend-actions';
+
+      const openBtn = document.createElement('button');
+      openBtn.className = 'friend-dm-btn'; openBtn.textContent = 'open';
+      openBtn.onclick = e => { e.stopPropagation(); openNode(n); };
+      actions.appendChild(openBtn);
+
+      if (n.owner !== currentUser?.username) {
+        const leaveBtn = document.createElement('button');
+        leaveBtn.className = 'friend-remove-btn'; leaveBtn.textContent = '×'; leaveBtn.title = 'leave';
+        leaveBtn.onclick = e => { e.stopPropagation(); leaveNode(n.id); };
+        actions.appendChild(leaveBtn);
+      }
+
+      item.append(dot, name, actions);
+      item.onclick = () => openNode(n);
+      myList.appendChild(item);
+    });
+  }
+  renderNodeMembers();
+}
+
+function renderNodeMembers() {
+  const section = document.getElementById('node-members-section');
+  const list    = document.getElementById('node-members-list');
+  if (!currentNode || currentNode.owner !== currentUser?.username || !currentNodeInfo)
+    { section.classList.add('hidden'); return; }
+  section.classList.remove('hidden');
+  list.innerHTML = '';
+  (currentNodeInfo.members || []).forEach(m => {
+    const item = document.createElement('div');
+    item.className = 'friend-item';
+    const dot = document.createElement('span');
+    dot.className = 'user-dot'; dot.style.background = m.color;
+    const name = document.createElement('span');
+    name.className = 'friend-name';
+    name.textContent = (m.username === currentNode.owner ? '♛ ' : '') + m.username;
+    item.append(dot, name);
+    if (m.username !== currentUser?.username) {
+      const actions = document.createElement('div');
+      actions.className = 'friend-actions';
+      const kick = document.createElement('button');
+      kick.className = 'friend-dm-btn'; kick.textContent = 'kick';
+      kick.onclick = () => kickFromNode(currentNode.id, m.username);
+      const ban = document.createElement('button');
+      ban.className = 'friend-remove-btn'; ban.textContent = 'ban'; ban.title = 'ban';
+      ban.onclick = () => banFromNode(currentNode.id, m.username);
+      actions.append(kick, ban);
+      item.appendChild(actions);
+    }
+    list.appendChild(item);
+  });
+}
+
+async function openNode(n) {
+  currentNode = n; currentDM = null; currentNodeInfo = null;
+  activeNodeChannel = 'general';    // ← reset channel
+  activeNodeData    = null;
+
+  const bar = document.getElementById('channel-bar');
+  bar.innerHTML = '';
+  const back = document.createElement('button');
+  back.id = 'back-btn'; back.textContent = '← back'; back.onclick = closeNode;
+  const label = document.createElement('span');
+  label.id = 'channel-label';
+  label.innerHTML = `<span style="color:var(--accent)">⬡</span> ${n.name}`;
+  bar.append(back, label);
+  if (n.owner === currentUser?.username) {
+    const inv = document.createElement('button');
+    inv.className = 'ch-tab'; inv.textContent = 'copy invite'; inv.style.marginLeft = 'auto';
+    inv.onclick = () => makeInvite(n.id);
+    bar.appendChild(inv);
+  }
+
+  document.getElementById('msg-input').placeholder = `message in ${n.name}...`;
+  document.getElementById('messages').innerHTML = '';
+
+  // ← fetch full node data (includes channels)
+  try {
+    const res = await fetch(`${HTTP_BASE}/api/nodes/${n.id}`, {
+      headers: { Authorization: 'Bearer ' + getToken() }
+    });
+    activeNodeData = await res.json();
+    if (n.owner === currentUser?.username) currentNodeInfo = activeNodeData;
+  } catch {
+    activeNodeData = { ...n, channels: ['general'] };
+  }
+
+  renderNodeChannelBar(activeNodeData);   // ← show channel tabs
+  sendWS({ type: 'node_history', nodeId: n.id, channel: 'general' });   // ← include channel
+
+  renderNodesPanel();
+  switchRightTab('nodes');
+  document.getElementById('msg-input').focus();
+}
+
+function closeNode() {
+  currentNode = null; currentNodeInfo = null;
+  activeNodeData    = null;
+  activeNodeChannel = 'general';
+  hideNodeChannelBar();
+
+  document.getElementById('channel-bar').innerHTML =
+    '<span id="channel-label">global chat</span><div class="header-spacer"></div><div id="channel-tabs"><button class="ch-tab active" onclick="switchChannel(\'global\')">#global</button><button class="ch-tab" onclick="switchChannel(\'debate\')">#debate</button><button class="ch-tab" onclick="switchChannel(\'gaming\')">#gaming</button><button class="ch-tab" onclick="switchChannel(\'music\')">#music</button></div>';
+  document.getElementById('msg-input').placeholder = 'say something...';
+  document.getElementById('messages').innerHTML = '<div class="msg-system" style="padding:12px 16px;">— returned to global chat —</div>';
+  renderNodesPanel();
+}
+
+function renderNodeMessage(msg) {
+  const container = document.getElementById('messages');
+  const isOwner = currentNode?.owner === currentUser?.username;
+  const ts = new Date(msg.timestamp);
+  const time = ts.getHours().toString().padStart(2,'0') + ':' + ts.getMinutes().toString().padStart(2,'0');
+  const row = document.createElement('div');
+  row.className = 'msg'; row.dataset.msgid = msg.id;
+  const tsEl = document.createElement('span');
+  tsEl.className = 'msg-ts'; tsEl.textContent = time;
+  const userEl = document.createElement('span');
+  userEl.className = 'msg-user'; userEl.style.color = msg.color || '#888';
+  userEl.textContent = (msg.username === currentNode?.owner ? '♛ ' : '') + msg.username;
+  const sepEl = document.createElement('span');
+  sepEl.className = 'msg-sep'; sepEl.textContent = '›';
+  const textEl = document.createElement('span');
+  textEl.className = 'msg-text'; textEl.textContent = msg.text;
+  if (msg.fileUrl) appendFilePreview(msg.fileUrl, msg.fileType, textEl);
+  row.append(tsEl, userEl, sepEl, textEl);
+  if (isOwner && msg.username !== currentUser?.username) {
+    const del = document.createElement('button');
+    del.className = 'node-del-btn'; del.textContent = '×'; del.title = 'delete';
+    del.onclick = () => deleteNodeMessage(currentNode.id, msg.id, row);
+    row.appendChild(del);
+  }
+  container.appendChild(row);
+}
+
+async function deleteNodeMessage(nodeId, msgId, rowEl) {
+  try {
+    await fetch(`${HTTP_BASE}/api/nodes/${nodeId}/messages/${msgId}`,
+      { method: 'DELETE', headers: { Authorization: 'Bearer ' + getToken() } });
+    rowEl.remove();
+  } catch {}
+}
+
+async function createNode() {
+  const input = document.getElementById('node-name-input');
+  const msgEl = document.getElementById('nodes-msg');
+  const name  = input.value.trim();
+  if (!name) return;
+  try {
+    const res  = await fetch(HTTP_BASE + '/api/nodes', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + getToken() },
+      body: JSON.stringify({ name })
+    });
+    const data = await res.json();
+    if (!res.ok) { msgEl.className = 'err'; msgEl.textContent = data.error; return; }
+    input.value = '';
+    myNodes.push({ id: data.id, name: data.name, owner: data.owner, memberCount: 1 });
+    renderNodesPanel();
+    msgEl.className = 'ok'; msgEl.textContent = `created "${data.name}"`;
+    setTimeout(() => { msgEl.textContent = ''; }, 3000);
+  } catch { msgEl.className = 'err'; msgEl.textContent = 'error'; }
+}
+
+async function joinByInvite() {
+  const code = document.getElementById('node-invite-input').value.trim();
+  document.getElementById('node-invite-input').value = '';
+  if (code) await joinByInviteCode(code);
+}
+
+async function joinByInviteCode(code) {
+  const msgEl = document.getElementById('nodes-msg');
+  try {
+    const res  = await fetch(`${HTTP_BASE}/api/nodes/join/invite/${code}`,
+      { method: 'POST', headers: { Authorization: 'Bearer ' + getToken() } });
+    const data = await res.json();
+    if (!res.ok) { if (msgEl) { msgEl.className = 'err'; msgEl.textContent = data.error; } showToast(data.error); return; }
+    if (!myNodes.find(n => n.id === data.node.id))
+      myNodes.push({ id: data.node.id, name: data.node.name, owner: data.node.owner, memberCount: 1 });
+    renderNodesPanel();
+    if (msgEl) { msgEl.className = 'ok'; msgEl.textContent = `joined "${data.node.name}"`; setTimeout(() => { msgEl.textContent = ''; }, 3000); }
+    showToast(`Joined "${data.node.name}"`);
+  } catch {}
+}
+
+async function leaveNode(nodeId) {
+  try {
+    await fetch(`${HTTP_BASE}/api/nodes/${nodeId}/leave`,
+      { method: 'POST', headers: { Authorization: 'Bearer ' + getToken() } });
+    myNodes = myNodes.filter(n => n.id !== nodeId);
+    if (currentNode?.id === nodeId) closeNode();
+    renderNodesPanel();
+  } catch {}
+}
+
+async function makeInvite(nodeId) {
+  try {
+    const res  = await fetch(`${HTTP_BASE}/api/nodes/${nodeId}/invite`,
+      { method: 'POST', headers: { Authorization: 'Bearer ' + getToken() } });
+    const data = await res.json();
+    const link = `${location.origin}${location.pathname}?invite=${data.code}`;
+    await navigator.clipboard.writeText(link);
+    showToast('Invite link copied! (valid 7 days)');
+  } catch { showToast('Failed to copy.'); }
+}
+
+async function kickFromNode(nodeId, username) {
+  try {
+    await fetch(`${HTTP_BASE}/api/nodes/${nodeId}/kick/${encodeURIComponent(username)}`,
+      { method: 'POST', headers: { Authorization: 'Bearer ' + getToken() } });
+    if (currentNodeInfo) currentNodeInfo.members = currentNodeInfo.members.filter(m => m.username !== username);
+    renderNodeMembers();
+  } catch {}
+}
+
+async function banFromNode(nodeId, username) {
+  try {
+    await fetch(`${HTTP_BASE}/api/nodes/${nodeId}/ban/${encodeURIComponent(username)}`,
+      { method: 'POST', headers: { Authorization: 'Bearer ' + getToken() } });
+    if (currentNodeInfo) currentNodeInfo.members = currentNodeInfo.members.filter(m => m.username !== username);
+    renderNodeMembers();
+  } catch {}
+}
+
+async function toggleDiscover() {
+  discoverOpen = !discoverOpen;
+  document.getElementById('discover-arrow').textContent = discoverOpen ? '▼' : '▶';
+  const list = document.getElementById('nodes-discover-list');
+  list.classList.toggle('hidden', !discoverOpen);
+  if (discoverOpen) await loadDiscover();
+}
+
+async function loadDiscover() {
+  const list = document.getElementById('nodes-discover-list');
+  list.innerHTML = '<div class="friends-empty">loading...</div>';
+  try {
+    const res  = await fetch(HTTP_BASE + '/api/nodes/discover', { headers: { Authorization: 'Bearer ' + getToken() } });
+    const data = await res.json();
+    list.innerHTML = '';
+    if (!data.length) { list.innerHTML = '<div class="friends-empty">nothing here yet</div>'; return; }
+    data.forEach(n => {
+      const item = document.createElement('div');
+      item.className = 'discover-item';
+      const name = document.createElement('span'); name.className = 'friend-name'; name.textContent = n.name;
+      const count = document.createElement('span'); count.className = 'outgoing-name'; count.textContent = n.memberCount + ' members';
+      const joinBtn = document.createElement('button'); joinBtn.className = 'friend-dm-btn'; joinBtn.textContent = 'join';
+      joinBtn.onclick = async () => {
+        const r = await fetch(`${HTTP_BASE}/api/nodes/${n.id}/join`, { method: 'POST', headers: { Authorization: 'Bearer ' + getToken() } });
+        const d = await r.json();
+        if (!r.ok) { showToast(d.error); return; }
+        if (!myNodes.find(x => x.id === n.id)) myNodes.push({ id: n.id, name: n.name, owner: n.owner, memberCount: n.memberCount });
+        renderNodesPanel(); item.remove(); showToast(`Joined "${n.name}"`);
+      };
+      item.append(name, count, joinBtn);
+      list.appendChild(item);
+    });
+  } catch { list.innerHTML = '<div class="friends-empty">error loading</div>'; }
+}
+
+function highlightNode(nodeId) {
+  document.querySelector(`.node-item[data-node-id="${nodeId}"]`)?.style.setProperty('background', 'rgba(139,126,245,0.07)');
+}
+  
+// ── Highlight friend row (unread indicator) ───────────────────────────────────
+function highlightFriend(username) {
+  const row = document.querySelector(`.friend-item[data-user="${username}"]`);
+  if (row) {
+    row.style.background = 'rgba(139,126,245,0.07)';
+  }
+  // Also switch to friends tab badge
+  updateFriendsBadge();
+}
+
+// ── Scroll ────────────────────────────────────────────────────────────────────
+function scrollToBottom() {
+  const el = document.getElementById('messages');
+  const threshold = 120;
+  if (el.scrollHeight - el.scrollTop - el.clientHeight < threshold)
+    el.scrollTop = el.scrollHeight;
+}
+
+// ── User list ─────────────────────────────────────────────────────────────────
+function renderUserList(users) {
+  const list = document.getElementById('users-list');
+  list.innerHTML = '';
+
+  const sorted = [...users].sort((a, b) => {
+    if (a.username === currentUser?.username) return 1;
+    if (b.username === currentUser?.username) return -1;
+    return a.username.localeCompare(b.username);
+  });
+
+  sorted.forEach(u => {
+    const item = document.createElement('div');
+    item.className = 'user-item';
+
+    const dot  = document.createElement('span');
+    dot.className = 'user-dot';
+    dot.style.background = u.color;
+
+    const name = document.createElement('span');
+    name.className   = 'user-name' + (u.username === currentUser?.username ? ' is-you' : '');
+    name.textContent = u.username === currentUser?.username ? u.username + ' (you)' : u.username;
+
+    item.append(dot, name);
+    list.appendChild(item);
+  });
+}
+
+// ── Typing indicator ──────────────────────────────────────────────────────────
+function renderTyping(users) {
+  const others = users.filter(u => u !== currentUser?.username);
+  const textEl = document.getElementById('typing-text');
+  const dotsEl = document.getElementById('typing-dots');
+
+  if (others.length === 0) {
+    textEl.textContent   = '';
+    dotsEl.style.display = 'none';
+    return;
+  }
+
+  dotsEl.style.display = 'inline';
+  if      (others.length === 1) textEl.textContent = others[0] + ' is typing';
+  else if (others.length === 2) textEl.textContent = others[0] + ' and ' + others[1] + ' are typing';
+  else                          textEl.textContent = others.length + ' people are typing';
+}
+
+// ── Send message (routes to DM or global) ─────────────────────────────────────
+async function sendMessage() {
+  if (rateRemaining <= 0) return;
+  const input     = document.getElementById('msg-input');
+  const fileInput = document.getElementById('file-input');
+  const text      = input.value.trim();
+  const file      = fileInput.files[0];
+
+  console.log('[send] text:', JSON.stringify(text), '| file:', file?.name ?? 'none');
+  if (!text && !file) return;
+
+  let fileUrl  = null;
+  let fileType = null;
+
+  if (file) {
+    console.log('[upload] uploading', file.name, file.type, file.size + 'B');
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      const res = await fetch(HTTP_BASE + '/api/upload', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer ' + getToken() },
+        body: form
+      });
+      console.log('[upload] status:', res.status, res.statusText);
+      const raw = await res.text();
+      console.log('[upload] raw response:', raw);
+      if (!res.ok) throw new Error('HTTP ' + res.status + ': ' + raw);
+      const data = JSON.parse(raw);
+      fileUrl  = data.url;
+      fileType = file.type;
+      console.log('[upload] fileUrl:', fileUrl);
+      fileInput.value = '';
+      document.getElementById('attachment-preview').classList.remove('visible');
+      document.getElementById('attachment-name').textContent = '';
+    } catch (e) {
+      console.error('[upload] FAILED:', e);
+      alert('Upload failed — check console for details.');
+      return;
+    }
+  }
+
+let payload;
+if (currentNode) {
+  payload = { type: 'node_message', nodeId: currentNode.id, channel: activeNodeChannel, text: text || ' ' };
+} else {
+  payload = { type: currentDM ? 'dm' : 'message', text: text || ' ', channel: currentChannel };
+  if (currentDM) payload.to = currentDM;
+}
+if (fileUrl) { payload.fileUrl = fileUrl; payload.fileType = fileType; }
+
+  console.log('[send] sending payload:', payload);
+  sendWS(payload);
+
+  input.value        = '';
+  input.style.height = '';
+  stopTyping();
+}
+  
+// ── Input handling ────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  const input = document.getElementById('msg-input');
+
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey && userSettings.enterSend) { e.preventDefault(); sendMessage(); }
+  });
+
+  input.addEventListener('input', () => {
+    input.style.height = 'auto';
+    input.style.height = Math.min(input.scrollHeight, 140) + 'px';
+    if (!currentDM) {
+      if (input.value.trim()) startTyping(); else stopTyping();
+    }
+  });
+
+  document.getElementById('login-pass').addEventListener('keydown', e => {
+    if (e.key === 'Enter') doLogin();
+  });
+  document.getElementById('login-user').addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('login-pass').focus();
+  });
+  document.getElementById('reg-pass').addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('reg-pass2').focus();
+  });
+  document.getElementById('reg-pass2').addEventListener('keydown', e => {
+    if (e.key === 'Enter') doRegister();
+  });
+
+  document.getElementById('file-input').addEventListener('change', () => {
+    const file = document.getElementById('file-input').files[0];
+    if (!file) return;
+    document.getElementById('attachment-name').textContent = file.name;
+    document.getElementById('attachment-preview').classList.add('visible');
+  });
+});
+  
+function startTyping() {
+  if (!isTyping) { isTyping = true; sendWS({ type: 'typing' }); }
+  clearTimeout(typingTimeout);
+  typingTimeout = setTimeout(stopTyping, 3000);
+}
+
+function stopTyping() {
+  if (isTyping) { isTyping = false; sendWS({ type: 'stop_typing' }); }
+  clearTimeout(typingTimeout);
+}
+
+// ── Rate limit display ────────────────────────────────────────────────────────
+function updateRateLimit(data) {
+  rateRemaining = data.remaining;
+  rateReset     = data.reset;
+  const el = document.getElementById('rate-limit');
+  if (rateRemaining <= 0) {
+    const secs = Math.ceil((rateReset - Date.now()) / 1000);
+    el.textContent = `rate limit — resets in ${secs}s`;
+  } else {
+    el.textContent = `${rateRemaining}/20 left`;
+  }
+}
+
+setInterval(() => {
+  if (!rateReset) return;
+  const el = document.getElementById('rate-limit');
+  const remaining = Math.max(0, rateReset - Date.now());
+  if (remaining <= 0) {
+    rateRemaining  = 20;
+    el.textContent = '20 messages / min';
+    return;
+  }
+  if (rateRemaining <= 0) {
+    el.textContent = `rate limit — resets in ${Math.ceil(remaining / 1000)}s`;
+  }
+}, 500);
+
+// ── Friends panel rendering ───────────────────────────────────────────────────
+function renderFriendsPanel() {
+  renderIncoming();
+  renderOutgoing();
+  renderFriendsList();
+  updateFriendsBadge();
+}
+
+function updateFriendsBadge() {
+  const count = (friendsState.incoming || []).length;
+  const badge = document.getElementById('friends-badge');
+  if (count > 0) {
+    badge.textContent = count;
+    badge.classList.remove('hidden');
+  } else {
+    badge.classList.add('hidden');
+  }
+}
+
+function renderIncoming() {
+  const section  = document.getElementById('section-incoming');
+  const incoming = friendsState.incoming || [];
+  section.innerHTML = '';
+  if (!incoming.length) return;
+
+  const label = document.createElement('div');
+  label.className   = 'friends-section-label';
+  label.textContent = 'INCOMING';
+  section.appendChild(label);
+
+  incoming.forEach(req => {
+    const item = document.createElement('div');
+    item.className = 'request-item';
+
+    const from = document.createElement('div');
+    from.className   = 'request-from';
+    from.style.color = req.color || '#888';
+    from.textContent = req.from;
+
+    const actions = document.createElement('div');
+    actions.className = 'request-actions';
+
+    const acc = document.createElement('button');
+    acc.className   = 'btn-accept';
+    acc.textContent = 'accept';
+    acc.onclick     = () => acceptFriendRequest(req.from);
+
+    const rej = document.createElement('button');
+    rej.className   = 'btn-reject';
+    rej.textContent = 'reject';
+    rej.onclick     = () => rejectFriendRequest(req.from);
+
+    actions.append(acc, rej);
+    item.append(from, actions);
+    section.appendChild(item);
+  });
+}
+
+function renderOutgoing() {
+  const section  = document.getElementById('section-outgoing');
+  const outgoing = friendsState.outgoing || [];
+  section.innerHTML = '';
+  if (!outgoing.length) return;
+
+  const label = document.createElement('div');
+  label.className   = 'friends-section-label';
+  label.textContent = 'PENDING';
+  section.appendChild(label);
+
+  outgoing.forEach(req => {
+    const item = document.createElement('div');
+    item.className = 'outgoing-item';
+
+    const name = document.createElement('span');
+    name.className   = 'outgoing-name';
+    name.textContent = req.to;
+
+    const cancel = document.createElement('button');
+    cancel.className   = 'btn-cancel-sm';
+    cancel.title       = 'cancel request';
+    cancel.textContent = '×';
+    cancel.onclick     = () => cancelFriendRequest(req.to);
+
+    item.append(name, cancel);
+    section.appendChild(item);
+  });
+}
+
+function renderFriendsList() {
+  const section = document.getElementById('section-friends');
+  const friends = friendsState.friends || [];
+  section.innerHTML = '';
+
+  const label = document.createElement('div');
+  label.className   = 'friends-section-label';
+  label.textContent = 'FRIENDS';
+  section.appendChild(label);
+
+  if (!friends.length) {
+    const empty = document.createElement('div');
+    empty.className   = 'friends-empty';
+    empty.textContent = 'no friends yet';
+    section.appendChild(empty);
+    return;
+  }
+
+  [...friends]
+    .sort((a, b) => a.username.localeCompare(b.username))
+    .forEach(f => {
+      const item = document.createElement('div');
+      item.className        = 'friend-item';
+      item.dataset.user     = f.username;
+
+      const dot  = document.createElement('span');
+      dot.className = 'friend-dot';
+      dot.style.background = f.color || '#888';
+
+      const name = document.createElement('span');
+      name.className   = 'friend-name';
+      name.textContent = f.username;
+
+      const actions = document.createElement('div');
+      actions.className = 'friend-actions';
+
+      const dmBtn = document.createElement('button');
+      dmBtn.className   = 'friend-dm-btn';
+      dmBtn.textContent = 'dm';
+      dmBtn.title       = `DM ${f.username}`;
+      dmBtn.onclick     = (e) => { e.stopPropagation(); openDM(f.username); };
+
+      const removeBtn = document.createElement('button');
+      removeBtn.className   = 'friend-remove-btn';
+      removeBtn.textContent = '×';
+      removeBtn.title       = 'remove friend';
+      removeBtn.onclick     = (e) => { e.stopPropagation(); removeFriend(f.username); };
+
+      actions.append(dmBtn, removeBtn);
+      item.append(dot, name, actions);
+      item.ondblclick = () => openDM(f.username);
+      section.appendChild(item);
+    });
+}
+
+// ── Friends API actions ───────────────────────────────────────────────────────
+async function sendFriendRequest() {
+  const input = document.getElementById('friend-input');
+  const msgEl = document.getElementById('add-friend-msg');
+  const to    = input.value.trim();
+  if (!to) return;
+
+  msgEl.className   = '';
+  msgEl.textContent = '';
+
+  try {
+    const res = await apiAuthPost('/api/friends/request', { to });
+    input.value = '';
+    if (res.status === 'accepted') {
+      msgEl.className   = 'ok';
+      msgEl.textContent = `now friends with ${to}!`;
+    } else {
+      msgEl.className   = 'ok';
+      msgEl.textContent = `request sent to ${to}`;
+    }
+    setTimeout(() => { msgEl.textContent = ''; }, 3000);
+  } catch (e) {
+    msgEl.className   = 'err';
+    msgEl.textContent = e.message;
+  }
+}
+
+async function acceptFriendRequest(from) {
+  try {
+    await apiAuthPost('/api/friends/accept', { from });
+    friendsState.incoming = (friendsState.incoming || []).filter(r => r.from !== from);
+    renderFriendsPanel();
+  } catch (e) { console.error(e); }
+}
+
+async function rejectFriendRequest(from) {
+  try {
+    await apiAuthPost('/api/friends/reject', { from });
+    friendsState.incoming = (friendsState.incoming || []).filter(r => r.from !== from);
+    renderFriendsPanel();
+  } catch (e) { console.error(e); }
+}
+
+async function cancelFriendRequest(to) {
+  try {
+    await apiAuthPost('/api/friends/cancel', { to });
+    friendsState.outgoing = (friendsState.outgoing || []).filter(r => r.to !== to);
+    renderFriendsPanel();
+  } catch (e) { console.error(e); }
+}
+
+async function removeFriend(username) {
+  try {
+    await apiDelete('/api/friends/' + encodeURIComponent(username));
+    friendsState.friends = (friendsState.friends || []).filter(f => f.username !== username);
+    renderFriendsPanel();
+    if (currentDM === username) closeDM();
+  } catch (e) { console.error(e); }
+}
+
+// ── Mobile nav ────────────────────────────────────────────────────────────────
+function isMobile() { return window.innerWidth <= 600; }
+
+function mobileNav(tab) {
+  if (!isMobile()) return;
+  document.getElementById('mnav-chat').classList.toggle('active',    tab === 'chat');
+  document.getElementById('mnav-online').classList.toggle('active',  tab === 'online');
+  document.getElementById('mnav-friends').classList.toggle('active', tab === 'friends');
+  document.getElementById('mobile-online-panel').classList.toggle('visible',  tab === 'online');
+  document.getElementById('mobile-friends-panel').classList.toggle('visible', tab === 'friends');
+
+  if (tab === 'online')  syncMobileOnline();
+  if (tab === 'friends') syncMobileFriends();
+}
+
+function syncMobileOnline() {
+  const panel = document.getElementById('mobile-online-panel');
+  panel.innerHTML = document.getElementById('users-list').innerHTML;
+}
+
+function syncMobileFriends() {
+  const panel = document.getElementById('mobile-friends-panel');
+  // Clone the full friends tab content
+  panel.innerHTML = document.getElementById('friends-tab').innerHTML;
+  // Re-wire buttons since they're clones
+  panel.querySelectorAll('.friend-dm-btn').forEach(btn => {
+    const user = btn.closest('.friend-item')?.dataset.user;
+    if (user) btn.onclick = (e) => { e.stopPropagation(); openDM(user); mobileNav('chat'); };
+  });
+  panel.querySelectorAll('.friend-remove-btn').forEach(btn => {
+    const user = btn.closest('.friend-item')?.dataset.user;
+    if (user) btn.onclick = (e) => { e.stopPropagation(); removeFriend(user); };
+  });
+  // Wire add-friend button in the cloned panel
+  const addBtn = panel.querySelector('#add-friend-btn');
+  const addInput = panel.querySelector('#friend-input');
+  if (addBtn) addBtn.onclick = async () => {
+    if (!addInput) return;
+    const to = addInput.value.trim();
+    const msgEl = panel.querySelector('#add-friend-msg');
+    if (!to) return;
+    try {
+      const res = await apiAuthPost('/api/friends/request', { to });
+      addInput.value = '';
+      msgEl.className = 'ok';
+      msgEl.textContent = res.status === 'accepted' ? `now friends with ${to}!` : `request sent to ${to}`;
+      setTimeout(() => { msgEl.textContent = ''; }, 3000);
+    } catch(e) { msgEl.className = 'err'; msgEl.textContent = e.message; }
+  };
+}
+
+function showToast(text) {
+  const container = document.getElementById('toast-container');
+
+  const toast = document.createElement('div');
+  toast.textContent = text;
+  toast.style.cssText = `
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    border-radius: var(--radius);
+    font-size: 12px;
+    color: var(--text);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    animation: fadeIn 0.15s ease;
+  `;
+
+  container.appendChild(toast);
+
+  setTimeout(() => {
+    toast.remove();
+  }, 3000);
+}
+
+// ── Settings ──────────────────────────────────────────────────────────────────
+const SETTINGS_KEY = 'asterisk_settings';
+
+const DEFAULT_SETTINGS = {
+  accentColor:  '#8b7ef5',
+  fontSize:     '13px',
+  density:      '3px',
+  timestamps:   true,
+  usernames:    true,
+  dmNotif:      true,
+  friendNotif:  true,
+  mentionNotif: true,
+  sound:        'off',
+  enterSend:    true,
+  typing:       true,
+  smoothScroll: true,
+  compactPanel: false,
+};
+
+let userSettings = { ...DEFAULT_SETTINGS };
+
+function loadSettings() {
+  try {
+    const stored = localStorage.getItem(SETTINGS_KEY);
+    if (stored) userSettings = { ...DEFAULT_SETTINGS, ...JSON.parse(stored) };
+  } catch {}
+  applyAllSettings();
+  syncSettingsUI();
+}
+
+function saveSetting(key, value) {
+  userSettings[key] = value;
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(userSettings));
+}
+
+function applySetting(key, value) {
+  saveSetting(key, value);
+  applyAllSettings();
+}
+
+function applyAllSettings() {
+  const s = userSettings;
+  const root = document.documentElement;
+
+  // Accent color + glow
+  root.style.setProperty('--accent', s.accentColor);
+  const hex = s.accentColor.replace('#','');
+  const r = parseInt(hex.slice(0,2),16), g = parseInt(hex.slice(2,4),16), b = parseInt(hex.slice(4,6),16);
+  root.style.setProperty('--accent-glow', `rgba(${r},${g},${b},0.2)`);
+
+  // Font size
+  document.body.style.fontSize = s.fontSize;
+
+  // Message density (vertical padding on .msg rows)
+  const sheet = getOrCreateSettingsSheet();
+  sheet.textContent = `
+    .msg { padding-top: ${s.density}; padding-bottom: ${s.density}; }
+    .msg-ts   { ${s.timestamps ? '' : 'display:none!important;'} }
+    .msg-user, .msg-sep { ${s.usernames ? '' : 'display:none!important;'} }
+    #typing-bar { ${s.typing ? '' : 'display:none!important;'} }
+    #right-panel { ${s.compactPanel ? 'width:150px;' : 'width:190px;'} }
+    #messages { scroll-behavior: ${s.smoothScroll ? 'smooth' : 'auto'}; }
+  `;
+}
+
+function getOrCreateSettingsSheet() {
+  let el = document.getElementById('settings-stylesheet');
+  if (!el) {
+    el = document.createElement('style');
+    el.id = 'settings-stylesheet';
+    document.head.appendChild(el);
+  }
+  return el;
+}
+
+function syncSettingsUI() {
+  const s = userSettings;
+
+  // Accent swatches
+  document.querySelectorAll('.s-swatch').forEach(sw => {
+    sw.classList.toggle('selected', sw.dataset.color === s.accentColor);
+  });
+
+  // Font size segment
+  document.querySelectorAll('#seg-fontsize .s-seg-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.val === s.fontSize);
+  });
+
+  // Density segment
+  document.querySelectorAll('#seg-density .s-seg-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.val === s.density);
+  });
+
+  // Sound segment
+  document.querySelectorAll('#seg-sound .s-seg-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.val === s.sound);
+  });
+
+  // Toggles
+  const map = {
+    'tog-timestamps':    s.timestamps,
+    'tog-usernames':     s.usernames,
+    'tog-dm-notif':      s.dmNotif,
+    'tog-friend-notif':  s.friendNotif,
+    'tog-mention-notif': s.mentionNotif,
+    'tog-enter-send':    s.enterSend,
+    'tog-typing':        s.typing,
+    'tog-smooth-scroll': s.smoothScroll,
+    'tog-compact-panel': s.compactPanel,
+  };
+  Object.entries(map).forEach(([id, val]) => {
+    const el = document.getElementById(id);
+    if (el) el.checked = val;
+  });
+}
+
+function resetSettings() {
+  userSettings = { ...DEFAULT_SETTINGS };
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(userSettings));
+  applyAllSettings();
+  syncSettingsUI();
+}
+
+// ── Settings modal open/close ──────────────────────────────────────────────────
+function openSettings() {
+  syncSettingsUI();
+  document.getElementById('settings-overlay').classList.remove('hidden');
+}
+
+function closeSettings() {
+  document.getElementById('settings-overlay').classList.add('hidden');
+}
+
+function overlayClick(e) {
+  if (e.target === document.getElementById('settings-overlay')) closeSettings();
+}
+
+// Close on Escape
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeSettings();
+});
+
+// ── Settings tab switching ────────────────────────────────────────────────────
+function switchSettingsTab(tab) {
+  ['appearance','notifications','behavior'].forEach(t => {
+    document.getElementById('s-tab-' + t).classList.toggle('hidden', t !== tab);
+  });
+  document.querySelectorAll('.s-tab').forEach((btn, i) => {
+    const tabs = ['appearance','notifications','behavior'];
+    btn.classList.toggle('active', tabs[i] === tab);
+  });
+}
+
+// ── Wire up swatch clicks ─────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.s-swatch').forEach(sw => {
+    sw.addEventListener('click', () => {
+      userSettings.accentColor = sw.dataset.color;
+      applySetting('accentColor', sw.dataset.color);
+      document.querySelectorAll('.s-swatch').forEach(s2 =>
+        s2.classList.toggle('selected', s2.dataset.color === sw.dataset.color)
+      );
+    });
+  });
+
+  // Segment buttons: font size
+  document.querySelectorAll('#seg-fontsize .s-seg-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#seg-fontsize .s-seg-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      applySetting('fontSize', btn.dataset.val);
+    });
+  });
+
+  // Segment buttons: density
+  document.querySelectorAll('#seg-density .s-seg-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#seg-density .s-seg-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      applySetting('density', btn.dataset.val);
+    });
+  });
+
+  // Segment buttons: sound
+  document.querySelectorAll('#seg-sound .s-seg-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#seg-sound .s-seg-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      saveSetting('sound', btn.dataset.val);
+      if (btn.dataset.val !== 'off') playNotifSound(btn.dataset.val);
+    });
+  });
+
+  loadSettings();
+});
+
+// ── Notification sound (Web Audio API, no files needed) ───────────────────────
+function playNotifSound(type) {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    if (type === 'soft') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(660, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.15);
+      gain.gain.setValueAtTime(0.12, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
+      osc.start(); osc.stop(ctx.currentTime + 0.2);
+    } else {
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(880, ctx.currentTime);
+      osc.frequency.setValueAtTime(1100, ctx.currentTime + 0.05);
+      gain.gain.setValueAtTime(0.15, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.18);
+      osc.start(); osc.stop(ctx.currentTime + 0.18);
+    }
+  } catch {}
+}
+
+// Call playNotifSound when a relevant toast fires.. maybe make that an option?????????????????/
+// In the 'dm' case: if (userSettings.dmNotif && currentDM !== other) { showToast(...); playNotifSound(userSettings.sound); }
+
+// ── Release banner ────────────────────────────────────────────────────────────
+async function checkRelease() {
+  try {
+    const res = await fetch('https://api.github.com/repos/auth1ery/asterisk/releases/latest');
+    const release = await res.json();
+    if (!release.tag_name) return;
+
+    const seenKey = 'asterisk_seen_release';
+    if (localStorage.getItem(seenKey) === release.tag_name) return;
+
+    showReleaseBanner(release);
+  } catch {}
+}
+
+function showReleaseBanner(release) {
+  const banner = document.createElement('div');
+  banner.id = 'release-banner';
+  banner.style.cssText = `
+    position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
+    background: var(--surface); border: 1px solid var(--accent);
+    border-radius: var(--radius); padding: 12px 16px; z-index: 9998;
+    max-width: 420px; width: 90%; box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+    font-size: 12px;
+  `;
+  banner.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+      <span style="color:var(--accent);font-weight:500;">★ ${release.tag_name}</span>
+      <button onclick="dismissRelease('${release.tag_name}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;line-height:1;">×</button>
+    </div>
+    <div style="color:var(--text);white-space:pre-wrap;max-height:160px;overflow-y:auto;line-height:1.5;">${release.body || 'no notes'}</div>
+  `;
+  document.body.appendChild(banner);
+}
+
+function dismissRelease(tag) {
+  localStorage.setItem('asterisk_seen_release', tag);
+  document.getElementById('release-banner')?.remove();
+}
+  
+</script>
+<!-- might need to seperate these script files into different js files since its taking up a ton of index.html. -->
+<script>
+// ── GIF Integration ───────────────────────────────────────────────────────────
+const GIPHY_PROXY = HTTP_BASE + '/api/giphy';
+const GIF_FAVES_KEY = 'asterisk_gif_faves';
+
+let gifPickerOpen  = false;
+let gifCurrentTab  = 'trending';
+let gifSearchTimer = null;
+let gifFaves       = [];
+
+function loadGifFaves() {
+  try { gifFaves = JSON.parse(localStorage.getItem(GIF_FAVES_KEY)) || []; }
+  catch { gifFaves = []; }
+}
+function saveGifFaves() { localStorage.setItem(GIF_FAVES_KEY, JSON.stringify(gifFaves)); }
+function toggleGifFave(gif) {
+  const idx = gifFaves.findIndex(f => f.id === gif.id);
+  if (idx === -1) gifFaves.unshift(gif);
+  else            gifFaves.splice(idx, 1);
+  saveGifFaves();
+}
+function isGifFaved(id) { return gifFaves.some(f => f.id === id); }
+loadGifFaves();
+
+// ── Open / close ──────────────────────────────────────────────────────────────
+function toggleGifPicker() {
+  gifPickerOpen = !gifPickerOpen;
+  document.getElementById('gif-picker').classList.toggle('hidden', !gifPickerOpen);
+  document.getElementById('gif-btn').classList.toggle('active', gifPickerOpen);
+  if (gifPickerOpen) {
+    gifCurrentTab === 'trending' ? fetchTrending() : renderFaves();
+    document.getElementById('gif-search').focus();
+  }
+}
+function closeGifPicker() {
+  gifPickerOpen = false;
+  document.getElementById('gif-picker').classList.add('hidden');
+  document.getElementById('gif-btn').classList.remove('active');
+}
+document.addEventListener('click', e => {
+  if (!gifPickerOpen) return;
+  if (!document.getElementById('gif-picker').contains(e.target) &&
+      e.target.id !== 'gif-btn') closeGifPicker();
+});
+
+// ── Tab switching ─────────────────────────────────────────────────────────────
+function gifSwitchTab(tab) {
+  gifCurrentTab = tab;
+  document.getElementById('gtab-trending').classList.toggle('active', tab === 'trending');
+  document.getElementById('gtab-faves').classList.toggle('active',   tab === 'faves');
+  document.getElementById('gif-search').value = '';
+  tab === 'trending' ? fetchTrending() : renderFaves();
+}
+
+// ── Search wire-up (runs after DOM ready) ─────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('gif-search').addEventListener('input', e => {
+    clearTimeout(gifSearchTimer);
+    const q = e.target.value.trim();
+    if (!q) { gifCurrentTab === 'trending' ? fetchTrending() : renderFaves(); return; }
+    gifSearchTimer = setTimeout(() => fetchSearch(q), 350);
+  });
+});
+
+// ── Proxy fetch ───────────────────────────────────────────────────────────────
+async function fetchTrending() {
+  renderGifGrid(null, 'loading');
+  try {
+    const r = await fetch(`${GIPHY_PROXY}?endpoint=trending&limit=30`);
+    console.log('[gif] status:', r.status);
+    const json = await r.json();
+    console.log('[gif] response:', json);
+    renderGifGrid(json.data);
+  } catch(e) {
+    console.error('[gif] fetch error:', e);
+    renderGifGrid(null, 'error');
+  }
+}
+async function fetchSearch(query) {
+  renderGifGrid(null, 'loading');
+  try {
+    const r = await fetch(`${GIPHY_PROXY}?endpoint=search&q=${encodeURIComponent(query)}&limit=30`);
+    renderGifGrid((await r.json()).data);
+  } catch { renderGifGrid(null, 'error'); }
+}
+
+// ── Render ────────────────────────────────────────────────────────────────────
+function gifToData(g) {
+  return { id: g.id, preview: g.images.fixed_height_small.url, full: g.images.original.url, title: g.title || '' };
+}
+function renderGifGrid(gifs, state) {
+  const grid = document.getElementById('gif-grid');
+  grid.innerHTML = '';
+  if (state === 'loading') { grid.innerHTML = '<div class="gif-empty">loading…</div>'; return; }
+  if (state === 'error')   { grid.innerHTML = '<div class="gif-empty">couldn\'t load GIFs</div>'; return; }
+  if (!gifs?.length)       { grid.innerHTML = '<div class="gif-empty">nothing found</div>'; return; }
+  gifs.map(gifToData).forEach(g => grid.appendChild(buildGifItem(g)));
+}
+function renderFaves() {
+  const grid = document.getElementById('gif-grid');
+  grid.innerHTML = '';
+  if (!gifFaves.length) {
+    grid.innerHTML = '<div class="gif-empty">no favourites yet<br><small>hover a GIF and click ★</small></div>';
+    return;
+  }
+  gifFaves.forEach(g => grid.appendChild(buildGifItem(g)));
+}
+function buildGifItem(g) {
+  const wrap = document.createElement('div');
+  wrap.className = 'gif-item';
+  const img = document.createElement('img');
+  img.className = 'gif-thumb'; img.src = g.preview; img.alt = g.title; img.loading = 'lazy';
+  img.onclick = () => sendGif(g);
+  const star = document.createElement('span');
+  star.className = 'gif-fave-star' + (isGifFaved(g.id) ? ' faved' : '');
+  star.textContent = '★';
+  star.title = isGifFaved(g.id) ? 'remove favourite' : 'add favourite';
+  star.onclick = e => {
+    e.stopPropagation();
+    toggleGifFave(g);
+    star.classList.toggle('faved', isGifFaved(g.id));
+    star.title = isGifFaved(g.id) ? 'remove favourite' : 'add favourite';
+    if (gifCurrentTab === 'faves') renderFaves();
+  };
+  wrap.append(img, star);
+  return wrap;
+}
+
+// ── Send ──────────────────────────────────────────────────────────────────────
+function sendGif(g) {
+  if (rateRemaining <= 0) return;
+  let payload;
+  if (currentNode) {
+    payload = { type: 'node_message', nodeId: currentNode.id, channel: activeNodeChannel, text: '' };
+  } else {
+    payload = { type: currentDM ? 'dm' : 'message', text: '', channel: currentChannel };
+    if (currentDM) payload.to = currentDM;
+  }
+  payload.fileUrl  = g.full;
+  payload.fileType = 'image/gif';
+  sendWS(payload);
+  closeGifPicker();
+}
+</script>
+</body>
+</html>
