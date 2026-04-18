@@ -27,6 +27,8 @@ const MESSAGES_FILE  = path.join(DATA_DIR, 'messages.json');
 const CHANNELS       = ['global', 'debate', 'gaming', 'music'];
 const FRIENDS_FILE  = path.join(DATA_DIR, 'friends.json');
 const DMS_FILE      = path.join(DATA_DIR, 'dms.json');
+const NODES_FILE = path.join(DATA_DIR, 'nodes.json');
+let nodes = loadJSON(NODES_FILE, {});
 
 const MAX_MESSAGES    = 30000;
 const HISTORY_SEND    = 6000;
@@ -94,6 +96,13 @@ function buildFriendsState(username) {
       .filter(r => r.from === username)
       .map(r => ({ id: r.id, to: r.to }))
   };
+}
+
+function pushToNodeMembers(nodeId, data) {
+  const node = nodes[nodeId];
+  if (!node) return;
+  for (const [ws, info] of clients)
+    if (node.members.includes(info.username)) push(ws, data);
 }
 
 // ── Message helpers ───────────────────────────────────────────────────────────
@@ -300,6 +309,130 @@ app.delete('/api/friends/:username', auth, (req, res) => {
   res.json({ status: 'removed' });
 });
 
+// ── Nodes ─────────────────────────────────────────────────────────────────────
+app.post('/api/nodes', auth, (req, res) => {
+  const me = req.user.username;
+  const { name } = req.body || {};
+  if (!name?.trim() || name.length < 2 || name.length > 32)
+    return res.status(400).json({ error: 'Name must be 2–32 chars.' });
+  const all = Object.values(nodes);
+  if (all.filter(n => n.owner === me).length >= 2)
+    return res.status(400).json({ error: 'Max 2 nodes owned.' });
+  if (all.filter(n => n.members.includes(me)).length >= 4)
+    return res.status(400).json({ error: 'Max 4 nodes joined.' });
+  const id = require('crypto').randomBytes(6).toString('hex');
+  nodes[id] = { id, name: name.trim(), owner: me, members: [me], banned: [], invites: [] };
+  messages[`node:${id}`] = [];
+  saveJSON(NODES_FILE, nodes);
+  saveJSON(MESSAGES_FILE, messages);
+  res.json(nodes[id]);
+});
+
+app.get('/api/nodes/mine', auth, (req, res) => {
+  const me = req.user.username;
+  res.json(Object.values(nodes).filter(n => n.members.includes(me))
+    .map(n => ({ id: n.id, name: n.name, owner: n.owner, memberCount: n.members.length })));
+});
+
+app.get('/api/nodes/discover', auth, (req, res) => {
+  const me = req.user.username;
+  res.json(Object.values(nodes).filter(n => !n.members.includes(me) && !n.banned.includes(me))
+    .map(n => ({ id: n.id, name: n.name, owner: n.owner, memberCount: n.members.length })));
+});
+
+app.get('/api/nodes/:id', auth, (req, res) => {
+  const me = req.user.username;
+  const node = nodes[req.params.id];
+  if (!node || !node.members.includes(me)) return res.status(404).json({ error: 'Not found.' });
+  res.json({
+    id: node.id, name: node.name, owner: node.owner,
+    members: node.members.map(u => ({ username: u, color: accounts[u?.toLowerCase()]?.color || '#888' }))
+  });
+});
+
+// Must come before /:id/join
+app.post('/api/nodes/join/invite/:code', auth, (req, res) => {
+  const me = req.user.username;
+  const node = Object.values(nodes).find(n =>
+    n.invites.some(i => i.code === req.params.code && i.expires > Date.now()));
+  if (!node) return res.status(404).json({ error: 'Invalid or expired invite.' });
+  if (node.banned.includes(me)) return res.status(403).json({ error: 'You are banned.' });
+  if (!node.members.includes(me)) {
+    if (Object.values(nodes).filter(n => n.members.includes(me)).length >= 4)
+      return res.status(400).json({ error: 'Max 4 nodes joined.' });
+    node.members.push(me);
+    saveJSON(NODES_FILE, nodes);
+  }
+  res.json({ node: { id: node.id, name: node.name, owner: node.owner } });
+});
+
+app.post('/api/nodes/:id/join', auth, (req, res) => {
+  const me = req.user.username;
+  const node = nodes[req.params.id];
+  if (!node) return res.status(404).json({ error: 'Node not found.' });
+  if (node.banned.includes(me)) return res.status(403).json({ error: 'You are banned.' });
+  if (!node.members.includes(me)) {
+    if (Object.values(nodes).filter(n => n.members.includes(me)).length >= 4)
+      return res.status(400).json({ error: 'Max 4 nodes joined.' });
+    node.members.push(me);
+    saveJSON(NODES_FILE, nodes);
+  }
+  res.json({ node: { id: node.id, name: node.name, owner: node.owner } });
+});
+
+app.post('/api/nodes/:id/leave', auth, (req, res) => {
+  const me = req.user.username;
+  const node = nodes[req.params.id];
+  if (!node) return res.status(404).json({ error: 'Not found.' });
+  if (node.owner === me) return res.status(400).json({ error: 'Owner cannot leave.' });
+  node.members = node.members.filter(u => u !== me);
+  saveJSON(NODES_FILE, nodes);
+  res.json({ status: 'left' });
+});
+
+app.post('/api/nodes/:id/invite', auth, (req, res) => {
+  const me = req.user.username;
+  const node = nodes[req.params.id];
+  if (!node || node.owner !== me) return res.status(403).json({ error: 'Not the owner.' });
+  const code = require('crypto').randomBytes(5).toString('hex');
+  node.invites.push({ code, expires: Date.now() + 7 * 24 * 60 * 60 * 1000 });
+  saveJSON(NODES_FILE, nodes);
+  res.json({ code });
+});
+
+app.post('/api/nodes/:id/kick/:username', auth, (req, res) => {
+  const me = req.user.username;
+  const node = nodes[req.params.id];
+  if (!node || node.owner !== me) return res.status(403).json({ error: 'Not owner.' });
+  const target = req.params.username;
+  node.members = node.members.filter(u => u !== target);
+  saveJSON(NODES_FILE, nodes);
+  pushToUser(target, { type: 'node_kicked', nodeId: node.id, nodeName: node.name });
+  res.json({ status: 'kicked' });
+});
+
+app.post('/api/nodes/:id/ban/:username', auth, (req, res) => {
+  const me = req.user.username;
+  const node = nodes[req.params.id];
+  if (!node || node.owner !== me) return res.status(403).json({ error: 'Not owner.' });
+  const target = req.params.username;
+  node.members = node.members.filter(u => u !== target);
+  if (!node.banned.includes(target)) node.banned.push(target);
+  saveJSON(NODES_FILE, nodes);
+  pushToUser(target, { type: 'node_kicked', nodeId: node.id, nodeName: node.name });
+  res.json({ status: 'banned' });
+});
+
+app.delete('/api/nodes/:id/messages/:msgId', auth, (req, res) => {
+  const me = req.user.username;
+  const node = nodes[req.params.id];
+  if (!node || node.owner !== me) return res.status(403).json({ error: 'Not owner.' });
+  const key = `node:${req.params.id}`;
+  if (messages[key]) { messages[key] = messages[key].filter(m => m.id !== req.params.msgId); saveJSON(MESSAGES_FILE, messages); }
+  pushToNodeMembers(req.params.id, { type: 'node_message_deleted', nodeId: req.params.id, msgId: req.params.msgId });
+  res.json({ status: 'deleted' });
+});
+
 // ── WebSocket ─────────────────────────────────────────────────────────────────
 const server = http.createServer(app);
 const wss    = new WebSocketServer({ server, path: '/ws' });
@@ -454,6 +587,39 @@ wss.on('connection', (ws, req) => {
       }
       break;
     }
+
+    case 'node_message': {
+  const node = nodes[msg.nodeId];
+  if (!node || !node.members.includes(self.username)) return;
+  const text = msg.text?.trim();
+  if (!text && !msg.fileUrl) return;
+
+  const rate = checkRate(self.username);
+  push(ws, { type: 'rate_limit', remaining: rate.remaining, reset: rate.reset });
+  if (!rate.allowed) return;
+
+  const m = {
+    type: 'node_message', id: Math.random().toString(36).slice(2),
+    nodeId: msg.nodeId, username: self.username, color: self.color,
+    text: text || '', fileUrl: msg.fileUrl || null, fileType: msg.fileType || null,
+    timestamp: Date.now()
+  };
+  const key = `node:${msg.nodeId}`;
+  if (!messages[key]) messages[key] = [];
+  messages[key].push(m);
+  if (messages[key].length > MAX_MESSAGES) messages[key].splice(0, messages[key].length - MAX_MESSAGES);
+  saveJSON(MESSAGES_FILE, messages);
+  pushToNodeMembers(msg.nodeId, m);
+  break;
+}
+
+case 'node_history': {
+  const node = nodes[msg.nodeId];
+  if (!node || !node.members.includes(self.username)) return;
+  push(ws, { type: 'node_history', nodeId: msg.nodeId,
+    messages: (messages[`node:${msg.nodeId}`] || []).slice(-HISTORY_SEND) });
+  break;
+}
 
     case 'join_channel': {
       const ch = CHANNELS.includes(msg.channel) ? msg.channel : 'global';
