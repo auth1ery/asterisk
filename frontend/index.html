@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>asterisk — private chat</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400&display=swap" rel="stylesheet">
+  <!-- link rel="stylesheet" href="styles.css" -->
+  <style>
+    /* ── paste from styles.css ─────────────────────────────────────────────── */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg:          #09090d;
+      --surface:     #0f0f14;
+      --surface2:    #141419;
+      --border:      #1c1c24;
+      --border2:     #24242f;
+      --text:        #c8c8d8;
+      --muted:       #4a4a60;
+      --muted2:      #2e2e3e;
+      --accent:      #8b7ef5;
+      --accent-glow: rgba(139,126,245,0.2);
+      --danger:      #ff4d6a;
+      --success:     #4dffa0;
+      --radius:      6px;
+      --font:        'JetBrains Mono', 'Courier New', monospace;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 13px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+    /* ── Landing-specific ──────────────────────────────────────────────────── */
+
+    /* subtle grid overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(139,126,245,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(139,126,245,0.025) 1px, transparent 1px);
+      background-size: 48px 48px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* top glow */
+    body::after {
+      content: '';
+      position: fixed;
+      top: -120px; left: 50%; transform: translateX(-50%);
+      width: 700px; height: 400px;
+      background: radial-gradient(ellipse, rgba(139,126,245,0.08) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── Page layout ────────────────────────────────────────────────────────── */
+    .page {
+      position: relative; z-index: 1;
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 0 24px 80px;
+    }
+
+    /* ── Topbar ─────────────────────────────────────────────────────────────── */
+    .topbar {
+      display: flex;
+      align-items: center;
+      padding: 20px 0;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 0;
+    }
+
+    .topbar-logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .topbar-star {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--accent);
+      line-height: 1;
+    }
+
+    .topbar-name {
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.14em;
+      color: var(--text);
+    }
+
+    .topbar-spacer { flex: 1; }
+
+    .topbar-link {
+      font-size: 11px;
+      color: var(--muted);
+      text-decoration: none;
+      letter-spacing: 0.06em;
+      transition: color 0.15s;
+    }
+    .topbar-link:hover { color: var(--accent); }
+
+    /* ── Hero ───────────────────────────────────────────────────────────────── */
+    .hero {
+      text-align: center;
+      padding: 80px 0 64px;
+      animation: fadeUp 0.6s ease both;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .hero-star {
+      display: block;
+      font-size: 72px;
+      font-weight: 700;
+      color: var(--accent);
+      text-shadow:
+        0 0 40px rgba(139,126,245,0.5),
+        0 0 80px rgba(139,126,245,0.2),
+        0 0 120px rgba(139,126,245,0.08);
+      line-height: 1;
+      margin-bottom: 20px;
+      animation: starPulse 4s ease-in-out infinite;
+    }
+
+    @keyframes starPulse {
+      0%, 100% { text-shadow: 0 0 40px rgba(139,126,245,0.5), 0 0 80px rgba(139,126,245,0.2); }
+      50%       { text-shadow: 0 0 60px rgba(139,126,245,0.7), 0 0 120px rgba(139,126,245,0.3); }
+    }
+
+    .hero-wordmark {
+      display: block;
+      font-size: 28px;
+      font-weight: 300;
+      letter-spacing: 0.3em;
+      color: var(--text);
+      margin-bottom: 16px;
+    }
+
+    .hero-tagline {
+      font-size: 12px;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      font-style: italic;
+    }
+
+    /* ── Section ────────────────────────────────────────────────────────────── */
+    .section {
+      border-top: 1px solid var(--border);
+      padding: 40px 0;
+      animation: fadeUp 0.6s ease both;
+    }
+
+    .section:nth-child(2) { animation-delay: 0.1s; }
+    .section:nth-child(3) { animation-delay: 0.2s; }
+    .section:nth-child(4) { animation-delay: 0.3s; }
+
+    .section-label {
+      font-size: 9px;
+      letter-spacing: 0.2em;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 24px;
+    }
+
+    /* ── Download buttons ───────────────────────────────────────────────────── */
+    .dl-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 10px;
+    }
+
+    .dl-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 4px;
+      padding: 14px 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      text-decoration: none;
+      color: var(--text);
+      transition: border-color 0.15s, background 0.15s, transform 0.1s;
+      cursor: pointer;
+    }
+    .dl-btn:hover {
+      border-color: var(--accent);
+      background: var(--surface2);
+      transform: translateY(-1px);
+    }
+
+    .dl-btn-label {
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 0.06em;
+    }
+
+    .dl-btn-name {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    /* web version — accent styled */
+    .dl-btn.dl-web {
+      border-color: rgba(139,126,245,0.3);
+      background: rgba(139,126,245,0.04);
+    }
+    .dl-btn.dl-web:hover {
+      border-color: var(--accent);
+      background: var(--accent-glow);
+    }
+    .dl-btn.dl-web .dl-btn-name { color: var(--accent); }
+
+    /* ── Info ───────────────────────────────────────────────────────────────── */
+    .info-block {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .info-row {
+      display: grid;
+      grid-template-columns: 120px 1fr;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 12px;
+    }
+    .info-row:last-child { border-bottom: none; }
+
+    .info-key {
+      color: var(--muted);
+      letter-spacing: 0.06em;
+      font-size: 11px;
+      padding-top: 1px;
+    }
+
+    .info-val {
+      color: var(--text);
+      line-height: 1.7;
+    }
+
+    .info-val a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    .info-val a:hover { text-decoration: underline; }
+
+    /* pill tags */
+    .tag {
+      display: inline-block;
+      padding: 1px 7px;
+      background: rgba(139,126,245,0.08);
+      border: 1px solid rgba(139,126,245,0.2);
+      border-radius: 3px;
+      font-size: 10px;
+      color: var(--accent);
+      letter-spacing: 0.04em;
+      margin-right: 4px;
+    }
+
+    /* ── Attributions ───────────────────────────────────────────────────────── */
+    .attr-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .attr-table thead th {
+      font-size: 9px;
+      letter-spacing: 0.14em;
+      color: var(--muted);
+      text-align: left;
+      padding: 0 0 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .attr-table tbody tr {
+      border-bottom: 1px solid var(--border);
+      transition: background 0.1s;
+    }
+    .attr-table tbody tr:hover { background: rgba(255,255,255,0.015); }
+    .attr-table tbody tr:last-child { border-bottom: none; }
+
+    .attr-table td {
+      padding: 9px 0;
+      font-size: 12px;
+      vertical-align: middle;
+    }
+
+    .attr-table td:nth-child(1) { color: var(--accent); width: 180px; }
+    .attr-table td:nth-child(2) { color: var(--muted); font-size: 11px; padding-right: 16px; }
+    .attr-table td:nth-child(3) {
+      color: var(--muted);
+      font-size: 10px;
+      text-align: right;
+      letter-spacing: 0.06em;
+    }
+
+    .attr-npm {
+      color: var(--text) !important;
+      text-decoration: none;
+      font-size: 11px;
+    }
+    .attr-npm:hover { color: var(--accent) !important; }
+
+    .attr-mit {
+      display: inline-block;
+      padding: 1px 6px;
+      background: rgba(77,255,160,0.06);
+      border: 1px solid rgba(77,255,160,0.18);
+      border-radius: 3px;
+      color: var(--success) !important;
+      font-size: 10px;
+    }
+
+    /* ── Footer ─────────────────────────────────────────────────────────────── */
+    .footer {
+      border-top: 1px solid var(--border);
+      padding: 24px 0 0;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 0.06em;
+    }
+
+    .footer a {
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+    .footer a:hover { color: var(--accent); }
+
+    .footer-sep {
+      width: 1px;
+      height: 12px;
+      background: var(--border);
+    }
+
+    .footer-spacer { flex: 1; }
+
+    /* ── Responsive ─────────────────────────────────────────────────────────── */
+    @media (max-width: 500px) {
+      .page { padding: 0 16px 60px; }
+      .hero { padding: 56px 0 48px; }
+      .hero-star { font-size: 56px; }
+      .hero-wordmark { font-size: 22px; }
+      .info-row { grid-template-columns: 1fr; gap: 4px; }
+      .info-key { font-size: 9px; letter-spacing: 0.1em; }
+      .attr-table td:nth-child(2) { display: none; }
+      .dl-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- topbar -->
+  <nav class="topbar">
+    <div class="topbar-logo">
+      <span class="topbar-star">*</span>
+      <span class="topbar-name">asterisk</span>
+    </div>
+    <div class="topbar-spacer"></div>
+    <a href="https://github.com/auth1ery/asterisk" class="topbar-link" target="_blank" rel="noopener">github ↗</a>
+  </nav>
+
+  <!-- hero -->
+  <section class="hero">
+    <span class="hero-star">*</span>
+    <span class="hero-wordmark">asterisk</span>
+    <span class="hero-tagline">private · self-hosted · fast open source chat!</span>
+  </section>
+
+  <!-- download -->
+  <section class="section">
+    <div class="section-label">get it</div>
+    <div class="dl-grid">
+      <a class="dl-btn dl-web" href="/app" target="_blank">
+        <span class="dl-btn-label">no install needed (recommended)</span>
+        <span class="dl-btn-name">↗ web version</span>
+      </a>
+      <a class="dl-btn" href="https://github.com/auth1ery/asterisk/releases/latest" target="_blank" rel="noopener">
+        <span class="dl-btn-label">self-hosted server</span>
+        <span class="dl-btn-name">⬇ latest release</span>
+      </a>
+      <a class="dl-btn" href="https://github.com/auth1ery/asterisk" target="_blank" rel="noopener">
+        <span class="dl-btn-label">build from source</span>
+        <span class="dl-btn-name">⎇ github repo</span>
+      </a>
+    </div>
+  </section>
+
+  <!-- info -->
+  <section class="section">
+    <div class="section-label">about</div>
+    <div class="info-block">
+      <div class="info-row">
+        <span class="info-key">what</span>
+        <span class="info-val">
+          a lightweight, self-hosted chat platform with real-time messaging,
+          friends, DMs, nodes (private group chats), file sharing, and GIF support.
+        </span>
+      </div>
+      <div class="info-row">
+        <span class="info-key">features</span>
+        <span class="info-val">
+          <span class="tag">channels</span>
+          <span class="tag">DMs</span>
+          <span class="tag">nodes</span>
+          <span class="tag">file uploads</span>
+          <span class="tag">GIFs</span>
+          <span class="tag">friends</span>
+          <span class="tag">rate limiting</span>
+          <span class="tag">invite links</span>
+        </span>
+      </div>
+      <div class="info-row">
+        <span class="info-key">stack</span>
+        <span class="info-val">node.js backend · vanilla JS frontend · WebSockets · JWT auth & nerdy stuff</span>
+      </div>
+      <div class="info-row">
+        <span class="info-key">self-host</span>
+        <span class="info-val">
+          clone the repo, run <code style="color:var(--accent);background:var(--surface2);padding:1px 5px;border-radius:3px;">npm install && npm start</code>,
+          point a domain at it. see the
+          <a href="https://github.com/auth1ery/asterisk#readme" target="_blank" rel="noopener">readme ↗</a>
+          for full setup.
+        </span>
+      </div>
+      <div class="info-row">
+        <span class="info-key">license</span>
+        <span class="info-val">ive already said MIT can you not read</span>
+      </div>
+      <div class="info-row">
+        <span class="info-key">author</span>
+        <span class="info-val">
+          <a href="https://github.com/auth1ery" target="_blank" rel="noopener">auth1ery ↗</a>
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <!-- attributions -->
+  <section class="section">
+    <div class="section-label">attributions</div>
+    <table class="attr-table">
+      <thead>
+        <tr>
+          <th>package</th>
+          <th>description</th>
+          <th>license</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><a class="attr-npm" href="https://npmjs.com/package/express" target="_blank" rel="noopener">express</a></td>
+          <td>HTTP server framework</td>
+          <td><span class="attr-mit">MIT</span></td>
+        </tr>
+        <tr>
+          <td><a class="attr-npm" href="https://npmjs.com/package/ws" target="_blank" rel="noopener">ws</a></td>
+          <td>WebSocket server</td>
+          <td><span class="attr-mit">MIT</span></td>
+        </tr>
+        <tr>
+          <td><a class="attr-npm" href="https://npmjs.com/package/bcrypt" target="_blank" rel="noopener">bcrypt</a></td>
+          <td>password hashing</td>
+          <td><span class="attr-mit">MIT</span></td>
+        </tr>
+        <tr>
+          <td><a class="attr-npm" href="https://npmjs.com/package/jsonwebtoken" target="_blank" rel="noopener">jsonwebtoken</a></td>
+          <td>JWT auth tokens</td>
+          <td><span class="attr-mit">MIT</span></td>
+        </tr>
+        <tr>
+          <td><a class="attr-npm" href="https://npmjs.com/package/cors" target="_blank" rel="noopener">cors</a></td>
+          <td>cross-origin resource sharing</td>
+          <td><span class="attr-mit">MIT</span></td>
+        </tr>
+        <tr>
+          <td><a class="attr-npm" href="https://npmjs.com/package/multer" target="_blank" rel="noopener">multer</a></td>
+          <td>multipart file upload handling</td>
+          <td><span class="attr-mit">MIT</span></td>
+        </tr>
+        <tr>
+          <td><a class="attr-npm" href="https://fonts.google.com/specimen/JetBrains+Mono" target="_blank" rel="noopener">JetBrains Mono</a></td>
+          <td>monospace typeface by JetBrains</td>
+          <td><span class="attr-mit">OFL-1.1</span></td>
+        </tr>
+        <tr>
+          <td><a class="attr-npm" href="https://giphy.com" target="_blank" rel="noopener">GIPHY API</a></td>
+          <td>GIF search and delivery</td>
+          <td>i dont even know bro</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- footer -->
+  <footer class="footer">
+    <span>* asterisk</span>
+    <div class="footer-sep"></div>
+    <a href="https://github.com/auth1ery/asterisk" target="_blank" rel="noopener">github</a>
+    <div class="footer-sep"></div>
+    <span>MIT license</span>
+    <div class="footer-spacer"></div>
+    <span>made by <a href="https://github.com/auth1ery" target="_blank" rel="noopener">auth</a></span>
+  </footer>
+
+</div>
+</body>
+</html>
