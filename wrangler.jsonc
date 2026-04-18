@@ -2,14 +2,10 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "asterisk",
   "compatibility_date": "2026-04-13",
+  "pages_build_output_dir": "frontend",
   "observability": {
     "enabled": true
   },
-  "assets": {
-    "directory": "frontend"
-  },
-  "pages_build_output_dir": "frontend",
-  "functions_dir": "frontend/functions",
   "compatibility_flags": [
     "nodejs_compat"
   ]
