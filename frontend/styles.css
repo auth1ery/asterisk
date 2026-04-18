@@ -1177,3 +1177,75 @@
 @media (max-width: 600px) {
   #settings-modal { max-height: calc(100vh - 96px); }
 }
+
+/* ── Node channels bar ──────────────────────────────────────────────────────── */
+#node-channels-bar {
+  display: none;
+  align-items: center;
+  gap: 2px;
+  padding: 0 10px;
+  height: 30px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  overflow-x: auto;
+  scrollbar-width: none;          /* Firefox */
+}
+#node-channels-bar::-webkit-scrollbar { display: none; }
+#node-channels-bar.visible { display: flex; }
+
+.node-ch-tab {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  font-family: var(--font);
+  font-size: 10px;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 2px 8px;
+  border-radius: var(--radius);
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  transition: color 0.15s, background 0.15s;
+}
+.node-ch-tab:hover  { color: var(--text); }
+.node-ch-tab.active { color: var(--accent); background: var(--accent-glow); }
+
+/* delete × on tab — only visible to owner on hover */
+.node-ch-tab-inner {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.node-ch-del {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1;
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+.node-ch-tab:hover .node-ch-del { opacity: 1; }
+.node-ch-del:hover { color: var(--danger); }
+
+/* + button (owner only) */
+#node-add-ch-btn {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-family: var(--font);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 4px;
+  margin-left: 2px;
+  transition: color 0.15s;
+}
+#node-add-ch-btn:hover { color: var(--accent); }
+
+@media (max-width: 600px) {
+  #node-channels-bar { padding: 0 8px; height: 32px; }
+  .node-ch-tab { font-size: 11px; padding: 3px 8px; }
+  .node-ch-del { opacity: 1; } /* always visible on mobile */
+}
