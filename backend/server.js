@@ -1,41 +1,17 @@
-const express    = require('express');
+const express          = require('express');
 const { WebSocketServer } = require('ws');
-const http       = require('http');
-const bcrypt     = require('bcrypt');
-const jwt        = require('jsonwebtoken');
-const fs         = require('fs');
-const path       = require('path');
-const cors       = require('cors');
-const multer = require('multer');
+const http             = require('http');
+const bcrypt           = require('bcrypt');
+const jwt              = require('jsonwebtoken');
+const fs               = require('fs');
+const path             = require('path');
+const cors             = require('cors');
+const multer           = require('multer');
 
 // ── Config ────────────────────────────────────────────────────────────────────
 const PORT         = process.env.PORT        || 3001;
 const FRONTEND_URL = process.env.FRONTEND_URL || '*';
 const DATA_DIR     = path.join(__dirname, 'data');
-
-const JWT_SECRET = process.env.JWT_SECRET || (() => {
-  if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
-  const f = path.join(DATA_DIR, '.secret');
-  if (fs.existsSync(f)) return fs.readFileSync(f, 'utf8').trim();
-  const s = require('crypto').randomBytes(48).toString('hex');
-  fs.writeFileSync(f, s);
-  return s;
-})();
-
-const ACCOUNTS_FILE = path.join(DATA_DIR, 'accounts.json');
-const MESSAGES_FILE  = path.join(DATA_DIR, 'messages.json');
-const CHANNELS       = ['global', 'debate', 'gaming', 'music'];
-const FRIENDS_FILE  = path.join(DATA_DIR, 'friends.json');
-const DMS_FILE      = path.join(DATA_DIR, 'dms.json');
-const NODES_FILE = path.join(DATA_DIR, 'nodes.json');
-let nodes = loadJSON(NODES_FILE, {});
-
-const MAX_MESSAGES    = 30000;
-const HISTORY_SEND    = 6000;
-const MAX_DM_STORED   = 5000;
-const DM_HISTORY_SEND = 100;
-const RATE_LIMIT      = 20;
-const RATE_WINDOW     = 60 * 1000;
 
 // ── Disk helpers ──────────────────────────────────────────────────────────────
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -47,11 +23,37 @@ const loadJSON = (file, def) => {
 const saveJSON = (file, data) =>
   fs.writeFileSync(file, JSON.stringify(data, null, 2));
 
+// ── Constants ─────────────────────────────────────────────────────────────────
+const JWT_SECRET = process.env.JWT_SECRET || (() => {
+  const f = path.join(DATA_DIR, '.secret');
+  if (fs.existsSync(f)) return fs.readFileSync(f, 'utf8').trim();
+  const s = require('crypto').randomBytes(48).toString('hex');
+  fs.writeFileSync(f, s);
+  return s;
+})();
+
+const ACCOUNTS_FILE = path.join(DATA_DIR, 'accounts.json');
+const MESSAGES_FILE = path.join(DATA_DIR, 'messages.json');
+const FRIENDS_FILE  = path.join(DATA_DIR, 'friends.json');
+const DMS_FILE      = path.join(DATA_DIR, 'dms.json');
+const NODES_FILE    = path.join(DATA_DIR, 'nodes.json');
+
+const CHANNELS        = ['global', 'debate', 'gaming', 'music'];
+const MAX_MESSAGES    = 30000;
+const HISTORY_SEND    = 6000;
+const MAX_DM_STORED   = 5000;
+const DM_HISTORY_SEND = 100;
+const RATE_LIMIT      = 20;
+const RATE_WINDOW     = 60 * 1000;
+
+// ── Load state ────────────────────────────────────────────────────────────────
 let accounts    = loadJSON(ACCOUNTS_FILE, {});
-let messages = loadJSON(MESSAGES_FILE, {});
+let messages    = loadJSON(MESSAGES_FILE, {});
+let friendships = loadJSON(FRIENDS_FILE,  { requests: [], accepted: [] });
+let dms         = loadJSON(DMS_FILE,      {});
+let nodes       = loadJSON(NODES_FILE,    {});
+
 CHANNELS.forEach(ch => { if (!messages[ch]) messages[ch] = []; });
-let friendships = loadJSON(FRIENDS_FILE, { requests: [], accepted: [] });
-let dms         = loadJSON(DMS_FILE, {});
 
 // ── In-memory state ───────────────────────────────────────────────────────────
 const clients     = new Map();  // ws → { username, color }
