@@ -438,7 +438,7 @@ const FILE_RENDERERS = [
 ];
 function appendFilePreview(fileUrl, fileType, textEl) {
   if (!fileUrl) return;
-  const url = HTTP_BASE + fileUrl;
+  const url = fileUrl.startsWith('http') ? fileUrl : HTTP_BASE + fileUrl; 
   const renderer = FILE_RENDERERS.find(r => r.test(fileType));
   if (renderer) {
     renderer.render(url, textEl);
