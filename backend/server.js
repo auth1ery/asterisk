@@ -1,3 +1,4 @@
+require('dotenv').config({ path: path.join(__dirname, '.env') })
 const express          = require('express');
 const { WebSocketServer } = require('ws');
 const http             = require('http');
@@ -7,7 +8,6 @@ const fs               = require('fs');
 const path             = require('path');
 const cors             = require('cors');
 const multer           = require('multer');
-require('dotenv').config()
 
 // ── Config ────────────────────────────────────────────────────────────────────
 const PORT         = process.env.PORT        || 3001;
