@@ -116,8 +116,8 @@
 </div>
     </div>
 
-    <!-- Right panel: ONLINE / FRIENDS / NODES tabs n shit-->
-    <div id="right-tabs">
+<!-- Right panel: tabs -->
+<div id="right-tabs">
   <button class="right-tab active" id="tab-online"  onclick="switchRightTab('online')">ONLINE</button>
   <button class="right-tab"        id="tab-friends" onclick="switchRightTab('friends')">
     FRIENDS <span id="friends-badge" class="notif-badge hidden"></span>
@@ -125,62 +125,65 @@
   <button class="right-tab"        id="tab-nodes"   onclick="switchRightTab('nodes')">NODES</button>
 </div>
 
-      <!-- Online tab -->
-      <div id="online-tab">
-        <div id="users-list"></div>
-      </div>
+<!-- Online tab -->
+<div id="online-tab">
+  <div id="users-list"></div>
+</div>
 
-      <!-- Friends tab -->
-      <div id="friends-tab" class="hidden">
-        <div id="add-friend-area">
-          <div id="add-friend-row">
-            <input type="text" id="friend-input" placeholder="username" spellcheck="false"
-                   onkeydown="if(event.key==='Enter') sendFriendRequest()">
-            <button id="add-friend-btn" onclick="sendFriendRequest()" title="Send friend request">+</button>
-          </div>
-          <div id="add-friend-msg"></div>
-        </div>
+<!-- Friends tab -->
+<div id="friends-tab" class="hidden">
+  <div id="add-friend-area">
+    <div id="add-friend-row">
+      <input
+        type="text" id="friend-input"
+        placeholder="username" spellcheck="false"
+        onkeydown="if(event.key==='Enter') sendFriendRequest()"
+      >
+      <button id="add-friend-btn" onclick="sendFriendRequest()" title="Send friend request">+</button>
+    </div>
+    <div id="add-friend-msg"></div>
+  </div>
+  <div class="friends-section" id="section-incoming"></div>
+  <div class="friends-section" id="section-outgoing"></div>
+  <div class="friends-section" id="section-friends"></div>
+</div>
 
-        <!-- Incoming requests -->
-        <div class="friends-section" id="section-incoming"></div>
-
-        <!-- Outgoing requests -->
-        <div class="friends-section" id="section-outgoing"></div>
-
-        <!-- Accepted friends -->
-        <div class="friends-section" id="section-friends"></div>
-      </div>
-    <!-- Nodes tab -->
+<!-- Nodes tab -->
 <div id="nodes-tab" class="hidden">
   <div id="nodes-create-area">
     <div id="nodes-create-row">
-      <input type="text" id="node-name-input" placeholder="node name" maxlength="32" spellcheck="false"
-             onkeydown="if(event.key==='Enter') createNode()">
+      <input
+        type="text" id="node-name-input"
+        placeholder="node name" maxlength="32" spellcheck="false"
+        onkeydown="if(event.key==='Enter') createNode()"
+      >
       <button id="node-create-btn" onclick="createNode()" title="Create node">+</button>
     </div>
     <div id="nodes-invite-row">
-      <input type="text" id="node-invite-input" placeholder="invite code" spellcheck="false"
-             onkeydown="if(event.key==='Enter') joinByInvite()">
+      <input
+        type="text" id="node-invite-input"
+        placeholder="invite code" spellcheck="false"
+        onkeydown="if(event.key==='Enter') joinByInvite()"
+      >
       <button id="node-invite-btn" onclick="joinByInvite()" title="Join by invite">→</button>
     </div>
     <div id="nodes-msg"></div>
   </div>
+
   <div id="nodes-my-list"></div>
+
   <div id="nodes-discover-section">
-    <div class="friends-section-label"
-         style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;padding-right:12px;"
-         onclick="toggleDiscover()">
+    <div class="friends-section-label discover-toggle" onclick="toggleDiscover()">
       DISCOVER <span id="discover-arrow">▶</span>
     </div>
     <div id="nodes-discover-list" class="hidden"></div>
   </div>
+
   <div id="node-members-section" class="hidden">
     <div class="friends-section-label">MEMBERS</div>
     <div id="node-members-list"></div>
-    </div>
   </div>
 </div>
-
 
 <!-- Mobile bottom nav -->
 <div id="mobile-nav" class="hidden">
