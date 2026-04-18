@@ -594,6 +594,14 @@
       text-transform: uppercase;
     }
 
+    .discover-toggle {
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-right: 12px;
+    }
+
     /* Incoming request card */
     .request-item {
       padding: 6px 10px 8px;
