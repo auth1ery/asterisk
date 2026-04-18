@@ -116,14 +116,14 @@
 </div>
     </div>
 
-    <!-- Right panel: ONLINE / FRIENDS tabs -->
-    <div id="right-panel">
-      <div id="right-tabs">
-        <button class="right-tab active" id="tab-online"  onclick="switchRightTab('online')">ONLINE</button>
-        <button class="right-tab"        id="tab-friends" onclick="switchRightTab('friends')">
-          FRIENDS <span id="friends-badge" class="notif-badge hidden"></span>
-        </button>
-      </div>
+    <!-- Right panel: ONLINE / FRIENDS / NODES tabs n shit-->
+    <div id="right-tabs">
+  <button class="right-tab active" id="tab-online"  onclick="switchRightTab('online')">ONLINE</button>
+  <button class="right-tab"        id="tab-friends" onclick="switchRightTab('friends')">
+    FRIENDS <span id="friends-badge" class="notif-badge hidden"></span>
+  </button>
+  <button class="right-tab"        id="tab-nodes"   onclick="switchRightTab('nodes')">NODES</button>
+</div>
 
       <!-- Online tab -->
       <div id="online-tab">
@@ -150,6 +150,33 @@
         <!-- Accepted friends -->
         <div class="friends-section" id="section-friends"></div>
       </div>
+    <!-- Nodes tab -->
+<div id="nodes-tab" class="hidden">
+  <div id="nodes-create-area">
+    <div id="nodes-create-row">
+      <input type="text" id="node-name-input" placeholder="node name" maxlength="32" spellcheck="false"
+             onkeydown="if(event.key==='Enter') createNode()">
+      <button id="node-create-btn" onclick="createNode()" title="Create node">+</button>
+    </div>
+    <div id="nodes-invite-row">
+      <input type="text" id="node-invite-input" placeholder="invite code" spellcheck="false"
+             onkeydown="if(event.key==='Enter') joinByInvite()">
+      <button id="node-invite-btn" onclick="joinByInvite()" title="Join by invite">→</button>
+    </div>
+    <div id="nodes-msg"></div>
+  </div>
+  <div id="nodes-my-list"></div>
+  <div id="nodes-discover-section">
+    <div class="friends-section-label"
+         style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;padding-right:12px;"
+         onclick="toggleDiscover()">
+      DISCOVER <span id="discover-arrow">▶</span>
+    </div>
+    <div id="nodes-discover-list" class="hidden"></div>
+  </div>
+  <div id="node-members-section" class="hidden">
+    <div class="friends-section-label">MEMBERS</div>
+    <div id="node-members-list"></div>
     </div>
   </div>
 </div>
@@ -444,6 +471,11 @@ let rateReset       = 0;
 
 let currentChannel = 'global';
 
+let currentNode     = null; // { id, name, owner }
+let currentNodeInfo = null; // { members: [...] } — owner only
+let myNodes         = [];
+let discoverOpen    = false;
+
 function switchChannel(ch) {
   if (currentDM) closeDM();
   currentChannel = ch;
@@ -478,10 +510,11 @@ function switchTab(tab) {
 
 // ── Right panel tab switching ─────────────────────────────────────────────────
 function switchRightTab(tab) {
-  document.getElementById('tab-online').classList.toggle('active',  tab === 'online');
-  document.getElementById('tab-friends').classList.toggle('active', tab === 'friends');
-  document.getElementById('online-tab').classList.toggle('hidden',  tab !== 'online');
-  document.getElementById('friends-tab').classList.toggle('hidden', tab !== 'friends');
+  ['online','friends','nodes'].forEach(t => {
+    document.getElementById('tab-' + t)?.classList.toggle('active', t === tab);
+    document.getElementById(t + '-tab')?.classList.toggle('hidden', t !== tab);
+  });
+  if (tab === 'nodes') renderNodesPanel();
 }
 
 // ── Auth API calls ────────────────────────────────────────────────────────────
@@ -595,6 +628,11 @@ function enterChat(user) {
   document.getElementById('header-username').style.color = user.color;
 
   connectWS();
+
+  fetchMyNodes();
+  const _inv = new URLSearchParams(location.search).get('invite');
+  if (_inv) setTimeout(() => joinByInviteCode(_inv), 800);
+  
   if (isMobile()) document.getElementById('mobile-nav').classList.remove('hidden');
   document.getElementById('msg-input').focus();
 }
@@ -710,6 +748,33 @@ function handleServerMessage(msg) {
       renderFriendsPanel();
       if (currentDM === msg.username) closeDM();
       break;
+
+    case 'node_message':
+  if (currentNode?.id === msg.nodeId) { renderNodeMessage(msg); scrollToBottom(); }
+  else highlightNode(msg.nodeId);
+  break;
+
+case 'node_history':
+  if (currentNode?.id === msg.nodeId) {
+    const c = document.getElementById('messages');
+    c.innerHTML = '';
+    msg.messages.forEach(renderNodeMessage);
+    c.scrollTop = c.scrollHeight;
+  }
+  break;
+
+case 'node_kicked':
+  myNodes = myNodes.filter(n => n.id !== msg.nodeId);
+  if (currentNode?.id === msg.nodeId) closeNode();
+  showToast(`Removed from node: ${msg.nodeName}`);
+  renderNodesPanel();
+  break;
+
+case 'node_message_deleted':
+  if (currentNode?.id === msg.nodeId) {
+    document.querySelector(`.msg[data-msgid="${msg.msgId}"]`)?.remove();
+  }
+  break;
 
     // ── DMs ──────────────────────────────────────────────────────────────────
     case 'dm': {
@@ -881,6 +946,291 @@ function closeDM() {
   document.getElementById('msg-input').focus();
 }
 
+// ── Nodes ─────────────────────────────────────────────────────────────────────
+async function fetchMyNodes() {
+  try {
+    const res = await fetch(HTTP_BASE + '/api/nodes/mine', { headers: { Authorization: 'Bearer ' + getToken() } });
+    myNodes = await res.json();
+    renderNodesPanel();
+  } catch {}
+}
+
+function renderNodesPanel() {
+  const myList = document.getElementById('nodes-my-list');
+  if (!myList) return;
+  myList.innerHTML = '';
+
+  if (!myNodes.length) {
+    const empty = document.createElement('div');
+    empty.className = 'friends-empty';
+    empty.textContent = 'no nodes yet';
+    myList.appendChild(empty);
+  } else {
+    const label = document.createElement('div');
+    label.className = 'friends-section-label';
+    label.textContent = 'YOUR NODES';
+    myList.appendChild(label);
+
+    myNodes.forEach(n => {
+      const item = document.createElement('div');
+      item.className = 'friend-item node-item' + (currentNode?.id === n.id ? ' active-node' : '');
+      item.dataset.nodeId = n.id;
+
+      const dot = document.createElement('span');
+      dot.className = 'user-dot'; dot.style.background = 'var(--accent)';
+
+      const name = document.createElement('span');
+      name.className = 'friend-name';
+      name.textContent = (n.owner === currentUser?.username ? '♛ ' : '') + n.name;
+
+      const actions = document.createElement('div');
+      actions.className = 'friend-actions';
+
+      const openBtn = document.createElement('button');
+      openBtn.className = 'friend-dm-btn'; openBtn.textContent = 'open';
+      openBtn.onclick = e => { e.stopPropagation(); openNode(n); };
+      actions.appendChild(openBtn);
+
+      if (n.owner !== currentUser?.username) {
+        const leaveBtn = document.createElement('button');
+        leaveBtn.className = 'friend-remove-btn'; leaveBtn.textContent = '×'; leaveBtn.title = 'leave';
+        leaveBtn.onclick = e => { e.stopPropagation(); leaveNode(n.id); };
+        actions.appendChild(leaveBtn);
+      }
+
+      item.append(dot, name, actions);
+      item.onclick = () => openNode(n);
+      myList.appendChild(item);
+    });
+  }
+  renderNodeMembers();
+}
+
+function renderNodeMembers() {
+  const section = document.getElementById('node-members-section');
+  const list    = document.getElementById('node-members-list');
+  if (!currentNode || currentNode.owner !== currentUser?.username || !currentNodeInfo)
+    { section.classList.add('hidden'); return; }
+  section.classList.remove('hidden');
+  list.innerHTML = '';
+  (currentNodeInfo.members || []).forEach(m => {
+    const item = document.createElement('div');
+    item.className = 'friend-item';
+    const dot = document.createElement('span');
+    dot.className = 'user-dot'; dot.style.background = m.color;
+    const name = document.createElement('span');
+    name.className = 'friend-name';
+    name.textContent = (m.username === currentNode.owner ? '♛ ' : '') + m.username;
+    item.append(dot, name);
+    if (m.username !== currentUser?.username) {
+      const actions = document.createElement('div');
+      actions.className = 'friend-actions';
+      const kick = document.createElement('button');
+      kick.className = 'friend-dm-btn'; kick.textContent = 'kick';
+      kick.onclick = () => kickFromNode(currentNode.id, m.username);
+      const ban = document.createElement('button');
+      ban.className = 'friend-remove-btn'; ban.textContent = 'ban'; ban.title = 'ban';
+      ban.onclick = () => banFromNode(currentNode.id, m.username);
+      actions.append(kick, ban);
+      item.appendChild(actions);
+    }
+    list.appendChild(item);
+  });
+}
+
+async function openNode(n) {
+  currentNode = n; currentDM = null; currentNodeInfo = null;
+  const bar = document.getElementById('channel-bar');
+  bar.innerHTML = '';
+  const back = document.createElement('button');
+  back.id = 'back-btn'; back.textContent = '← back'; back.onclick = closeNode;
+  const label = document.createElement('span');
+  label.id = 'channel-label';
+  label.innerHTML = `<span style="color:var(--accent)">⬡</span> ${n.name}`;
+  bar.append(back, label);
+  if (n.owner === currentUser?.username) {
+    const inv = document.createElement('button');
+    inv.className = 'ch-tab'; inv.textContent = 'copy invite'; inv.style.marginLeft = 'auto';
+    inv.onclick = () => makeInvite(n.id);
+    bar.appendChild(inv);
+  }
+  document.getElementById('msg-input').placeholder = `message in ${n.name}...`;
+  document.getElementById('messages').innerHTML = '';
+  sendWS({ type: 'node_history', nodeId: n.id });
+  if (n.owner === currentUser?.username) {
+    try {
+      const res = await fetch(`${HTTP_BASE}/api/nodes/${n.id}`, { headers: { Authorization: 'Bearer ' + getToken() } });
+      currentNodeInfo = await res.json();
+    } catch {}
+  }
+  renderNodesPanel();
+  switchRightTab('nodes');
+  document.getElementById('msg-input').focus();
+}
+
+function closeNode() {
+  currentNode = null; currentNodeInfo = null;
+  document.getElementById('channel-bar').innerHTML =
+    '<span id="channel-label">global chat</span><div class="header-spacer"></div><div id="channel-tabs"><button class="ch-tab active" onclick="switchChannel(\'global\')">#global</button><button class="ch-tab" onclick="switchChannel(\'debate\')">#debate</button><button class="ch-tab" onclick="switchChannel(\'gaming\')">#gaming</button><button class="ch-tab" onclick="switchChannel(\'music\')">#music</button></div>';
+  document.getElementById('msg-input').placeholder = 'say something...';
+  document.getElementById('messages').innerHTML = '<div class="msg-system" style="padding:12px 16px;">— returned to global chat —</div>';
+  renderNodesPanel();
+}
+
+function renderNodeMessage(msg) {
+  const container = document.getElementById('messages');
+  const isOwner = currentNode?.owner === currentUser?.username;
+  const ts = new Date(msg.timestamp);
+  const time = ts.getHours().toString().padStart(2,'0') + ':' + ts.getMinutes().toString().padStart(2,'0');
+  const row = document.createElement('div');
+  row.className = 'msg'; row.dataset.msgid = msg.id;
+  const tsEl = document.createElement('span');
+  tsEl.className = 'msg-ts'; tsEl.textContent = time;
+  const userEl = document.createElement('span');
+  userEl.className = 'msg-user'; userEl.style.color = msg.color || '#888';
+  userEl.textContent = (msg.username === currentNode?.owner ? '♛ ' : '') + msg.username;
+  const sepEl = document.createElement('span');
+  sepEl.className = 'msg-sep'; sepEl.textContent = '›';
+  const textEl = document.createElement('span');
+  textEl.className = 'msg-text'; textEl.textContent = msg.text;
+  if (msg.fileUrl) appendFilePreview(msg.fileUrl, msg.fileType, textEl);
+  row.append(tsEl, userEl, sepEl, textEl);
+  if (isOwner && msg.username !== currentUser?.username) {
+    const del = document.createElement('button');
+    del.className = 'node-del-btn'; del.textContent = '×'; del.title = 'delete';
+    del.onclick = () => deleteNodeMessage(currentNode.id, msg.id, row);
+    row.appendChild(del);
+  }
+  container.appendChild(row);
+}
+
+async function deleteNodeMessage(nodeId, msgId, rowEl) {
+  try {
+    await fetch(`${HTTP_BASE}/api/nodes/${nodeId}/messages/${msgId}`,
+      { method: 'DELETE', headers: { Authorization: 'Bearer ' + getToken() } });
+    rowEl.remove();
+  } catch {}
+}
+
+async function createNode() {
+  const input = document.getElementById('node-name-input');
+  const msgEl = document.getElementById('nodes-msg');
+  const name  = input.value.trim();
+  if (!name) return;
+  try {
+    const res  = await fetch(HTTP_BASE + '/api/nodes', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + getToken() },
+      body: JSON.stringify({ name })
+    });
+    const data = await res.json();
+    if (!res.ok) { msgEl.className = 'err'; msgEl.textContent = data.error; return; }
+    input.value = '';
+    myNodes.push({ id: data.id, name: data.name, owner: data.owner, memberCount: 1 });
+    renderNodesPanel();
+    msgEl.className = 'ok'; msgEl.textContent = `created "${data.name}"`;
+    setTimeout(() => { msgEl.textContent = ''; }, 3000);
+  } catch { msgEl.className = 'err'; msgEl.textContent = 'error'; }
+}
+
+async function joinByInvite() {
+  const code = document.getElementById('node-invite-input').value.trim();
+  document.getElementById('node-invite-input').value = '';
+  if (code) await joinByInviteCode(code);
+}
+
+async function joinByInviteCode(code) {
+  const msgEl = document.getElementById('nodes-msg');
+  try {
+    const res  = await fetch(`${HTTP_BASE}/api/nodes/join/invite/${code}`,
+      { method: 'POST', headers: { Authorization: 'Bearer ' + getToken() } });
+    const data = await res.json();
+    if (!res.ok) { if (msgEl) { msgEl.className = 'err'; msgEl.textContent = data.error; } showToast(data.error); return; }
+    if (!myNodes.find(n => n.id === data.node.id))
+      myNodes.push({ id: data.node.id, name: data.node.name, owner: data.node.owner, memberCount: 1 });
+    renderNodesPanel();
+    if (msgEl) { msgEl.className = 'ok'; msgEl.textContent = `joined "${data.node.name}"`; setTimeout(() => { msgEl.textContent = ''; }, 3000); }
+    showToast(`Joined "${data.node.name}"`);
+  } catch {}
+}
+
+async function leaveNode(nodeId) {
+  try {
+    await fetch(`${HTTP_BASE}/api/nodes/${nodeId}/leave`,
+      { method: 'POST', headers: { Authorization: 'Bearer ' + getToken() } });
+    myNodes = myNodes.filter(n => n.id !== nodeId);
+    if (currentNode?.id === nodeId) closeNode();
+    renderNodesPanel();
+  } catch {}
+}
+
+async function makeInvite(nodeId) {
+  try {
+    const res  = await fetch(`${HTTP_BASE}/api/nodes/${nodeId}/invite`,
+      { method: 'POST', headers: { Authorization: 'Bearer ' + getToken() } });
+    const data = await res.json();
+    const link = `${location.origin}${location.pathname}?invite=${data.code}`;
+    await navigator.clipboard.writeText(link);
+    showToast('Invite link copied! (valid 7 days)');
+  } catch { showToast('Failed to copy.'); }
+}
+
+async function kickFromNode(nodeId, username) {
+  try {
+    await fetch(`${HTTP_BASE}/api/nodes/${nodeId}/kick/${encodeURIComponent(username)}`,
+      { method: 'POST', headers: { Authorization: 'Bearer ' + getToken() } });
+    if (currentNodeInfo) currentNodeInfo.members = currentNodeInfo.members.filter(m => m.username !== username);
+    renderNodeMembers();
+  } catch {}
+}
+
+async function banFromNode(nodeId, username) {
+  try {
+    await fetch(`${HTTP_BASE}/api/nodes/${nodeId}/ban/${encodeURIComponent(username)}`,
+      { method: 'POST', headers: { Authorization: 'Bearer ' + getToken() } });
+    if (currentNodeInfo) currentNodeInfo.members = currentNodeInfo.members.filter(m => m.username !== username);
+    renderNodeMembers();
+  } catch {}
+}
+
+async function toggleDiscover() {
+  discoverOpen = !discoverOpen;
+  document.getElementById('discover-arrow').textContent = discoverOpen ? '▼' : '▶';
+  const list = document.getElementById('nodes-discover-list');
+  list.classList.toggle('hidden', !discoverOpen);
+  if (discoverOpen) await loadDiscover();
+}
+
+async function loadDiscover() {
+  const list = document.getElementById('nodes-discover-list');
+  list.innerHTML = '<div class="friends-empty">loading...</div>';
+  try {
+    const res  = await fetch(HTTP_BASE + '/api/nodes/discover', { headers: { Authorization: 'Bearer ' + getToken() } });
+    const data = await res.json();
+    list.innerHTML = '';
+    if (!data.length) { list.innerHTML = '<div class="friends-empty">nothing here yet</div>'; return; }
+    data.forEach(n => {
+      const item = document.createElement('div');
+      item.className = 'discover-item';
+      const name = document.createElement('span'); name.className = 'friend-name'; name.textContent = n.name;
+      const count = document.createElement('span'); count.className = 'outgoing-name'; count.textContent = n.memberCount + ' members';
+      const joinBtn = document.createElement('button'); joinBtn.className = 'friend-dm-btn'; joinBtn.textContent = 'join';
+      joinBtn.onclick = async () => {
+        const r = await fetch(`${HTTP_BASE}/api/nodes/${n.id}/join`, { method: 'POST', headers: { Authorization: 'Bearer ' + getToken() } });
+        const d = await r.json();
+        if (!r.ok) { showToast(d.error); return; }
+        if (!myNodes.find(x => x.id === n.id)) myNodes.push({ id: n.id, name: n.name, owner: n.owner, memberCount: n.memberCount });
+        renderNodesPanel(); item.remove(); showToast(`Joined "${n.name}"`);
+      };
+      item.append(name, count, joinBtn);
+      list.appendChild(item);
+    });
+  } catch { list.innerHTML = '<div class="friends-empty">error loading</div>'; }
+}
+
+function highlightNode(nodeId) {
+  document.querySelector(`.node-item[data-node-id="${nodeId}"]`)?.style.setProperty('background', 'rgba(139,126,245,0.07)');
+}
+  
 // ── Highlight friend row (unread indicator) ───────────────────────────────────
 function highlightFriend(username) {
   const row = document.querySelector(`.friend-item[data-user="${username}"]`);
@@ -987,13 +1337,14 @@ async function sendMessage() {
     }
   }
 
-  const payload = {
-    type: currentDM ? 'dm' : 'message',
-    text: text || ' ',
-    channel: currentChannel
-  };
+let payload;
+if (currentNode) {
+  payload = { type: 'node_message', nodeId: currentNode.id, text: text || ' ' };
+} else {
+  payload = { type: currentDM ? 'dm' : 'message', text: text || ' ', channel: currentChannel };
   if (currentDM) payload.to = currentDM;
-  if (fileUrl)   { payload.fileUrl = fileUrl; payload.fileType = fileType; }
+}
+if (fileUrl) { payload.fileUrl = fileUrl; payload.fileType = fileType; }
 
   console.log('[send] sending payload:', payload);
   sendWS(payload);
