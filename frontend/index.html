@@ -1942,8 +1942,25 @@ function playNotifSound(type) {
 <!-- might need to seperate these script files into different js files since its taking up a ton of index.html. -->
 <script>
   // ── GIF Integration ───────────────────────────────────────────────────────────
-const GIPHY_KEY      = 'thequickbrownfoxjumpedoverthelazydog';
-const GIPHY_BASE     = 'https://api.giphy.com/v1/gifs';
+const GIPHY_PROXY = '/api/giphy';
+
+async function fetchTrending() {
+  renderGifGrid(null, 'loading');
+  try {
+    const r    = await fetch(`${GIPHY_PROXY}?endpoint=trending&limit=30`);
+    const data = await r.json();
+    renderGifGrid(data.data);
+  } catch { renderGifGrid(null, 'error'); }
+}
+
+async function fetchSearch(query) {
+  renderGifGrid(null, 'loading');
+  try {
+    const r    = await fetch(`${GIPHY_PROXY}?endpoint=search&q=${encodeURIComponent(query)}&limit=30`);
+    const data = await r.json();
+    renderGifGrid(data.data);
+  } catch { renderGifGrid(null, 'error'); }
+}
 const GIF_FAVES_KEY  = 'asterisk_gif_faves';
 
 let gifPickerOpen   = false;
