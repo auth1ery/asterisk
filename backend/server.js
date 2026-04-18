@@ -221,6 +221,22 @@ app.get('/api/friends', auth, (req, res) => {
   res.json(buildFriendsState(req.user.username));
 });
 
+// gif
+app.get('/api/giphy', async (req, res) => {
+  const key = process.env.GIPHY_KEY;
+  if (!key) return res.status(500).json({ error: 'GIPHY_KEY not set' });
+
+  const { endpoint = 'trending', limit = 20, q } = req.query;
+  const base = 'https://api.giphy.com/v1/gifs';
+  const url = endpoint === 'search'
+    ? `${base}/search?api_key=${key}&q=${encodeURIComponent(q)}&limit=${limit}`
+    : `${base}/trending?api_key=${key}&limit=${limit}`;
+
+  const response = await fetch(url);
+  const data = await response.json();
+  res.json(data);
+});
+
 // ── Friends: send request ─────────────────────────────────────────────────────
 app.post('/api/friends/request', auth, (req, res) => {
   const me  = req.user.username;
