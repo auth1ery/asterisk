@@ -96,94 +96,83 @@
   <div id="chat-body">
     <div id="messages-panel">
       <div id="messages"></div>
-        <div id="input-area">
-  <div id="typing-bar">
-    <span id="typing-text"></span><span id="typing-dots"></span>
-  </div>
-<div id="attachment-preview">
-  <span>📎</span>
-  <span id="attachment-name"></span>
-  <button id="attachment-remove" title="Remove attachment" onclick="removeAttachment()">×</button>
-</div>
-  <div id="input-row">
-    <label id="attach-btn" title="Attach image" style="flex-shrink:0;width:38px;height:38px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);color:var(--muted);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;transition:color 0.15s;">
-      📎
-       <input type="file" id="file-input" accept="image/*,video/mp4,video/webm,video/ogg,text/plain" style="display:none">
-    </label>
-    <textarea id="msg-input" placeholder="say something..." rows="1" maxlength="2000"></textarea>
-    <button id="send-btn" title="Send" onclick="sendMessage()">↑</button>
-  </div>
-</div>
+      <div id="input-area">
+        <div id="typing-bar">
+          <span id="typing-text"></span><span id="typing-dots"></span>
+        </div>
+        <div id="attachment-preview">
+          <span>📎</span>
+          <span id="attachment-name"></span>
+          <button id="attachment-remove" title="Remove attachment" onclick="removeAttachment()">×</button>
+        </div>
+        <div id="input-row">
+          <label id="attach-btn" title="Attach image" style="flex-shrink:0;width:38px;height:38px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);color:var(--muted);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;transition:color 0.15s;">
+            📎
+            <input type="file" id="file-input" accept="image/*,video/mp4,video/webm,video/ogg,text/plain" style="display:none">
+          </label>
+          <textarea id="msg-input" placeholder="say something..." rows="1" maxlength="2000"></textarea>
+          <button id="send-btn" title="Send" onclick="sendMessage()">↑</button>
+        </div>
+      </div>
     </div>
 
-<!-- Right panel: tabs -->
-<div id="right-tabs">
-  <button class="right-tab active" id="tab-online"  onclick="switchRightTab('online')">ONLINE</button>
-  <button class="right-tab"        id="tab-friends" onclick="switchRightTab('friends')">
-    FRIENDS <span id="friends-badge" class="notif-badge hidden"></span>
-  </button>
-  <button class="right-tab"        id="tab-nodes"   onclick="switchRightTab('nodes')">NODES</button>
-</div>
+    <!-- Right panel -->
+    <div id="right-panel">
+      <div id="right-tabs">
+        <button class="right-tab active" id="tab-online"  onclick="switchRightTab('online')">ONLINE</button>
+        <button class="right-tab"        id="tab-friends" onclick="switchRightTab('friends')">
+          FRIENDS <span id="friends-badge" class="notif-badge hidden"></span>
+        </button>
+        <button class="right-tab"        id="tab-nodes"   onclick="switchRightTab('nodes')">NODES</button>
+      </div>
 
-<!-- Online tab -->
-<div id="online-tab">
-  <div id="users-list"></div>
-</div>
+      <div id="online-tab">
+        <div id="users-list"></div>
+      </div>
 
-<!-- Friends tab -->
-<div id="friends-tab" class="hidden">
-  <div id="add-friend-area">
-    <div id="add-friend-row">
-      <input
-        type="text" id="friend-input"
-        placeholder="username" spellcheck="false"
-        onkeydown="if(event.key==='Enter') sendFriendRequest()"
-      >
-      <button id="add-friend-btn" onclick="sendFriendRequest()" title="Send friend request">+</button>
-    </div>
-    <div id="add-friend-msg"></div>
-  </div>
-  <div class="friends-section" id="section-incoming"></div>
-  <div class="friends-section" id="section-outgoing"></div>
-  <div class="friends-section" id="section-friends"></div>
-</div>
+      <div id="friends-tab" class="hidden">
+        <div id="add-friend-area">
+          <div id="add-friend-row">
+            <input type="text" id="friend-input" placeholder="username" spellcheck="false"
+                   onkeydown="if(event.key==='Enter') sendFriendRequest()">
+            <button id="add-friend-btn" onclick="sendFriendRequest()" title="Send friend request">+</button>
+          </div>
+          <div id="add-friend-msg"></div>
+        </div>
+        <div class="friends-section" id="section-incoming"></div>
+        <div class="friends-section" id="section-outgoing"></div>
+        <div class="friends-section" id="section-friends"></div>
+      </div>
 
-<!-- Nodes tab -->
-<div id="nodes-tab" class="hidden">
-  <div id="nodes-create-area">
-    <div id="nodes-create-row">
-      <input
-        type="text" id="node-name-input"
-        placeholder="node name" maxlength="32" spellcheck="false"
-        onkeydown="if(event.key==='Enter') createNode()"
-      >
-      <button id="node-create-btn" onclick="createNode()" title="Create node">+</button>
-    </div>
-    <div id="nodes-invite-row">
-      <input
-        type="text" id="node-invite-input"
-        placeholder="invite code" spellcheck="false"
-        onkeydown="if(event.key==='Enter') joinByInvite()"
-      >
-      <button id="node-invite-btn" onclick="joinByInvite()" title="Join by invite">→</button>
-    </div>
-    <div id="nodes-msg"></div>
-  </div>
+      <div id="nodes-tab" class="hidden">
+        <div id="nodes-create-area">
+          <div id="nodes-create-row">
+            <input type="text" id="node-name-input" placeholder="node name" maxlength="32" spellcheck="false"
+                   onkeydown="if(event.key==='Enter') createNode()">
+            <button id="node-create-btn" onclick="createNode()" title="Create node">+</button>
+          </div>
+          <div id="nodes-invite-row">
+            <input type="text" id="node-invite-input" placeholder="invite code" spellcheck="false"
+                   onkeydown="if(event.key==='Enter') joinByInvite()">
+            <button id="node-invite-btn" onclick="joinByInvite()" title="Join by invite">→</button>
+          </div>
+          <div id="nodes-msg"></div>
+        </div>
+        <div id="nodes-my-list"></div>
+        <div id="nodes-discover-section">
+          <div class="friends-section-label discover-toggle" onclick="toggleDiscover()">
+            DISCOVER <span id="discover-arrow">▶</span>
+          </div>
+          <div id="nodes-discover-list" class="hidden"></div>
+        </div>
+        <div id="node-members-section" class="hidden">
+          <div class="friends-section-label">MEMBERS</div>
+          <div id="node-members-list"></div>
+        </div>
+      </div>
+    </div><!-- /#right-panel -->
 
-  <div id="nodes-my-list"></div>
-
-  <div id="nodes-discover-section">
-    <div class="friends-section-label discover-toggle" onclick="toggleDiscover()">
-      DISCOVER <span id="discover-arrow">▶</span>
-    </div>
-    <div id="nodes-discover-list" class="hidden"></div>
-  </div>
-
-  <div id="node-members-section" class="hidden">
-    <div class="friends-section-label">MEMBERS</div>
-    <div id="node-members-list"></div>
-  </div>
-</div>
+  </div><!-- /#chat-body -->
 
 <!-- Mobile bottom nav -->
 <div id="mobile-nav" class="hidden">
