@@ -1,2 +1,5 @@
 .env
 node_modules
+backend/data/
+backend/cloudflared-linux-amd64.deb
+backend/package-lock.json
