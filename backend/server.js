@@ -1,4 +1,4 @@
-require('dotenv').config({ path: path.join(__dirname, '.env') })
+require('dotenv').config({ path: __dirname + '/.env' })
 const express          = require('express');
 const { WebSocketServer } = require('ws');
 const http             = require('http');
