@@ -105,6 +105,19 @@
           <span id="attachment-name"></span>
           <button id="attachment-remove" title="Remove attachment" onclick="removeAttachment()">×</button>
         </div>
+        <div id="gif-picker" class="hidden">
+          <div id="gif-picker-header">
+            <input id="gif-search" type="text" placeholder="search giphy…" spellcheck="false">
+            <div id="gif-tabs">
+              <button class="gif-tab active" id="gtab-trending" onclick="gifSwitchTab('trending')">trending</button>
+              <button class="gif-tab" id="gtab-faves" onclick="gifSwitchTab('faves')">★ faves</button>
+            </div>
+          </div>
+          <div id="gif-grid"></div>
+          <div id="gif-attribution">
+            <span style="font-size:10px;color:var(--muted);opacity:0.6;">powered by GIPHY</span>
+          </div>
+        </div>
         <div id="input-row">
           <label id="attach-btn" title="Attach image" style="flex-shrink:0;width:38px;height:38px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);color:var(--muted);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;transition:color 0.15s;">
             📎
@@ -172,20 +185,7 @@
         </div>
       </div>
     </div><!-- /#right-panel -->
-      <div id="gif-picker" class="hidden">
-    <div id="gif-picker-header">
-      <input id="gif-search" type="text" placeholder="search giphy…" spellcheck="false">
-      <div id="gif-tabs">
-        <button class="gif-tab active" id="gtab-trending" onclick="gifSwitchTab('trending')">trending</button>
-        <button class="gif-tab" id="gtab-faves" onclick="gifSwitchTab('faves')">★ faves</button>
-      </div>
-    </div>
-    <div id="gif-grid"></div>
-    <div id="gif-attribution">
-      <img src="https://developers.giphy.com/branch/master/static/header-logo-8974b8ae658f704a65b1f1a69cd36050.gif"
-           alt="Powered by GIPHY" style="height:14px;opacity:0.6;">
-    </div>
-  </div>
+
   </div><!-- /#chat-body -->
 
 <!-- Mobile bottom nav -->
@@ -389,7 +389,7 @@
     </div>
   </div>
 </div>
-  
+
 <div id="toast-container" style="
   position: fixed;
   bottom: 16px;
@@ -1941,70 +1941,44 @@ function playNotifSound(type) {
 </script>
 <!-- might need to seperate these script files into different js files since its taking up a ton of index.html. -->
 <script>
-  // ── GIF Integration ───────────────────────────────────────────────────────────
-const GIPHY_PROXY = '/api/giphy';
+// ── GIF Integration ───────────────────────────────────────────────────────────
+const GIPHY_PROXY   = '/api/giphy';
+const GIF_FAVES_KEY = 'asterisk_gif_faves';
 
-async function fetchTrending() {
-  renderGifGrid(null, 'loading');
-  try {
-    const r    = await fetch(`${GIPHY_PROXY}?endpoint=trending&limit=30`);
-    const data = await r.json();
-    renderGifGrid(data.data);
-  } catch { renderGifGrid(null, 'error'); }
-}
+let gifPickerOpen  = false;
+let gifCurrentTab  = 'trending';
+let gifSearchTimer = null;
+let gifFaves       = [];
 
-async function fetchSearch(query) {
-  renderGifGrid(null, 'loading');
-  try {
-    const r    = await fetch(`${GIPHY_PROXY}?endpoint=search&q=${encodeURIComponent(query)}&limit=30`);
-    const data = await r.json();
-    renderGifGrid(data.data);
-  } catch { renderGifGrid(null, 'error'); }
-}
-const GIF_FAVES_KEY  = 'asterisk_gif_faves';
-
-let gifPickerOpen   = false;
-let gifCurrentTab   = 'trending';
-let gifSearchTimer  = null;
-let gifFaves        = [];
-
-// ── Load / save favourites from localStorage ──────────────────────────────────
 function loadGifFaves() {
   try { gifFaves = JSON.parse(localStorage.getItem(GIF_FAVES_KEY)) || []; }
   catch { gifFaves = []; }
 }
-function saveGifFaves() {
-  localStorage.setItem(GIF_FAVES_KEY, JSON.stringify(gifFaves));
-}
+function saveGifFaves() { localStorage.setItem(GIF_FAVES_KEY, JSON.stringify(gifFaves)); }
 function toggleGifFave(gif) {
   const idx = gifFaves.findIndex(f => f.id === gif.id);
-  if (idx === -1) gifFaves.unshift(gif);   // prepend so newest shows first
+  if (idx === -1) gifFaves.unshift(gif);
   else            gifFaves.splice(idx, 1);
   saveGifFaves();
 }
 function isGifFaved(id) { return gifFaves.some(f => f.id === id); }
-
 loadGifFaves();
 
-// ── Open / close picker ───────────────────────────────────────────────────────
+// ── Open / close ──────────────────────────────────────────────────────────────
 function toggleGifPicker() {
   gifPickerOpen = !gifPickerOpen;
   document.getElementById('gif-picker').classList.toggle('hidden', !gifPickerOpen);
   document.getElementById('gif-btn').classList.toggle('active', gifPickerOpen);
   if (gifPickerOpen) {
-    if (gifCurrentTab === 'trending') fetchTrending();
-    else                              renderFaves();
+    gifCurrentTab === 'trending' ? fetchTrending() : renderFaves();
     document.getElementById('gif-search').focus();
   }
 }
-
 function closeGifPicker() {
   gifPickerOpen = false;
   document.getElementById('gif-picker').classList.add('hidden');
   document.getElementById('gif-btn').classList.remove('active');
 }
-
-// Close when clicking outside
 document.addEventListener('click', e => {
   if (!gifPickerOpen) return;
   if (!document.getElementById('gif-picker').contains(e.target) &&
@@ -2017,71 +1991,47 @@ function gifSwitchTab(tab) {
   document.getElementById('gtab-trending').classList.toggle('active', tab === 'trending');
   document.getElementById('gtab-faves').classList.toggle('active',   tab === 'faves');
   document.getElementById('gif-search').value = '';
-  if (tab === 'trending') fetchTrending();
-  else                    renderFaves();
+  tab === 'trending' ? fetchTrending() : renderFaves();
 }
 
-// ── Search (debounced) ────────────────────────────────────────────────────────
+// ── Search wire-up (runs after DOM ready) ─────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('gif-search').addEventListener('input', e => {
     clearTimeout(gifSearchTimer);
     const q = e.target.value.trim();
-    if (!q) {
-      if (gifCurrentTab === 'trending') fetchTrending();
-      else                              renderFaves();
-      return;
-    }
-    // Search always hits Giphy regardless of tab
+    if (!q) { gifCurrentTab === 'trending' ? fetchTrending() : renderFaves(); return; }
     gifSearchTimer = setTimeout(() => fetchSearch(q), 350);
   });
 });
 
-// ── Giphy API helpers ─────────────────────────────────────────────────────────
+// ── Proxy fetch ───────────────────────────────────────────────────────────────
 async function fetchTrending() {
   renderGifGrid(null, 'loading');
   try {
-    const r    = await fetch(`${GIPHY_BASE}/trending?api_key=${GIPHY_KEY}&limit=30&rating=pg`);
-    const data = await r.json();
-    renderGifGrid(data.data);
+    const r = await fetch(`${GIPHY_PROXY}?endpoint=trending&limit=30`);
+    renderGifGrid((await r.json()).data);
   } catch { renderGifGrid(null, 'error'); }
 }
-
 async function fetchSearch(query) {
   renderGifGrid(null, 'loading');
   try {
-    const r    = await fetch(`${GIPHY_BASE}/search?api_key=${GIPHY_KEY}&q=${encodeURIComponent(query)}&limit=30&rating=pg`);
-    const data = await r.json();
-    renderGifGrid(data.data);
+    const r = await fetch(`${GIPHY_PROXY}?endpoint=search&q=${encodeURIComponent(query)}&limit=30`);
+    renderGifGrid((await r.json()).data);
   } catch { renderGifGrid(null, 'error'); }
 }
 
-// ── Render grid ───────────────────────────────────────────────────────────────
+// ── Render ────────────────────────────────────────────────────────────────────
 function gifToData(g) {
-  return {
-    id:       g.id,
-    preview:  g.images.fixed_height_small.url,   // small, loads fast
-    full:     g.images.original.url,             // sent in chat
-    title:    g.title || '',
-  };
+  return { id: g.id, preview: g.images.fixed_height_small.url, full: g.images.original.url, title: g.title || '' };
 }
-
 function renderGifGrid(gifs, state) {
   const grid = document.getElementById('gif-grid');
   grid.innerHTML = '';
-
-  if (state === 'loading') {
-    grid.innerHTML = '<div class="gif-empty">loading…</div>'; return;
-  }
-  if (state === 'error') {
-    grid.innerHTML = '<div class="gif-empty">couldn\'t load GIFs</div>'; return;
-  }
-  if (!gifs || !gifs.length) {
-    grid.innerHTML = '<div class="gif-empty">nothing found</div>'; return;
-  }
-
+  if (state === 'loading') { grid.innerHTML = '<div class="gif-empty">loading…</div>'; return; }
+  if (state === 'error')   { grid.innerHTML = '<div class="gif-empty">couldn\'t load GIFs</div>'; return; }
+  if (!gifs?.length)       { grid.innerHTML = '<div class="gif-empty">nothing found</div>'; return; }
   gifs.map(gifToData).forEach(g => grid.appendChild(buildGifItem(g)));
 }
-
 function renderFaves() {
   const grid = document.getElementById('gif-grid');
   grid.innerHTML = '';
@@ -2091,18 +2041,12 @@ function renderFaves() {
   }
   gifFaves.forEach(g => grid.appendChild(buildGifItem(g)));
 }
-
 function buildGifItem(g) {
   const wrap = document.createElement('div');
   wrap.className = 'gif-item';
-
   const img = document.createElement('img');
-  img.className = 'gif-thumb';
-  img.src = g.preview;
-  img.alt = g.title;
-  img.loading = 'lazy';
+  img.className = 'gif-thumb'; img.src = g.preview; img.alt = g.title; img.loading = 'lazy';
   img.onclick = () => sendGif(g);
-
   const star = document.createElement('span');
   star.className = 'gif-fave-star' + (isGifFaved(g.id) ? ' faved' : '');
   star.textContent = '★';
@@ -2112,18 +2056,15 @@ function buildGifItem(g) {
     toggleGifFave(g);
     star.classList.toggle('faved', isGifFaved(g.id));
     star.title = isGifFaved(g.id) ? 'remove favourite' : 'add favourite';
-    // If we're on the faves tab, re-render so removed faves disappear
     if (gifCurrentTab === 'faves') renderFaves();
   };
-
   wrap.append(img, star);
   return wrap;
 }
 
-// ── Send GIF as a message ─────────────────────────────────────────────────────
+// ── Send ──────────────────────────────────────────────────────────────────────
 function sendGif(g) {
   if (rateRemaining <= 0) return;
-
   let payload;
   if (currentNode) {
     payload = { type: 'node_message', nodeId: currentNode.id, text: '' };
@@ -2131,14 +2072,11 @@ function sendGif(g) {
     payload = { type: currentDM ? 'dm' : 'message', text: '', channel: currentChannel };
     if (currentDM) payload.to = currentDM;
   }
-
-  // Pass the full Giphy URL directly — handled by the patched appendFilePreview below
   payload.fileUrl  = g.full;
   payload.fileType = 'image/gif';
-
   sendWS(payload);
   closeGifPicker();
 }
 </script>
 </body>
-  </html>
+</html>
