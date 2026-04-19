@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>asterisk — privacy policy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg:          #09090d;
+      --surface:     #0f0f14;
+      --surface2:    #141419;
+      --border:      #1c1c24;
+      --border2:     #24242f;
+      --text:        #c8c8d8;
+      --muted:       #4a4a60;
+      --muted2:      #2e2e3e;
+      --accent:      #8b7ef5;
+      --accent-glow: rgba(139,126,245,0.2);
+      --danger:      #ff4d6a;
+      --success:     #4dffa0;
+      --radius:      6px;
+      --font:        'JetBrains Mono', 'Courier New', monospace;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 13px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(139,126,245,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(139,126,245,0.025) 1px, transparent 1px);
+      background-size: 48px 48px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    body::after {
+      content: '';
+      position: fixed;
+      top: -120px; left: 50%; transform: translateX(-50%);
+      width: 700px; height: 400px;
+      background: radial-gradient(ellipse, rgba(139,126,245,0.08) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .page {
+      position: relative; z-index: 1;
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 0 24px 80px;
+    }
+
+    /* topbar */
+    .topbar {
+      display: flex;
+      align-items: center;
+      padding: 20px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .topbar-logo { display: flex; align-items: center; gap: 8px; }
+    .topbar-star { font-size: 18px; font-weight: 700; color: var(--accent); line-height: 1; }
+    .topbar-name { font-size: 13px; font-weight: 500; letter-spacing: 0.14em; color: var(--text); }
+    .topbar-spacer { flex: 1; }
+    .topbar-link { font-size: 11px; color: var(--muted); text-decoration: none; letter-spacing: 0.06em; transition: color 0.15s; }
+    .topbar-link:hover { color: var(--accent); }
+
+    /* hero */
+    .hero {
+      padding: 56px 0 40px;
+      animation: fadeUp 0.6s ease both;
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .hero-label {
+      font-size: 9px;
+      letter-spacing: 0.22em;
+      color: var(--accent);
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+    .hero-title {
+      font-size: 22px;
+      font-weight: 300;
+      letter-spacing: 0.1em;
+      color: var(--text);
+      margin-bottom: 10px;
+    }
+    .hero-sub {
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 0.06em;
+    }
+
+    /* sections */
+    .section {
+      border-top: 1px solid var(--border);
+      padding: 36px 0;
+      animation: fadeUp 0.6s ease both;
+    }
+    .section-label {
+      font-size: 9px;
+      letter-spacing: 0.2em;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 18px;
+    }
+    .section-title {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--accent);
+      margin-bottom: 12px;
+      letter-spacing: 0.06em;
+    }
+    p {
+      color: var(--text);
+      font-size: 12px;
+      line-height: 1.8;
+      margin-bottom: 12px;
+    }
+    p:last-child { margin-bottom: 0; }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8px;
+      margin-bottom: 8px;
+    }
+    .data-table thead th {
+      font-size: 9px;
+      letter-spacing: 0.14em;
+      color: var(--muted);
+      text-align: left;
+      padding: 0 0 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    .data-table tbody tr {
+      border-bottom: 1px solid var(--border);
+      transition: background 0.1s;
+    }
+    .data-table tbody tr:hover { background: rgba(255,255,255,0.015); }
+    .data-table tbody tr:last-child { border-bottom: none; }
+    .data-table td {
+      padding: 9px 0;
+      font-size: 12px;
+      vertical-align: top;
+      line-height: 1.7;
+    }
+    .data-table td:nth-child(1) { color: var(--accent); width: 180px; padding-right: 16px; }
+    .data-table td:nth-child(2) { color: var(--muted); font-size: 11px; }
+
+    .tag {
+      display: inline-block;
+      padding: 1px 7px;
+      background: rgba(139,126,245,0.08);
+      border: 1px solid rgba(139,126,245,0.2);
+      border-radius: 3px;
+      font-size: 10px;
+      color: var(--accent);
+      letter-spacing: 0.04em;
+    }
+    .tag-warn {
+      background: rgba(255,77,106,0.07);
+      border-color: rgba(255,77,106,0.2);
+      color: var(--danger);
+    }
+    .tag-ok {
+      background: rgba(77,255,160,0.06);
+      border-color: rgba(77,255,160,0.18);
+      color: var(--success);
+    }
+
+    .notice {
+      border: 1px solid rgba(139,126,245,0.25);
+      background: rgba(139,126,245,0.04);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      margin-bottom: 12px;
+      font-size: 12px;
+      color: var(--text);
+      line-height: 1.8;
+    }
+
+    /* footer */
+    .footer {
+      border-top: 1px solid var(--border);
+      padding: 24px 0 0;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 0.06em;
+    }
+    .footer a { color: var(--muted); text-decoration: none; transition: color 0.15s; }
+    .footer a:hover { color: var(--accent); }
+    .footer-sep { width: 1px; height: 12px; background: var(--border); }
+    .footer-spacer { flex: 1; }
+
+    @media (max-width: 500px) {
+      .page { padding: 0 16px 60px; }
+      .hero { padding: 40px 0 32px; }
+      .data-table td:nth-child(1) { width: auto; display: block; padding-bottom: 4px; }
+      .data-table td:nth-child(2) { display: block; padding-top: 0; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <nav class="topbar">
+    <div class="topbar-logo">
+      <span class="topbar-star">*</span>
+      <span class="topbar-name">asterisk</span>
+    </div>
+    <div class="topbar-spacer"></div>
+    <a href="/" class="topbar-link">← home</a>
+  </nav>
+
+  <div class="hero">
+    <div class="hero-label">legal</div>
+    <div class="hero-title">privacy policy</div>
+    <div class="hero-sub">last updated: 2025 &nbsp;·&nbsp; applies to asterisk.authsrng.xyz and self-hosted instances</div>
+  </div>
+
+  <!-- overview -->
+  <section class="section">
+    <div class="section-label">overview</div>
+    <div class="notice">
+      asterisk is an open-source, self-hosted chat platform. this policy covers the instance operated at <strong style="color:var(--accent)">asterisk.authsrng.xyz</strong>. if you run your own instance, you are the data controller for your users.
+    </div>
+    <p>we take privacy seriously and collect only what is strictly necessary to run the service. we do not sell, share, or monetize your data. there are no ads.</p>
+  </section>
+
+  <!-- age -->
+  <section class="section">
+    <div class="section-label">eligibility</div>
+    <div class="section-title">age requirement</div>
+    <p>asterisk is intended for users <strong>14 years of age or older</strong>. by creating an account you confirm that you meet this requirement. if we discover that a user is under 14, we will delete the account and associated data.</p>
+    <p>if you believe a user under 14 has registered, please contact us so we can remove the account promptly.</p>
+  </section>
+
+  <!-- what we collect -->
+  <section class="section">
+    <div class="section-label">data we collect</div>
+    <div class="section-title">account & profile data</div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>data</th>
+          <th>details</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>username</td>
+          <td>chosen by you at registration. visible to other users. 2–20 characters, letters/numbers/_-.</td>
+        </tr>
+        <tr>
+          <td>password</td>
+          <td>stored as a bcrypt hash. we never store or transmit your plaintext password.</td>
+        </tr>
+        <tr>
+          <td>color</td>
+          <td>a randomly assigned display color (HSL value). used to distinguish your messages.</td>
+        </tr>
+        <tr>
+          <td>bio</td>
+          <td>optional, up to 160 characters. set and edited by you. visible to other users.</td>
+        </tr>
+        <tr>
+          <td>status</td>
+          <td>optional presence status (online, away, busy, invisible). visible to other users while connected.</td>
+        </tr>
+        <tr>
+          <td>auth token</td>
+          <td>a JWT stored in your browser's localStorage. used to keep you logged in. does not contain sensitive info beyond your username and color.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="section-title" style="margin-top: 24px;">messages & content</div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>data</th>
+          <th>details</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>channel messages</td>
+          <td>messages sent in #global, #debate, #gaming, and #music are stored on the server. up to 30,000 messages per channel are retained.</td>
+        </tr>
+        <tr>
+          <td>direct messages</td>
+          <td>DMs between friends are stored on the server. up to 5,000 messages per conversation are retained.</td>
+        </tr>
+        <tr>
+          <td>node messages</td>
+          <td>messages sent inside nodes (private group chats) are stored per-channel on the server.</td>
+        </tr>
+        <tr>
+          <td>reactions</td>
+          <td>emoji reactions (and which users added them) are stored alongside messages.</td>
+        </tr>
+        <tr>
+          <td>file uploads</td>
+          <td>images, videos, and text files you upload are stored on the server. accepted types: JPEG, PNG, GIF, WebP, MP4, WebM, Ogg, plain text. max size: 8 MB.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="section-title" style="margin-top: 24px;">social data</div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>data</th>
+          <th>details</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>friend list</td>
+          <td>accepted friendships, pending requests you sent, and requests you received are stored on the server.</td>
+        </tr>
+        <tr>
+          <td>nodes</td>
+          <td>nodes you own or belong to, including membership lists, invite codes, and ban lists, are stored on the server.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="section-title" style="margin-top: 24px;">local / browser data</div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>data</th>
+          <th>details</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>settings</td>
+          <td>appearance preferences (accent color, font size, density, notification settings, etc.) are stored in your browser's localStorage. they never leave your device.</td>
+        </tr>
+        <tr>
+          <td>gif favourites</td>
+          <td>GIFs you favourite are stored in your browser's localStorage only. we do not sync these to the server.</td>
+        </tr>
+        <tr>
+          <td>seen releases</td>
+          <td>the tag of the last release banner you dismissed is stored in your browser's localStorage to avoid repeated popups.</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- what we do NOT collect -->
+  <section class="section">
+    <div class="section-label">what we don't collect</div>
+    <p>we do <strong>not</strong> collect or store any of the following:</p>
+    <p>
+      <span class="tag tag-ok">✓ no IP address logs</span>&nbsp;
+      <span class="tag tag-ok">✓ no email address</span>&nbsp;
+      <span class="tag tag-ok">✓ no real name</span>&nbsp;
+      <span class="tag tag-ok">✓ no phone number</span>&nbsp;
+      <span class="tag tag-ok">✓ no payment data</span>&nbsp;
+      <span class="tag tag-ok">✓ no analytics or tracking</span>&nbsp;
+      <span class="tag tag-ok">✓ no ads</span>
+    </p>
+    <p style="margin-top: 12px;">we do not use cookies. we do not use third-party analytics, advertising networks, or tracking pixels.</p>
+  </section>
+
+  <!-- third parties -->
+  <section class="section">
+    <div class="section-label">third-party services</div>
+    <div class="section-title">GIPHY</div>
+    <p>the GIF picker uses the <strong>GIPHY API</strong> proxied through our server. when you search for or send a GIF, a request is made to GIPHY's servers via our backend. your search query is passed to GIPHY. GIPHY's own privacy policy applies to this data. we do not pass your username or any identifying information to GIPHY.</p>
+
+    <div class="section-title" style="margin-top: 24px;">GitHub API</div>
+    <p>on login, the app checks the GitHub releases API for the latest asterisk version to display a release banner. this request goes from your browser directly to <code style="color:var(--accent);background:var(--surface2);padding:1px 5px;border-radius:3px;">api.github.com</code>. no personal data is sent. GitHub's privacy policy applies.</p>
+
+    <div class="section-title" style="margin-top: 24px;">Google Fonts</div>
+    <p>the app loads the JetBrains Mono font from Google Fonts. this means Google's servers receive a request from your browser containing your IP address and browser info. Google's privacy policy applies. if you self-host, you may serve the font locally instead.</p>
+  </section>
+
+  <!-- how we use data -->
+  <section class="section">
+    <div class="section-label">how we use your data</div>
+    <p>data is used solely to operate the chat service: authenticating your account, delivering messages to the right people, displaying usernames and profile info, and enforcing rate limits. we do not use your data for any other purpose.</p>
+  </section>
+
+  <!-- data retention -->
+  <section class="section">
+    <div class="section-label">data retention & deletion</div>
+    <p>messages are retained up to the limits described above (30,000 per channel, 5,000 per DM conversation). older messages are automatically removed as new ones arrive.</p>
+    <p>to delete your account and all associated data, contact us. upon deletion we will remove your account record, your messages, and your DMs from our servers as soon as practicable.</p>
+    <p>uploaded files are stored indefinitely until the account is deleted or a server administrator removes them manually.</p>
+  </section>
+
+  <!-- security -->
+  <section class="section">
+    <div class="section-label">security</div>
+    <p>passwords are hashed with <strong>bcrypt</strong> (cost factor 10) and never stored in plaintext. authentication uses signed <strong>JWT tokens</strong>. connections are made over HTTPS/WSS when the server is configured with TLS.</p>
+    <p>that said, no system is perfectly secure. do not share sensitive personal information in messages.</p>
+  </section>
+
+  <!-- self-hosted instances -->
+  <section class="section">
+    <div class="section-label">self-hosted instances</div>
+    <p>asterisk is open-source (MIT license). if you run your own instance, <strong>you</strong> are responsible for the privacy of your users. this policy only covers the instance at <strong style="color:var(--accent)">asterisk.authsrng.xyz</strong>.</p>
+  </section>
+
+  <!-- changes -->
+  <section class="section">
+    <div class="section-label">changes to this policy</div>
+    <p>we may update this policy from time to time. when we do, the "last updated" date at the top will change. continued use of the service after changes constitutes acceptance of the revised policy.</p>
+  </section>
+
+  <!-- contact -->
+  <section class="section">
+    <div class="section-label">contact</div>
+    <p>questions about this policy? reach out via <a href="https://github.com/auth1ery/asterisk" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none;">github ↗</a>.</p>
+  </section>
+
+  <footer class="footer">
+    <span>* asterisk</span>
+    <div class="footer-sep"></div>
+    <a href="/">home</a>
+    <div class="footer-sep"></div>
+    <a href="terms-of-service.html">terms of service</a>
+    <div class="footer-spacer"></div>
+    <span>MIT license</span>
+  </footer>
+
+</div>
+</body>
+</html>
