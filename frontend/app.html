@@ -131,7 +131,6 @@
             <span style="font-size:10px;color:var(--muted);opacity:0.6;">powered by GIPHY</span>
           </div>
         </div>
-        <div id="emoji-autocomplete"></div>
         <div id="input-row">
           <label id="attach-btn" title="Attach image" style="flex-shrink:0;width:38px;height:38px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);color:var(--muted);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;transition:color 0.15s;">
             📎
@@ -140,6 +139,7 @@
           <button id="gif-btn" title="Send a GIF" onclick="toggleGifPicker()">GIF</button>
           <button id="emoji-btn" title="Emoji">😀</button>
           <div id="emoji-picker" style="display:none; position:absolute; z-index:999;"></div>
+          <div id="emoji-autocomplete"></div>
           <textarea id="msg-input" placeholder="say something..." rows="1" maxlength="2000"></textarea>
           <button id="send-btn" title="Send" onclick="sendMessage()">↑</button>
         </div>
