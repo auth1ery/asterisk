@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>asterisk — 404</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg:          #09090d;
+      --surface:     #0f0f14;
+      --surface2:    #141419;
+      --border:      #1c1c24;
+      --border2:     #24242f;
+      --text:        #c8c8d8;
+      --muted:       #4a4a60;
+      --accent:      #8b7ef5;
+      --accent-glow: rgba(139,126,245,0.2);
+      --danger:      #ff4d6a;
+      --radius:      6px;
+      --font:        'JetBrains Mono', 'Courier New', monospace;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 13px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(139,126,245,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(139,126,245,0.025) 1px, transparent 1px);
+      background-size: 48px 48px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    body::after {
+      content: '';
+      position: fixed;
+      top: -120px; left: 50%; transform: translateX(-50%);
+      width: 700px; height: 400px;
+      background: radial-gradient(ellipse, rgba(255,77,106,0.06) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .page {
+      position: relative; z-index: 1;
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 0 24px 80px;
+      flex: 1;
+      width: 100%;
+    }
+
+    /* topbar */
+    .topbar {
+      display: flex;
+      align-items: center;
+      padding: 20px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .topbar-logo { display: flex; align-items: center; gap: 8px; }
+    .topbar-star { font-size: 18px; font-weight: 700; color: var(--accent); line-height: 1; }
+    .topbar-name { font-size: 13px; font-weight: 500; letter-spacing: 0.14em; color: var(--text); }
+    .topbar-spacer { flex: 1; }
+    .topbar-link { font-size: 11px; color: var(--muted); text-decoration: none; letter-spacing: 0.06em; transition: color 0.15s; }
+    .topbar-link:hover { color: var(--accent); }
+
+    /* hero */
+    .hero {
+      text-align: center;
+      padding: 72px 0 56px;
+      animation: fadeUp 0.5s ease both;
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .hero-code {
+      display: block;
+      font-size: 80px;
+      font-weight: 700;
+      color: var(--danger);
+      text-shadow:
+        0 0 40px rgba(255,77,106,0.4),
+        0 0 80px rgba(255,77,106,0.15);
+      line-height: 1;
+      margin-bottom: 20px;
+      animation: pulse 4s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { text-shadow: 0 0 40px rgba(255,77,106,0.4), 0 0 80px rgba(255,77,106,0.15); }
+      50%       { text-shadow: 0 0 60px rgba(255,77,106,0.6), 0 0 120px rgba(255,77,106,0.25); }
+    }
+
+    .hero-title {
+      display: block;
+      font-size: 14px;
+      font-weight: 300;
+      letter-spacing: 0.3em;
+      color: var(--text);
+      margin-bottom: 10px;
+    }
+    .hero-sub {
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 0.06em;
+      font-style: italic;
+    }
+
+    /* error block */
+    .section {
+      border-top: 1px solid var(--border);
+      padding: 36px 0;
+      animation: fadeUp 0.5s ease both;
+    }
+    .section:nth-child(2) { animation-delay: 0.08s; }
+    .section:nth-child(3) { animation-delay: 0.16s; }
+    .section:nth-child(4) { animation-delay: 0.24s; }
+
+    .section-label {
+      font-size: 9px;
+      letter-spacing: 0.2em;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 18px;
+    }
+
+    .error-block {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .error-block-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+    }
+    .error-block-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--danger);
+      box-shadow: 0 0 6px rgba(255,77,106,0.5);
+    }
+
+    .error-row {
+      display: grid;
+      grid-template-columns: 160px 1fr;
+      gap: 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 12px;
+    }
+    .error-row:last-child { border-bottom: none; }
+
+    .error-key {
+      padding: 9px 14px;
+      color: var(--muted);
+      font-size: 11px;
+      letter-spacing: 0.04em;
+      border-right: 1px solid var(--border);
+      background: rgba(255,255,255,0.01);
+    }
+
+    .error-val {
+      padding: 9px 14px;
+      color: var(--text);
+      word-break: break-all;
+      font-size: 11px;
+    }
+
+    .error-val.val-danger { color: var(--danger); }
+    .error-val.val-accent { color: var(--accent); }
+    .error-val.val-muted  { color: var(--muted); font-style: italic; }
+
+    /* actions */
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 4px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      text-decoration: none;
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 12px;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s, transform 0.1s;
+      letter-spacing: 0.04em;
+    }
+    .btn:hover {
+      border-color: var(--accent);
+      background: var(--surface2);
+      transform: translateY(-1px);
+    }
+    .btn-primary {
+      border-color: rgba(139,126,245,0.3);
+      background: rgba(139,126,245,0.04);
+      color: var(--accent);
+    }
+    .btn-primary:hover {
+      border-color: var(--accent);
+      background: var(--accent-glow);
+    }
+
+    /* footer */
+    .footer {
+      border-top: 1px solid var(--border);
+      padding: 24px 0 0;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 0.06em;
+    }
+    .footer a { color: var(--muted); text-decoration: none; transition: color 0.15s; }
+    .footer a:hover { color: var(--accent); }
+    .footer-sep { width: 1px; height: 12px; background: var(--border); }
+    .footer-spacer { flex: 1; }
+
+    @media (max-width: 500px) {
+      .page { padding: 0 16px 60px; }
+      .hero { padding: 52px 0 40px; }
+      .hero-code { font-size: 60px; }
+      .error-row { grid-template-columns: 1fr; }
+      .error-key { border-right: none; border-bottom: 1px solid var(--border); padding-bottom: 4px; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <nav class="topbar">
+    <div class="topbar-logo">
+      <span class="topbar-star">*</span>
+      <span class="topbar-name">asterisk</span>
+    </div>
+    <div class="topbar-spacer"></div>
+    <a href="/" class="topbar-link">← home</a>
+  </nav>
+
+  <div class="hero">
+    <span class="hero-code">404</span>
+    <span class="hero-title">not found</span>
+    <span class="hero-sub">the page you're looking for doesn't exist</span>
+  </div>
+
+  <!-- error details -->
+  <section class="section">
+    <div class="section-label">error details</div>
+    <div class="error-block">
+      <div class="error-block-header">
+        <div class="error-block-dot"></div>
+        <span>HTTP ERROR</span>
+      </div>
+      <div class="error-row">
+        <div class="error-key">error code</div>
+        <div class="error-val val-danger">404 NOT_FOUND</div>
+      </div>
+      <div class="error-row">
+        <div class="error-key">requested url</div>
+        <div class="error-val val-accent" id="req-url">—</div>
+      </div>
+      <div class="error-row">
+        <div class="error-key">host</div>
+        <div class="error-val" id="req-host">—</div>
+      </div>
+      <div class="error-row">
+        <div class="error-key">timestamp</div>
+        <div class="error-val" id="req-time">—</div>
+      </div>
+      <div class="error-row">
+        <div class="error-key">ray id</div>
+        <div class="error-val val-muted" id="ray-id">—</div>
+      </div>
+      <div class="error-row">
+        <div class="error-key">status</div>
+        <div class="error-val val-danger">the origin server returned no response for this route.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- actions -->
+  <section class="section">
+    <div class="section-label">what now</div>
+    <div class="actions">
+      <a href="/" class="btn btn-primary">↗ go home</a>
+      <button class="btn" onclick="history.back()">← go back</button>
+      <a href="https://github.com/auth1ery/asterisk/issues" target="_blank" rel="noopener" class="btn">⎇ report on github</a>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <span>* asterisk</span>
+    <div class="footer-sep"></div>
+    <a href="/">home</a>
+    <div class="footer-sep"></div>
+    <a href="/privacy-policy">privacy</a>
+    <div class="footer-sep"></div>
+    <a href="/terms-of-service">terms</a>
+    <div class="footer-spacer"></div>
+    <span>made by <a href="https://github.com/auth1ery" target="_blank" rel="noopener">auth</a></span>
+  </footer>
+
+</div>
+
+<script>
+  // requested url
+  document.getElementById('req-url').textContent = window.location.pathname + window.location.search;
+
+  // host
+  document.getElementById('req-host').textContent = window.location.host;
+
+  // timestamp (ISO 8601 like CF uses)
+  document.getElementById('req-time').textContent = new Date().toISOString();
+
+  // fake ray id — Cloudflare ray IDs are 16 hex chars followed by airport code
+  // we just generate a convincing random one
+  const airports = ['LAX','LHR','CDG','SIN','NRT','SYD','AMS','FRA','ORD','DFW'];
+  const hex = () => Math.floor(Math.random() * 16).toString(16);
+  const rayHex = Array.from({ length: 16 }, hex).join('');
+  const airport = airports[Math.floor(Math.random() * airports.length)];
+  document.getElementById('ray-id').textContent = rayHex + '-' + airport;
+</script>
+</body>
+</html>
