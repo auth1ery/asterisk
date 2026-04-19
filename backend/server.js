@@ -523,6 +523,61 @@ app.delete('/api/nodes/:id/messages/:msgId', auth, (req, res) => {
   res.json({ status: 'deleted' });
 });
 
+// ── Admin endpoints ────────────────────────────────────────────────────────
+const ADMIN_SECRET = process.env.ADMIN_SECRET || 'changeme';
+
+const adminAuth = (req, res, next) => {
+  if (req.headers['x-admin-secret'] !== ADMIN_SECRET)
+    return res.status(403).json({ error: 'Forbidden.' });
+  next();
+};
+
+// List online sessions
+app.get('/api/admin/online', adminAuth, (req, res) => {
+  res.json([...clients.values()].map(c => ({ username: c.username, color: c.color })));
+});
+
+// List all accounts
+app.get('/api/admin/accounts', adminAuth, (req, res) => {
+  res.json(Object.values(accounts).map(a => ({ username: a.username, color: a.color })));
+});
+
+// Kick a session
+app.post('/api/admin/kick/:username', adminAuth, (req, res) => {
+  const target = req.params.username;
+  let kicked = false;
+  for (const [ws, info] of clients) {
+    if (info.username === target) {
+      push(ws, { type: 'kicked', reason: 'Kicked by admin.' });
+      ws.close(); kicked = true;
+    }
+  }
+  res.json({ kicked });
+});
+
+// Delete an account (also kicks active session)
+app.delete('/api/admin/accounts/:username', adminAuth, (req, res) => {
+  const target = req.params.username;
+  for (const [ws, info] of clients) {
+    if (info.username === target) {
+      push(ws, { type: 'kicked', reason: 'Account deleted by admin.' });
+      ws.close();
+    }
+  }
+  delete accounts[target.toLowerCase()];
+  saveJSON(ACCOUNTS_FILE, accounts);
+  res.json({ deleted: true });
+});
+
+// ── Admin dashboard key gate ───────────────────────────────────────────────
+app.post('/api/admin/dashkey', (req, res) => {
+  const { key } = req.body || {};
+  const DASHKEY = process.env.ADMIN_DASHKEY;
+  if (!DASHKEY) return res.status(500).json({ error: 'ADMIN_DASHKEY not set in .env... bahahhahahahahahahahha' });
+  if (key !== DASHKEY) return res.status(403).json({ error: 'wrong key LMAO' });
+  res.json({ ok: true });
+});
+
 // ── WebSocket ─────────────────────────────────────────────────────────────────
 const server = http.createServer(app);
 const wss    = new WebSocketServer({ server, path: '/ws' });
