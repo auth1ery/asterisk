@@ -364,6 +364,7 @@
       flex-shrink: 0;
       border-top: 1px solid var(--border);
       background: var(--surface);
+      position: relative;
     }
 
     #typing-bar {
@@ -1063,10 +1064,6 @@
 }
 
 .active-node { background: rgba(139,126,245,0.07) !important; }
-
-#input-area {
-  position: relative;
-}
 
 #node-members-section {
   flex-shrink: 0; border-top: 1px solid var(--border); padding-top: 4px; margin-top: 4px;
