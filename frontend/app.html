@@ -131,6 +131,7 @@
             <span style="font-size:10px;color:var(--muted);opacity:0.6;">powered by GIPHY</span>
           </div>
         </div>
+        <div id="emoji-autocomplete"></div>
         <div id="input-row">
           <label id="attach-btn" title="Attach image" style="flex-shrink:0;width:38px;height:38px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);color:var(--muted);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;transition:color 0.15s;">
             📎
@@ -750,6 +751,66 @@ document.addEventListener('click', (e) => {
     emojiContainer.style.display = 'none';
   }
 });
+
+let acResults = [];
+let acIndex   = 0;
+
+document.getElementById('msg-input').addEventListener('input', async () => {
+  const input = document.getElementById('msg-input');
+  const val   = input.value;
+  const ac    = document.getElementById('emoji-autocomplete');
+
+  const match = val.match(/:([a-zA-Z0-9_+-]{2,})$/);
+  if (!match) { ac.style.display = 'none'; acResults = []; return; }
+
+  const results = await EmojiMart.SearchIndex.search(match[1]);
+  acResults = (results || []).slice(0, 8);
+  acIndex   = 0;
+
+  if (!acResults.length) { ac.style.display = 'none'; return; }
+
+  ac.innerHTML = '';
+  ac.style.display = 'block';
+  acResults.forEach((emoji, i) => {
+    const item = document.createElement('div');
+    item.className = 'emoji-ac-item' + (i === 0 ? ' selected' : '');
+    item.innerHTML = `<span class="emoji-ac-native">${emoji.skins[0].native}</span><span class="emoji-ac-name">:${emoji.id}:</span>`;
+    item.onclick = () => insertAcEmoji(emoji);
+    ac.appendChild(item);
+  });
+});
+
+function insertAcEmoji(emoji) {
+  const input = document.getElementById('msg-input');
+  input.value = input.value.replace(/:([a-zA-Z0-9_+-]{2,})$/, emoji.skins[0].native);
+  document.getElementById('emoji-autocomplete').style.display = 'none';
+  acResults = [];
+  input.focus();
+}
+
+// Arrow keys + enter to navigate autocomplete
+document.getElementById('msg-input').addEventListener('keydown', e => {
+  const ac = document.getElementById('emoji-autocomplete');
+  if (ac.style.display === 'none' || !acResults.length) return;
+
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    acIndex = (acIndex + 1) % acResults.length;
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    acIndex = (acIndex - 1 + acResults.length) % acResults.length;
+  } else if (e.key === 'Enter' || e.key === 'Tab') {
+    e.preventDefault();
+    insertAcEmoji(acResults[acIndex]);
+    return;
+  } else if (e.key === 'Escape') {
+    ac.style.display = 'none'; acResults = []; return;
+  } else { return; }
+
+  ac.querySelectorAll('.emoji-ac-item').forEach((el, i) =>
+    el.classList.toggle('selected', i === acIndex)
+  );
+});
   
 function scheduleReconnect() {
   clearTimeout(reconnectTimer);
@@ -921,11 +982,14 @@ case 'node_channel_deleted':
   }
 }
 
-function parseShortcodes(text) {
-  return text.replace(/:([a-zA-Z0-9_+-]+):/g, (match, code) => {
-    const emoji = EmojiMart.getEmojiDataFromNative?.(code);
-    return emoji ? emoji.native : match;
-  });
+async function parseShortcodes(text) {
+  const matches = [...text.matchAll(/:([a-zA-Z0-9_+-]+):/g)];
+  let result = text;
+  for (const [match, code] of matches) {
+    const results = await EmojiMart.SearchIndex.search(code);
+    if (results?.length) result = result.replace(match, results[0].skins[0].native);
+  }
+  return result;
 }
   
 // ── Render global message ─────────────────────────────────────────────────────
@@ -1484,7 +1548,7 @@ async function sendMessage() {
   if (rateRemaining <= 0) return;
   const input     = document.getElementById('msg-input');
   const fileInput = document.getElementById('file-input');
-  const text = parseShortcodes(input.value.trim());
+  const text = await parseShortcodes(input.value.trim());
   const file      = fileInput.files[0];
 
   console.log('[send] text:', JSON.stringify(text), '| file:', file?.name ?? 'none');
