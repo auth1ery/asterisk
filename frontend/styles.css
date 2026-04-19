@@ -835,6 +835,28 @@
   .request-item { padding: 8px 14px 10px; }
 }
 
+#emoji-btn {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 18px;
+  padding: 0;
+}
+#emoji-btn:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+
+
 /* Desktop: hide mobile-only elements */
 @media (min-width: 601px) {
   #mobile-nav { display: none; }
@@ -1256,15 +1278,15 @@
 }
 
 #emoji-autocomplete {
-  display: none;
   position: absolute;
-  bottom: 48px;
+  bottom: 100%;
   left: 0;
+  margin-bottom: 4px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   z-index: 1000;
-  max-width: 320px;
+  max-width: 280px;
   overflow: hidden;
 }
 
