@@ -82,8 +82,9 @@
       20 messages / min
     </div>
     <div class="header-sep" style="margin-left:6px;"></div>
-    <button id="settings-btn" onclick="openSettings()" title="Settings">⚙</button>
+    <button id="settings-btn" onclick="openSettings()" title="settings">⚙</button>
     <div id="header-user">
+      <span id="my-status-icon" onclick="showStatusPicker()" title="set status" style="cursor:pointer">🟢</span>
       <span id="header-username"></span>
       <button id="logout-btn" onclick="doLogout()">logout</button>
     </div>
@@ -112,6 +113,9 @@
       <div id="input-area">
         <div id="typing-bar">
           <span id="typing-text"></span><span id="typing-dots"></span>
+        </div>
+        <div id="reply-preview">
+          <!-- populated by JS -->
         </div>
         <div id="attachment-preview">
           <span>📎</span>
@@ -496,6 +500,9 @@ let myNodes         = [];
 let discoverOpen    = false;
 let activeNodeChannel = 'general';
 let activeNodeData    = null;   // { id, name, owner, channels, members }
+let replyingTo = null; // { id, username, text }
+const STATUS_ICONS = { online: '🟢', away: '🟡', busy: '🔴', invisible: '⚫' };
+const QUICK_REACTIONS = ['👍','❤️','😂','😮','😢','🔥','✅','👀'];
 
 function switchChannel(ch) {
   if (currentDM) closeDM();
@@ -927,7 +934,7 @@ case 'node_kicked':
 
 case 'node_message_deleted':
   if (currentNode?.id === msg.nodeId) {
-    document.querySelector(`.msg[data-msgid="${msg.msgId}"]`)?.remove();
+    document.querySelector(`.msg[data-msgid="${msg.msgId}"]`)?.closest('.msg-wrap')?.remove();
   }
   break;
 
@@ -951,6 +958,14 @@ case 'node_channel_deleted':
   }
   break;
 
+    case 'reaction_update': {
+  const bar = document.querySelector(`.reaction-bar[data-msgid="${msg.msgId}"]`);
+  if (!bar) return;
+  const newBar = buildReactionBar(msg.msgId, msg.reactions);
+  bar.replaceWith(newBar);
+  break;
+}
+      
     // ── DMs ──────────────────────────────────────────────────────────────────
     case 'dm': {
       const other = msg.from === currentUser?.username ? msg.to : msg.from;
@@ -994,6 +1009,139 @@ async function parseShortcodes(text) {
   }
   return result;
 }
+
+// ── Reactions ─────────────────────────────────────────────────────────────────
+async function toggleReaction(msgId, emoji) {
+  await fetch(HTTP_BASE + '/api/reactions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + getToken() },
+    body: JSON.stringify({ msgId, emoji })
+  });
+}
+
+function showReactionPicker(e, msgId) {
+  e.stopPropagation();
+  document.querySelector('.reaction-picker-popup')?.remove();
+  const popup = document.createElement('div');
+  popup.className = 'reaction-picker-popup';
+  QUICK_REACTIONS.forEach(emoji => {
+    const btn = document.createElement('button');
+    btn.textContent = emoji;
+    btn.onclick = ev => { ev.stopPropagation(); toggleReaction(msgId, emoji); popup.remove(); };
+    popup.appendChild(btn);
+  });
+  const rect = e.target.getBoundingClientRect();
+  popup.style.cssText = `position:fixed;left:${rect.left}px;top:${rect.top - 48}px;`;
+  document.body.appendChild(popup);
+  setTimeout(() => document.addEventListener('click', () => popup.remove(), { once: true }), 0);
+}
+
+function buildReactionBar(msgId, rxns) {
+  const bar = document.createElement('div');
+  bar.className = 'reaction-bar';
+  bar.dataset.msgid = msgId;
+  Object.entries(rxns || {}).forEach(([emoji, users]) => {
+    if (!users.length) return;
+    const btn = document.createElement('button');
+    btn.className = 'reaction-pill' + (users.includes(currentUser?.username) ? ' reacted' : '');
+    btn.title = users.join(', ');
+    btn.innerHTML = `${emoji} <span class="reaction-count">${users.length}</span>`;
+    btn.onclick = () => toggleReaction(msgId, emoji);
+    bar.appendChild(btn);
+  });
+  return bar;
+}
+
+// ── Replies ───────────────────────────────────────────────────────────────────
+function setReply(id, username, text) {
+  replyingTo = { id, username, text };
+  const bar = document.getElementById('reply-preview');
+  bar.innerHTML = `
+    <span class="reply-preview-to">replying to <strong style="color:var(--accent)">${username}</strong>:</span>
+    <span class="reply-preview-text">${text.slice(0, 80)}${text.length > 80 ? '…' : ''}</span>
+    <button onclick="clearReply()">×</button>
+  `;
+  bar.classList.add('visible');
+  document.getElementById('msg-input').focus();
+}
+
+function clearReply() {
+  replyingTo = null;
+  const bar = document.getElementById('reply-preview');
+  bar.classList.remove('visible');
+  bar.innerHTML = '';
+}
+
+// ── User profiles ─────────────────────────────────────────────────────────────
+async function showProfile(username, anchorEl) {
+  document.querySelector('.profile-popup')?.remove();
+  const res = await fetch(`${HTTP_BASE}/api/profile/${encodeURIComponent(username)}`, {
+    headers: { Authorization: 'Bearer ' + getToken() }
+  });
+  const data = await res.json();
+
+  const popup = document.createElement('div');
+  popup.className = 'profile-popup';
+  const isMe = username === currentUser?.username;
+  popup.innerHTML = `
+    <div class="profile-head">
+      <span class="profile-dot" style="background:${data.color}"></span>
+      <span class="profile-name" style="color:${data.color}">${data.username}</span>
+      <span class="profile-status-icon">${STATUS_ICONS[data.status] || '🟢'}</span>
+      <button class="profile-close" onclick="this.closest('.profile-popup').remove()">×</button>
+    </div>
+    <div class="profile-bio">${data.bio || '<span style="color:var(--muted);font-style:italic">no bio set</span>'}</div>
+    ${isMe ? `
+      <textarea class="profile-bio-edit" maxlength="160" placeholder="write a bio…">${data.bio || ''}</textarea>
+      <button class="profile-save-btn" onclick="saveBio(this)">save bio</button>
+    ` : ''}
+  `;
+
+  const rect = anchorEl.getBoundingClientRect();
+  popup.style.cssText = `position:fixed;left:${rect.left}px;top:${rect.bottom + 4}px;`;
+  document.body.appendChild(popup);
+  setTimeout(() => document.addEventListener('click', e => {
+    if (!popup.contains(e.target)) popup.remove();
+  }, { once: true }), 0);
+}
+
+async function saveBio(btn) {
+  const popup = btn.closest('.profile-popup');
+  const bio = popup.querySelector('.profile-bio-edit').value.trim();
+  await fetch(HTTP_BASE + '/api/profile', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + getToken() },
+    body: JSON.stringify({ bio })
+  });
+  popup.querySelector('.profile-bio').textContent = bio || 'no bio set';
+  btn.textContent = 'saved!';
+  setTimeout(() => { btn.textContent = 'save bio'; }, 1500);
+}
+
+// ── Status picker ─────────────────────────────────────────────────────────────
+function showStatusPicker() {
+  document.querySelector('.status-picker-popup')?.remove();
+  const popup = document.createElement('div');
+  popup.className = 'status-picker-popup';
+  [['online','🟢 online'],['away','🟡 away'],['busy','🔴 busy'],['invisible','⚫ invisible']].forEach(([val, label]) => {
+    const btn = document.createElement('button');
+    btn.textContent = label;
+    btn.onclick = () => {
+      sendWS({ type: 'set_status', status: val });
+      fetch(HTTP_BASE + '/api/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + getToken() },
+        body: JSON.stringify({ status: val })
+      });
+      document.getElementById('my-status-icon').textContent = STATUS_ICONS[val];
+      popup.remove();
+    };
+    popup.appendChild(btn);
+  });
+  popup.style.cssText = 'position:fixed;right:16px;top:46px;';
+  document.body.appendChild(popup);
+  setTimeout(() => document.addEventListener('click', () => popup.remove(), { once: true }), 0);
+}
   
 // ── Render global message ─────────────────────────────────────────────────────
 function renderMessage(msg) {
@@ -1001,7 +1149,7 @@ function renderMessage(msg) {
 
   if (msg.type === 'system') {
     const el = document.createElement('div');
-    el.className   = 'msg-system';
+    el.className = 'msg-system';
     el.textContent = '— ' + msg.text + ' —';
     container.appendChild(el);
     return;
@@ -1010,33 +1158,69 @@ function renderMessage(msg) {
   const ts   = new Date(msg.timestamp);
   const time = ts.getHours().toString().padStart(2,'0') + ':' + ts.getMinutes().toString().padStart(2,'0');
 
+  const wrap   = document.createElement('div');
+  wrap.className = 'msg-wrap';
+
   const row    = document.createElement('div');
   row.className = 'msg';
+  if (msg.id) row.dataset.msgid = msg.id;
 
-  const tsEl   = document.createElement('span');
-  tsEl.className   = 'msg-ts';
-  tsEl.textContent = time;
-
-  const userEl = document.createElement('span');
-  userEl.className   = 'msg-user';
-  userEl.style.color = msg.color || '#888';
-  userEl.textContent = msg.username;
-
-  const sepEl  = document.createElement('span');
-  sepEl.className   = 'msg-sep';
-  sepEl.textContent = '›';
-
-  const textEl = document.createElement('span');
-  textEl.className   = 'msg-text';
-  textEl.textContent = msg.text;
-
-  if (msg.fileUrl) {
-    appendFilePreview(msg.fileUrl, msg.fileType, textEl);
+  // Reply quote
+  if (msg.replyTo) {
+    const quote = document.createElement('div');
+    quote.className = 'msg-reply-quote';
+    quote.innerHTML = `<span class="reply-quote-user">${msg.replyTo.username}</span> ${msg.replyTo.text.slice(0, 80)}${msg.replyTo.text.length > 80 ? '…' : ''}`;
+    quote.onclick = () => {
+      document.querySelector(`.msg[data-msgid="${msg.replyTo.id}"]`)
+        ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    };
+    row.appendChild(quote);
   }
 
-  row.append(tsEl, userEl, sepEl, textEl);
-  container.appendChild(row);
+  const mainRow = document.createElement('div');
+  mainRow.className = 'msg-main';
+
+  const tsEl = document.createElement('span');
+  tsEl.className = 'msg-ts'; tsEl.textContent = time;
+
+  const userEl = document.createElement('span');
+  userEl.className = 'msg-user'; userEl.style.color = msg.color || '#888';
+  userEl.textContent = msg.username;
+  userEl.style.cursor = 'pointer';
+  userEl.onclick = e => { e.stopPropagation(); showProfile(msg.username, userEl); };
+
+  const sepEl = document.createElement('span');
+  sepEl.className = 'msg-sep'; sepEl.textContent = '›';
+
+  const textEl = document.createElement('span');
+  textEl.className = 'msg-text'; textEl.textContent = msg.text;
+  if (msg.fileUrl) appendFilePreview(msg.fileUrl, msg.fileType, textEl);
+
+  const actions = document.createElement('div');
+  actions.className = 'msg-actions';
+
+  const reactBtn = document.createElement('button');
+  reactBtn.className = 'msg-action-btn'; reactBtn.title = 'React'; reactBtn.textContent = '😀';
+  if (msg.id) reactBtn.onclick = e => showReactionPicker(e, msg.id);
+
+  const replyBtn = document.createElement('button');
+  replyBtn.className = 'msg-action-btn'; replyBtn.title = 'Reply'; replyBtn.textContent = '↩';
+  replyBtn.onclick = () => setReply(msg.id, msg.username, msg.text || '');
+
+  actions.append(reactBtn, replyBtn);
+  mainRow.append(tsEl, userEl, sepEl, textEl, actions);
+  row.appendChild(mainRow);
+  wrap.appendChild(row);
+
+  // Reaction bar
+  if (msg.id) {
+    const rxBar = buildReactionBar(msg.id, msg.reactions || {});
+    wrap.appendChild(rxBar);
+  }
+
+  container.appendChild(wrap);
 }
+  
 // ── Render DM message ─────────────────────────────────────────────────────────
 function renderDMMessage(msg) {
   const container = document.getElementById('messages');
@@ -1045,32 +1229,56 @@ function renderDMMessage(msg) {
   const ts   = new Date(msg.timestamp);
   const time = ts.getHours().toString().padStart(2,'0') + ':' + ts.getMinutes().toString().padStart(2,'0');
 
-  const row    = document.createElement('div');
+  const wrap = document.createElement('div');
+  wrap.className = 'msg-wrap';
+
+  const row = document.createElement('div');
   row.className = 'msg ' + (isSelf ? 'msg-dm-out' : 'msg-dm-in');
+  if (msg.id) row.dataset.msgid = msg.id;
 
-  const tsEl   = document.createElement('span');
-  tsEl.className   = 'msg-ts';
-  tsEl.textContent = time;
-
-  const userEl = document.createElement('span');
-  userEl.className   = 'msg-user';
-  userEl.style.color = msg.color || '#888';
-  userEl.textContent = msg.from;
-
-  const sepEl  = document.createElement('span');
-  sepEl.className   = 'msg-sep';
-  sepEl.textContent = '›';
-
-  const textEl = document.createElement('span');
-  textEl.className   = 'msg-text';
-  textEl.textContent = msg.text;
-
-  if (msg.fileUrl) {
-    appendFilePreview(msg.fileUrl, msg.fileType, textEl);
+  if (msg.replyTo) {
+    const quote = document.createElement('div');
+    quote.className = 'msg-reply-quote';
+    quote.innerHTML = `<span class="reply-quote-user">${msg.replyTo.username}</span> ${msg.replyTo.text.slice(0, 80)}${msg.replyTo.text.length > 80 ? '…' : ''}`;
+    quote.onclick = () => {
+      document.querySelector(`.msg[data-msgid="${msg.replyTo.id}"]`)
+        ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    };
+    row.appendChild(quote);
   }
 
-  row.append(tsEl, userEl, sepEl, textEl);
-  container.appendChild(row);
+  const mainRow = document.createElement('div');
+  mainRow.className = 'msg-main';
+
+  const tsEl = document.createElement('span');
+  tsEl.className = 'msg-ts'; tsEl.textContent = time;
+
+  const userEl = document.createElement('span');
+  userEl.className = 'msg-user'; userEl.style.color = msg.color || '#888';
+  userEl.textContent = msg.from;
+  userEl.style.cursor = 'pointer';
+  userEl.onclick = e => { e.stopPropagation(); showProfile(msg.from, userEl); };
+
+  const sepEl = document.createElement('span');
+  sepEl.className = 'msg-sep'; sepEl.textContent = '›';
+
+  const textEl = document.createElement('span');
+  textEl.className = 'msg-text'; textEl.textContent = msg.text;
+  if (msg.fileUrl) appendFilePreview(msg.fileUrl, msg.fileType, textEl);
+
+  const actions = document.createElement('div');
+  actions.className = 'msg-actions';
+
+  const replyBtn = document.createElement('button');
+  replyBtn.className = 'msg-action-btn'; replyBtn.title = 'Reply'; replyBtn.textContent = '↩';
+  replyBtn.onclick = () => setReply(msg.id, msg.from, msg.text || '');
+  actions.appendChild(replyBtn);
+
+  mainRow.append(tsEl, userEl, sepEl, textEl, actions);
+  row.appendChild(mainRow);
+  wrap.appendChild(row);
+
+  container.appendChild(wrap);
 }
 
 function renderNodeChannelBar(node) {
@@ -1333,35 +1541,84 @@ function closeNode() {
 function renderNodeMessage(msg) {
   const container = document.getElementById('messages');
   const isOwner = currentNode?.owner === currentUser?.username;
+
   const ts = new Date(msg.timestamp);
   const time = ts.getHours().toString().padStart(2,'0') + ':' + ts.getMinutes().toString().padStart(2,'0');
+
+  const wrap = document.createElement('div');
+  wrap.className = 'msg-wrap';
+
   const row = document.createElement('div');
   row.className = 'msg'; row.dataset.msgid = msg.id;
+
+  if (msg.replyTo) {
+    const quote = document.createElement('div');
+    quote.className = 'msg-reply-quote';
+    quote.innerHTML = `<span class="reply-quote-user">${msg.replyTo.username}</span> ${msg.replyTo.text.slice(0, 80)}${msg.replyTo.text.length > 80 ? '…' : ''}`;
+    quote.onclick = () => {
+      document.querySelector(`.msg[data-msgid="${msg.replyTo.id}"]`)
+        ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    };
+    row.appendChild(quote);
+  }
+
+  const mainRow = document.createElement('div');
+  mainRow.className = 'msg-main';
+
   const tsEl = document.createElement('span');
   tsEl.className = 'msg-ts'; tsEl.textContent = time;
+
   const userEl = document.createElement('span');
   userEl.className = 'msg-user'; userEl.style.color = msg.color || '#888';
   userEl.textContent = (msg.username === currentNode?.owner ? '♛ ' : '') + msg.username;
+  userEl.style.cursor = 'pointer';
+  userEl.onclick = e => { e.stopPropagation(); showProfile(msg.username, userEl); };
+
   const sepEl = document.createElement('span');
   sepEl.className = 'msg-sep'; sepEl.textContent = '›';
+
   const textEl = document.createElement('span');
   textEl.className = 'msg-text'; textEl.textContent = msg.text;
   if (msg.fileUrl) appendFilePreview(msg.fileUrl, msg.fileType, textEl);
-  row.append(tsEl, userEl, sepEl, textEl);
+
+  const actions = document.createElement('div');
+  actions.className = 'msg-actions';
+
+  const reactBtn = document.createElement('button');
+  reactBtn.className = 'msg-action-btn'; reactBtn.title = 'React'; reactBtn.textContent = '😀';
+  if (msg.id) reactBtn.onclick = e => showReactionPicker(e, msg.id);
+
+  const replyBtn = document.createElement('button');
+  replyBtn.className = 'msg-action-btn'; replyBtn.title = 'Reply'; replyBtn.textContent = '↩';
+  replyBtn.onclick = () => setReply(msg.id, msg.username, msg.text || '');
+
+  actions.append(reactBtn, replyBtn);
+
   if (isOwner && msg.username !== currentUser?.username) {
     const del = document.createElement('button');
-    del.className = 'node-del-btn'; del.textContent = '×'; del.title = 'delete';
-    del.onclick = () => deleteNodeMessage(currentNode.id, msg.id, row);
-    row.appendChild(del);
+    del.className = 'msg-action-btn'; del.textContent = '×'; del.title = 'delete';
+    del.style.color = 'var(--muted)';
+    del.onclick = () => deleteNodeMessage(currentNode.id, msg.id, wrap); // ← targets wrap now
+    actions.appendChild(del);
   }
-  container.appendChild(row);
+
+  mainRow.append(tsEl, userEl, sepEl, textEl, actions);
+  row.appendChild(mainRow);
+  wrap.appendChild(row);
+
+  if (msg.id) {
+    const rxBar = buildReactionBar(msg.id, msg.reactions || {});
+    wrap.appendChild(rxBar);
+  }
+
+  container.appendChild(wrap);
 }
 
-async function deleteNodeMessage(nodeId, msgId, rowEl) {
+async function deleteNodeMessage(nodeId, msgId, wrapEl) {
   try {
     await fetch(`${HTTP_BASE}/api/nodes/${nodeId}/messages/${msgId}`,
       { method: 'DELETE', headers: { Authorization: 'Bearer ' + getToken() } });
-    rowEl.remove();
+    wrapEl.remove();
   } catch {}
 }
 
@@ -1519,7 +1776,11 @@ function renderUserList(users) {
 
     const dot  = document.createElement('span');
     dot.className = 'user-dot';
-    dot.style.background = u.color;
+    dot.style.background = u.status === 'invisible' ? 'var(--muted)' 
+      : u.status === 'busy' ? 'var(--danger)'
+      : u.status === 'away' ? '#f5c842'
+      : u.color;
+    dot.title = u.status || 'online';
 
     const name = document.createElement('span');
     name.className   = 'user-name' + (u.username === currentUser?.username ? ' is-you' : '');
@@ -1589,15 +1850,16 @@ async function sendMessage() {
       return;
     }
   }
-
-let payload;
-if (currentNode) {
-  payload = { type: 'node_message', nodeId: currentNode.id, channel: activeNodeChannel, text: text || ' ' };
-} else {
-  payload = { type: currentDM ? 'dm' : 'message', text: text || ' ', channel: currentChannel };
-  if (currentDM) payload.to = currentDM;
-}
-if (fileUrl) { payload.fileUrl = fileUrl; payload.fileType = fileType; }
+  
+  let payload;
+  if (currentNode) {
+    payload = { type: 'node_message', nodeId: currentNode.id, channel: activeNodeChannel, text: text || ' ' };
+  } else {
+    payload = { type: currentDM ? 'dm' : 'message', text: text || ' ', channel: currentChannel };
+    if (currentDM) payload.to = currentDM;
+  }
+  if (replyingTo) { payload.replyTo = replyingTo; clearReply(); }
+  if (fileUrl) { payload.fileUrl = fileUrl; payload.fileType = fileType; }
 
   console.log('[send] sending payload:', payload);
   sendWS(payload);
