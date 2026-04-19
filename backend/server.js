@@ -609,8 +609,14 @@ wss.on('connection', (ws, req) => {
     }
   }
 
-  clients.set(ws, { username: user.username, color: user.color });
+  // Cancel pending leave message if reconnecting
+  if (leaveTimers.has(user.username)) {
+    clearTimeout(leaveTimers.get(user.username));
+    leaveTimers.delete(user.username);
+  }
 
+  clients.set(ws, { username: user.username, color: user.color });
+  
   // Send initial state
   push(ws, { type: 'history', messages: messages['global'].slice(-HISTORY_SEND), channel: 'global' });
   push(ws, buildFriendsState(user.username));
@@ -790,26 +796,34 @@ case 'node_history': {
 });
 
   // ── Disconnect ────────────────────────────────────────────────────────────
-  ws.on('close', () => {
-    const self = clients.get(ws);
-    if (!self) return;
-    clients.delete(ws);
+const leaveTimers = new Map(); // username → timeoutId
 
-    if (typingUsers.has(self.username)) {
-      clearTimeout(typingUsers.get(self.username));
-      typingUsers.delete(self.username);
-    }
+ws.on('close', () => {
+  const self = clients.get(ws);
+  if (!self) return;
+  clients.delete(ws);
 
-    syncUserList();
-    syncTyping();
+  if (typingUsers.has(self.username)) {
+    clearTimeout(typingUsers.get(self.username));
+    typingUsers.delete(self.username);
+  }
 
+  syncUserList();
+  syncTyping();
+
+  // Wait 8 seconds before broadcasting leave — cancels if they reconnect
+  const timer = setTimeout(() => {
+    leaveTimers.delete(self.username);
     const leaveMsg = {
       type: 'system', id: Math.random().toString(36).slice(2),
       text: `${self.username} left`, timestamp: Date.now()
     };
     appendMessage(leaveMsg, 'global');
     broadcastAll(leaveMsg);
-  });
+  }, 8000);
+
+  leaveTimers.set(self.username, timer);
+});
 
   ws.on('error', err => console.error('[ws error]', err.message));
 });
