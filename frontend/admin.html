@@ -777,8 +777,7 @@ async function verifyGate() {
   if (!key) return;
 
   // Use whatever BASE_URL is typed in the config bar, fallback to origin
-  const base = document.getElementById('url-input').value.trim().replace(/\/$/,'')
-               || window.location.origin;
+  const base = 'https://asterisk.authsrng.xyz/admin.html';
 
   try {
     const res  = await fetch(base + '/api/admin/dashkey', {
