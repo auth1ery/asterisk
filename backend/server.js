@@ -573,8 +573,11 @@ app.delete('/api/admin/accounts/:username', adminAuth, (req, res) => {
 app.post('/api/admin/dashkey', (req, res) => {
   const { key } = req.body || {};
   const DASHKEY = process.env.ADMIN_DASHKEY;
-  if (!DASHKEY) return res.status(500).json({ error: 'ADMIN_DASHKEY not set in .env... bahahhahahahahahahahha' });
-  if (key !== DASHKEY) return res.status(403).json({ error: 'wrong key LMAO' });
+  console.log('got key:', JSON.stringify(key));
+  console.log('env key:', JSON.stringify(DASHKEY));
+  console.log('match:', key === DASHKEY);
+  if (!DASHKEY) return res.status(500).json({ error: 'ADMIN_DASHKEY not set in .env' });
+  if (key !== DASHKEY) return res.status(403).json({ error: 'wrong key' });
   res.json({ ok: true });
 });
 
