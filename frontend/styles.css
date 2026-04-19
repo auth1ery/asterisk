@@ -1268,10 +1268,6 @@
 }
 #node-add-ch-btn:hover { color: var(--accent); }
 
-#input-row {
-  position: relative;
-}
-
 #emoji-picker {
   position: absolute;
   bottom: 48px;
