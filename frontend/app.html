@@ -840,6 +840,7 @@ function handleServerMessage(msg) {
       el.innerHTML = '';
       msg.messages.forEach(renderMessage);
       el.scrollTop = el.scrollHeight;
+      setTimeout(() => { el.scrollTop = el.scrollHeight; }, 200);
       break;
 
     case 'message':
@@ -913,6 +914,7 @@ case 'node_history':
     c.innerHTML = '';
     msg.messages.forEach(renderNodeMessage);
     c.scrollTop = c.scrollHeight;
+    setTimeout(() => { c.scrollTop = c.scrollHeight; }, 200);
   }
   break;
 
@@ -971,14 +973,15 @@ case 'node_channel_deleted':
     }
 
     case 'dm_history':
-      dmCache[msg.with] = msg.messages;
-      if (currentDM === msg.with) {
-        const container = document.getElementById('messages');
-        container.innerHTML = '';
-        msg.messages.forEach(renderDMMessage);
-        container.scrollTop = container.scrollHeight;
-      }
-      break;
+    dmCache[msg.with] = msg.messages;
+    if (currentDM === msg.with) {
+      const container = document.getElementById('messages');
+      container.innerHTML = '';
+      msg.messages.forEach(renderDMMessage);
+      container.scrollTop = container.scrollHeight;
+      setTimeout(() => { container.scrollTop = container.scrollHeight; }, 200);
+    }
+    break;
   }
 }
 
