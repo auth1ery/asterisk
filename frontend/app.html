@@ -1163,21 +1163,18 @@ function openDM(username) {
 function closeDM() {
   currentDM = null;
 
-  // Restore channel bar
-  const bar   = document.getElementById('channel-bar');
-  bar.innerHTML = '<span id="channel-label">global chat</span>';
+  const bar = document.getElementById('channel-bar');
+  bar.innerHTML = '<span id="channel-label">#' + currentChannel + '</span><div class="header-spacer"></div><div id="channel-tabs"><button class="ch-tab" onclick="switchChannel(\'global\')">#global</button><button class="ch-tab" onclick="switchChannel(\'debate\')">#debate</button><button class="ch-tab" onclick="switchChannel(\'gaming\')">#gaming</button><button class="ch-tab" onclick="switchChannel(\'music\')">#music</button></div>';
+  document.querySelectorAll('.ch-tab').forEach(b =>
+    b.classList.toggle('active', b.textContent === '#' + currentChannel)
+  );
 
-  // Restore input placeholder
   document.getElementById('msg-input').placeholder = 'say something...';
-
-  // Reload global history from cache (re-request on reconnect; for now restore what we have)
-  // We'll ask for global history by reconnecting or just clearing
-  const container = document.getElementById('messages');
-  container.innerHTML = '<div class="msg-system" style="padding:12px 16px;">— returned to global chat —</div>';
-
+  document.getElementById('messages').innerHTML = '';
+  sendWS({ type: 'join_channel', channel: currentChannel });
   document.getElementById('msg-input').focus();
 }
-
+  
 // ── Nodes ─────────────────────────────────────────────────────────────────────
 async function fetchMyNodes() {
   try {
@@ -1318,13 +1315,18 @@ function closeNode() {
   activeNodeChannel = 'general';
   hideNodeChannelBar();
 
-  document.getElementById('channel-bar').innerHTML =
-    '<span id="channel-label">global chat</span><div class="header-spacer"></div><div id="channel-tabs"><button class="ch-tab active" onclick="switchChannel(\'global\')">#global</button><button class="ch-tab" onclick="switchChannel(\'debate\')">#debate</button><button class="ch-tab" onclick="switchChannel(\'gaming\')">#gaming</button><button class="ch-tab" onclick="switchChannel(\'music\')">#music</button></div>';
+  const bar = document.getElementById('channel-bar');
+  bar.innerHTML = '<span id="channel-label">#' + currentChannel + '</span><div class="header-spacer"></div><div id="channel-tabs"><button class="ch-tab" onclick="switchChannel(\'global\')">#global</button><button class="ch-tab" onclick="switchChannel(\'debate\')">#debate</button><button class="ch-tab" onclick="switchChannel(\'gaming\')">#gaming</button><button class="ch-tab" onclick="switchChannel(\'music\')">#music</button></div>';
+  document.querySelectorAll('.ch-tab').forEach(b =>
+    b.classList.toggle('active', b.textContent === '#' + currentChannel)
+  );
+
   document.getElementById('msg-input').placeholder = 'say something...';
-  document.getElementById('messages').innerHTML = '<div class="msg-system" style="padding:12px 16px;">— returned to global chat —</div>';
+  document.getElementById('messages').innerHTML = '';
+  sendWS({ type: 'join_channel', channel: currentChannel });
   renderNodesPanel();
 }
-
+  
 function renderNodeMessage(msg) {
   const container = document.getElementById('messages');
   const isOwner = currentNode?.owner === currentUser?.username;
