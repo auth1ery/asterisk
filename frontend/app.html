@@ -1098,7 +1098,9 @@ async function showProfile(username, anchorEl) {
   `;
 
   const rect = anchorEl.getBoundingClientRect();
-  popup.style.cssText = `position:fixed;left:${rect.left}px;top:${rect.bottom + 4}px;`;
+  const left = Math.min(rect.left, window.innerWidth - 300);
+  const top  = Math.min(rect.bottom + 4, window.innerHeight - 200);
+  popup.style.cssText = `position:fixed;left:${Math.max(0,left)}px;top:${top}px;`;
   document.body.appendChild(popup);
   setTimeout(() => document.addEventListener('click', e => {
     if (!popup.contains(e.target)) popup.remove();
@@ -1787,6 +1789,8 @@ function renderUserList(users) {
     name.textContent = u.username === currentUser?.username ? u.username + ' (you)' : u.username;
 
     item.append(dot, name);
+    item.style.cursor = 'pointer';
+    item.onclick = () => showProfile(u.username, item);
     list.appendChild(item);
   });
 }
@@ -2083,6 +2087,8 @@ function renderFriendsList() {
       actions.append(dmBtn, removeBtn);
       item.append(dot, name, actions);
       item.ondblclick = () => openDM(f.username);
+      item.querySelector('.friend-name').style.cursor = 'pointer';
+      item.querySelector('.friend-name').onclick = e => { e.stopPropagation(); showProfile(f.username, item); };
       section.appendChild(item);
     });
 }
