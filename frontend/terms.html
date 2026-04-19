@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>asterisk — terms of service</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg:          #09090d;
+      --surface:     #0f0f14;
+      --surface2:    #141419;
+      --border:      #1c1c24;
+      --border2:     #24242f;
+      --text:        #c8c8d8;
+      --muted:       #4a4a60;
+      --muted2:      #2e2e3e;
+      --accent:      #8b7ef5;
+      --accent-glow: rgba(139,126,245,0.2);
+      --danger:      #ff4d6a;
+      --success:     #4dffa0;
+      --radius:      6px;
+      --font:        'JetBrains Mono', 'Courier New', monospace;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 13px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(139,126,245,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(139,126,245,0.025) 1px, transparent 1px);
+      background-size: 48px 48px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    body::after {
+      content: '';
+      position: fixed;
+      top: -120px; left: 50%; transform: translateX(-50%);
+      width: 700px; height: 400px;
+      background: radial-gradient(ellipse, rgba(139,126,245,0.08) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .page {
+      position: relative; z-index: 1;
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 0 24px 80px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      padding: 20px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .topbar-logo { display: flex; align-items: center; gap: 8px; }
+    .topbar-star { font-size: 18px; font-weight: 700; color: var(--accent); line-height: 1; }
+    .topbar-name { font-size: 13px; font-weight: 500; letter-spacing: 0.14em; color: var(--text); }
+    .topbar-spacer { flex: 1; }
+    .topbar-link { font-size: 11px; color: var(--muted); text-decoration: none; letter-spacing: 0.06em; transition: color 0.15s; }
+    .topbar-link:hover { color: var(--accent); }
+
+    .hero {
+      padding: 56px 0 40px;
+      animation: fadeUp 0.6s ease both;
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .hero-label {
+      font-size: 9px;
+      letter-spacing: 0.22em;
+      color: var(--accent);
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+    .hero-title {
+      font-size: 22px;
+      font-weight: 300;
+      letter-spacing: 0.1em;
+      color: var(--text);
+      margin-bottom: 10px;
+    }
+    .hero-sub {
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 0.06em;
+    }
+
+    .section {
+      border-top: 1px solid var(--border);
+      padding: 36px 0;
+      animation: fadeUp 0.6s ease both;
+    }
+    .section-label {
+      font-size: 9px;
+      letter-spacing: 0.2em;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 18px;
+    }
+    .section-title {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--accent);
+      margin-bottom: 12px;
+      letter-spacing: 0.06em;
+    }
+    p {
+      color: var(--text);
+      font-size: 12px;
+      line-height: 1.8;
+      margin-bottom: 12px;
+    }
+    p:last-child { margin-bottom: 0; }
+
+    .rule-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .rule-list li {
+      display: grid;
+      grid-template-columns: 20px 1fr;
+      gap: 10px;
+      font-size: 12px;
+      line-height: 1.7;
+      color: var(--text);
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .rule-list li:last-child { border-bottom: none; }
+    .rule-list .rule-icon { color: var(--accent); }
+    .rule-list.rules-no .rule-icon { color: var(--danger); }
+    .rule-list.rules-no li { color: var(--text); }
+
+    .notice {
+      border: 1px solid rgba(139,126,245,0.25);
+      background: rgba(139,126,245,0.04);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      margin-bottom: 12px;
+      font-size: 12px;
+      color: var(--text);
+      line-height: 1.8;
+    }
+    .notice-warn {
+      border-color: rgba(255,77,106,0.25);
+      background: rgba(255,77,106,0.04);
+    }
+
+    .tag {
+      display: inline-block;
+      padding: 1px 7px;
+      background: rgba(139,126,245,0.08);
+      border: 1px solid rgba(139,126,245,0.2);
+      border-radius: 3px;
+      font-size: 10px;
+      color: var(--accent);
+      letter-spacing: 0.04em;
+    }
+
+    .footer {
+      border-top: 1px solid var(--border);
+      padding: 24px 0 0;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 0.06em;
+    }
+    .footer a { color: var(--muted); text-decoration: none; transition: color 0.15s; }
+    .footer a:hover { color: var(--accent); }
+    .footer-sep { width: 1px; height: 12px; background: var(--border); }
+    .footer-spacer { flex: 1; }
+
+    @media (max-width: 500px) {
+      .page { padding: 0 16px 60px; }
+      .hero { padding: 40px 0 32px; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <nav class="topbar">
+    <div class="topbar-logo">
+      <span class="topbar-star">*</span>
+      <span class="topbar-name">asterisk</span>
+    </div>
+    <div class="topbar-spacer"></div>
+    <a href="/" class="topbar-link">← home</a>
+  </nav>
+
+  <div class="hero">
+    <div class="hero-label">legal</div>
+    <div class="hero-title">terms of service</div>
+    <div class="hero-sub">last updated: 2025 &nbsp;·&nbsp; applies to asterisk.authsrng.xyz</div>
+  </div>
+
+  <!-- acceptance -->
+  <section class="section">
+    <div class="section-label">acceptance</div>
+    <p>by creating an account or using asterisk at <strong style="color:var(--accent)">asterisk.authsrng.xyz</strong> you agree to these terms. if you don't agree, don't use the service.</p>
+    <p>these terms apply to the instance hosted by us. self-hosted instances are governed by their own operators.</p>
+  </section>
+
+  <!-- age -->
+  <section class="section">
+    <div class="section-label">age requirement</div>
+    <div class="notice notice-warn">
+      <strong style="color:var(--danger)">you must be at least 14 years old to use asterisk.</strong> by registering, you confirm that you are 14 or older. if you are under 14, do not register or use the service.
+    </div>
+    <p>accounts found to belong to users under 14 will be terminated and their data deleted. we reserve the right to request age verification at any time.</p>
+  </section>
+
+  <!-- accounts -->
+  <section class="section">
+    <div class="section-label">your account</div>
+    <div class="section-title">registration</div>
+    <p>you need a username (2–20 characters, letters/numbers/underscore/hyphen) and a password (minimum 6 characters) to create an account. usernames are unique and case-insensitive.</p>
+    <p>you are responsible for keeping your credentials secure. you are responsible for all activity that occurs under your account.</p>
+
+    <div class="section-title" style="margin-top: 24px;">username rules</div>
+    <ul class="rule-list">
+      <li><span class="rule-icon">›</span><span>your username may not impersonate another person or entity.</span></li>
+      <li><span class="rule-icon">›</span><span>your username may not be hateful, slur-based, or harassing in nature.</span></li>
+      <li><span class="rule-icon">›</span><span>we reserve the right to rename or remove usernames that violate these rules.</span></li>
+    </ul>
+
+    <div class="section-title" style="margin-top: 24px;">account termination</div>
+    <p>we may suspend or delete your account if you violate these terms. you may delete your account at any time by contacting us.</p>
+  </section>
+
+  <!-- conduct -->
+  <section class="section">
+    <div class="section-label">conduct</div>
+    <div class="section-title">what you must not do</div>
+    <ul class="rule-list rules-no">
+      <li><span class="rule-icon">✕</span><span>post or share content that is illegal under applicable law.</span></li>
+      <li><span class="rule-icon">✕</span><span>share content that sexualizes minors (CSAM) in any form. this will result in immediate termination and reporting to relevant authorities.</span></li>
+      <li><span class="rule-icon">✕</span><span>harass, threaten, or intimidate other users.</span></li>
+      <li><span class="rule-icon">✕</span><span>share content designed to incite violence or hatred against individuals or groups.</span></li>
+      <li><span class="rule-icon">✕</span><span>spam, flood channels, or deliberately abuse the rate-limit system.</span></li>
+      <li><span class="rule-icon">✕</span><span>attempt to exploit, hack, or disrupt the service or its infrastructure.</span></li>
+      <li><span class="rule-icon">✕</span><span>upload malware or files intended to harm other users' devices.</span></li>
+      <li><span class="rule-icon">✕</span><span>impersonate administrators, moderators, or other users.</span></li>
+      <li><span class="rule-icon">✕</span><span>scrape, harvest, or automatically extract user data from the platform.</span></li>
+      <li><span class="rule-icon">✕</span><span>share another person's private information without their consent (doxing).</span></li>
+    </ul>
+
+    <div class="section-title" style="margin-top: 24px;">content you post</div>
+    <p>you retain ownership of content you post. by posting, you grant us a limited, non-exclusive license to store and transmit that content for the purposes of operating the service. we do not claim ownership of your messages or files.</p>
+    <p>you are solely responsible for the content you post. we are not liable for user-generated content.</p>
+  </section>
+
+  <!-- uploads -->
+  <section class="section">
+    <div class="section-label">file uploads</div>
+    <p>you may upload images, videos, and text files up to <strong>8 MB</strong> each. accepted file types are JPEG, PNG, GIF, WebP, MP4, WebM, Ogg, and plain text.</p>
+    <p>uploaded files are accessible to anyone who can see the message they are attached to. do not upload files containing sensitive personal information or content that violates these terms.</p>
+    <p>we reserve the right to remove uploaded files that violate these terms without notice.</p>
+  </section>
+
+  <!-- nodes -->
+  <section class="section">
+    <div class="section-label">nodes</div>
+    <p>nodes are private group chats. node owners are responsible for moderating their nodes and ensuring members comply with these terms. we may remove nodes or ban users from the platform if a node is used to facilitate violations.</p>
+    <p>node owners may kick or ban members at their discretion. we are not responsible for moderation decisions made by node owners.</p>
+  </section>
+
+  <!-- rate limits -->
+  <section class="section">
+    <div class="section-label">rate limiting</div>
+    <p>the service enforces a limit of <strong>20 messages per minute</strong> per account to maintain quality for everyone. attempting to circumvent rate limits (e.g. via scripts or multiple accounts) is prohibited and may result in suspension.</p>
+  </section>
+
+  <!-- service availability -->
+  <section class="section">
+    <div class="section-label">service availability</div>
+    <p>asterisk is provided as-is. we do not guarantee any specific level of uptime or availability. the service may be interrupted for maintenance, updates, or circumstances outside our control.</p>
+    <p>we reserve the right to modify, suspend, or discontinue the service at any time without notice.</p>
+  </section>
+
+  <!-- disclaimer -->
+  <section class="section">
+    <div class="section-label">disclaimer of warranties</div>
+    <div class="notice notice-warn">
+      the service is provided <strong>"as is"</strong> without warranties of any kind, express or implied. we make no warranty that the service will be error-free, secure, or continuously available. your use of the service is at your own risk.
+    </div>
+  </section>
+
+  <!-- limitation of liability -->
+  <section class="section">
+    <div class="section-label">limitation of liability</div>
+    <p>to the fullest extent permitted by law, we shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising from your use of or inability to use the service, including but not limited to loss of data or content.</p>
+  </section>
+
+  <!-- open source -->
+  <section class="section">
+    <div class="section-label">open source</div>
+    <p>asterisk's source code is released under the <strong>MIT license</strong> and is available at <a href="https://github.com/auth1ery/asterisk" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none;">github.com/auth1ery/asterisk ↗</a>. the MIT license governs use of the software itself; these terms govern use of this hosted service.</p>
+  </section>
+
+  <!-- changes -->
+  <section class="section">
+    <div class="section-label">changes to these terms</div>
+    <p>we may update these terms at any time. the "last updated" date at the top will reflect the most recent revision. continued use after changes constitutes acceptance of the new terms.</p>
+  </section>
+
+  <!-- contact -->
+  <section class="section">
+    <div class="section-label">contact</div>
+    <p>questions or reports about these terms? reach out via <a href="https://github.com/auth1ery/asterisk" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none;">github ↗</a>.</p>
+  </section>
+
+  <footer class="footer">
+    <span>* asterisk</span>
+    <div class="footer-sep"></div>
+    <a href="/">home</a>
+    <div class="footer-sep"></div>
+    <a href="privacy-policy.html">privacy policy</a>
+    <div class="footer-spacer"></div>
+    <span>MIT license</span>
+  </footer>
+
+</div>
+</body>
+</html>
