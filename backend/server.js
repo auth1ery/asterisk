@@ -39,6 +39,7 @@ const MESSAGES_FILE = path.join(DATA_DIR, 'messages.json');
 const FRIENDS_FILE  = path.join(DATA_DIR, 'friends.json');
 const DMS_FILE      = path.join(DATA_DIR, 'dms.json');
 const NODES_FILE    = path.join(DATA_DIR, 'nodes.json');
+const REACTIONS_FILE = path.join(DATA_DIR, 'reactions.json');
 
 const CHANNELS        = ['global', 'debate', 'gaming', 'music'];
 const MAX_MESSAGES    = 30000;
@@ -55,6 +56,7 @@ let messages    = loadJSON(MESSAGES_FILE, {});
 let friendships = loadJSON(FRIENDS_FILE,  { requests: [], accepted: [] });
 let dms         = loadJSON(DMS_FILE,      {});
 let nodes       = loadJSON(NODES_FILE,    {});
+let reactions = loadJSON(REACTIONS_FILE, {});
 
 CHANNELS.forEach(ch => { if (!messages[ch]) messages[ch] = []; });
 
@@ -233,6 +235,47 @@ app.post('/api/login', async (req, res) => {
 // ── Verify ────────────────────────────────────────────────────────────────────
 app.get('/api/verify', auth, (req, res) => {
   res.json({ username: req.user.username, color: req.user.color });
+});
+
+// Update profile (bio + status)
+app.patch('/api/profile', auth, (req, res) => {
+  const me = req.user.username;
+  const acc = accounts[me.toLowerCase()];
+  if (!acc) return res.status(404).json({ error: 'Not found.' });
+  if (req.body.bio !== undefined) acc.bio = String(req.body.bio).slice(0, 160);
+  if (req.body.status !== undefined) {
+    const allowed = ['online','away','busy','invisible'];
+    if (allowed.includes(req.body.status)) acc.status = req.body.status;
+  }
+  saveJSON(ACCOUNTS_FILE, accounts);
+  // live-update the connected client entry
+  for (const [ws, info] of clients) {
+    if (info.username === me) { info.status = acc.status; break; }
+  }
+  syncUserList();
+  res.json({ ok: true });
+});
+
+app.get('/api/profile/:username', auth, (req, res) => {
+  const acc = accounts[req.params.username.toLowerCase()];
+  if (!acc) return res.status(404).json({ error: 'Not found.' });
+  res.json({ username: acc.username, color: acc.color, bio: acc.bio || '', status: acc.status || 'online' });
+});
+
+app.post('/api/reactions', auth, (req, res) => {
+  const { msgId, emoji } = req.body;
+  if (!msgId || !emoji) return res.status(400).json({ error: 'Missing fields.' });
+  const me = req.user.username;
+  if (!reactions[msgId]) reactions[msgId] = {};
+  if (!reactions[msgId][emoji]) reactions[msgId][emoji] = [];
+  const arr = reactions[msgId][emoji];
+  const idx = arr.indexOf(me);
+  if (idx === -1) arr.push(me); else arr.splice(idx, 1);
+  if (!arr.length) delete reactions[msgId][emoji];
+  if (!Object.keys(reactions[msgId] || {}).length) delete reactions[msgId];
+  saveJSON(REACTIONS_FILE, reactions);
+  broadcastAll({ type: 'reaction_update', msgId, reactions: reactions[msgId] || {} });
+  res.json({ ok: true });
 });
 
 // the files
@@ -518,8 +561,11 @@ app.delete('/api/nodes/:id/messages/:msgId', auth, (req, res) => {
   const me = req.user.username;
   const node = nodes[req.params.id];
   if (!node || node.owner !== me) return res.status(403).json({ error: 'Not owner.' });
-  const key = `node:${req.params.id}`;
-  if (messages[key]) { messages[key] = messages[key].filter(m => m.id !== req.params.msgId); saveJSON(MESSAGES_FILE, messages); }
+  const allKeys = Object.keys(messages).filter(k => k.startsWith(`node:${req.params.id}:`));
+  for (const key of allKeys) {
+    if (messages[key]) messages[key] = messages[key].filter(m => m.id !== req.params.msgId);
+  }
+  saveJSON(MESSAGES_FILE, messages);  // ← moved outside the loop, called once
   pushToNodeMembers(req.params.id, { type: 'node_message_deleted', nodeId: req.params.id, msgId: req.params.msgId });
   res.json({ status: 'deleted' });
 });
@@ -592,7 +638,11 @@ function broadcast(data, skip = null) {
 }
 const broadcastAll = data => broadcast(data, null);
 
-function userList()     { return [...clients.values()]; }
+function userList() {
+  return [...clients.values()].map(c => ({
+    username: c.username, color: c.color, status: c.status || 'online'
+  }));
+}
 function syncUserList() { broadcastAll({ type: 'user_list', users: userList() }); }
 function syncTyping()   { broadcastAll({ type: 'typing',   users: [...typingUsers.keys()] }); }
 
@@ -616,10 +666,18 @@ wss.on('connection', (ws, req) => {
     leaveTimers.delete(user.username);
   }
 
-  clients.set(ws, { username: user.username, color: user.color });
+  clients.set(ws, {
+    username: user.username,
+    color:    user.color,
+    status:   accounts[user.username.toLowerCase()]?.status || 'online'
+  });
   
   // Send initial state
-  push(ws, { type: 'history', messages: messages['global'].slice(-HISTORY_SEND), channel: 'global' });
+  push(ws, {
+    type: 'history',
+    channel: 'global',
+    messages: messages['global'].slice(-HISTORY_SEND).map(m => ({ ...m, reactions: reactions[m.id] || {} }))
+  });
   push(ws, buildFriendsState(user.username));
   syncUserList();
 
@@ -665,7 +723,12 @@ wss.on('connection', (ws, req) => {
         channel,
         fileUrl:  msg.fileUrl  || msg.imageUrl || null,   // accept both for compat
         fileType: msg.fileType || null,           
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        replyTo: msg.replyTo ? {
+        id:       String(msg.replyTo.id || ''),
+        username: String(msg.replyTo.username || ''),
+        text:     String(msg.replyTo.text || '').slice(0, 200)
+      } : null,
       };
 
       appendMessage(m, channel);
@@ -692,7 +755,12 @@ wss.on('connection', (ws, req) => {
         text: text?.trim() || '',
         fileUrl: msg.fileUrl || null,
         fileType: msg.fileType || null,
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        replyTo: msg.replyTo ? {
+        id:       String(msg.replyTo.id || ''),
+        username: String(msg.replyTo.username || ''),
+        text:     String(msg.replyTo.text || '').slice(0, 200)
+      } : null,
       };
 
       appendDM(self.username, to, m);
@@ -743,6 +811,16 @@ wss.on('connection', (ws, req) => {
       break;
     }
 
+    case 'set_status': {
+  const allowed = ['online','away','busy','invisible'];
+  if (!allowed.includes(msg.status)) return;
+  self.status = msg.status;
+  const acc = accounts[self.username.toLowerCase()];
+  if (acc) { acc.status = msg.status; saveJSON(ACCOUNTS_FILE, accounts); }
+  syncUserList();
+  break;
+}
+      
     case 'node_message': {
   const node = nodes[msg.nodeId];
   if (!node || !node.members.includes(self.username)) return;
@@ -756,10 +834,15 @@ wss.on('connection', (ws, req) => {
 
   const m = {
     type: 'node_message', id: Math.random().toString(36).slice(2),
-    nodeId: msg.nodeId, channel,                    // ← included in message
+    nodeId: msg.nodeId, channel,
     username: self.username, color: self.color,
     text: text || '', fileUrl: msg.fileUrl || null, fileType: msg.fileType || null,
-    timestamp: Date.now()
+    timestamp: Date.now(),
+    replyTo: msg.replyTo ? {
+      id:       String(msg.replyTo.id || ''),
+      username: String(msg.replyTo.username || ''),
+      text:     String(msg.replyTo.text || '').slice(0, 20)
+    } : null,
   };
   const key = `node:${msg.nodeId}:${channel}`;     // ← new key format
   if (!messages[key]) messages[key] = [];
@@ -777,20 +860,20 @@ case 'node_history': {
   const channel = node.channels?.includes(msg.channel) ? msg.channel : 'general';
   push(ws, {
     type: 'node_history', nodeId: msg.nodeId, channel,
-    messages: (messages[`node:${msg.nodeId}:${channel}`] || []).slice(-HISTORY_SEND)
+    messages: (messages[`node:${msg.nodeId}:${channel}`] || [])
+      .slice(-HISTORY_SEND)
+      .map(m => ({ ...m, reactions: reactions[m.id] || {} }))
   });
   break;
 }
 
-    case 'join_channel': {
-      const ch = CHANNELS.includes(msg.channel) ? msg.channel : 'global';
-
-      push(ws, {
+      case 'join_channel': {
+        const ch = CHANNELS.includes(msg.channel) ? msg.channel : 'global';
+        push(ws, {
         type: 'history',
-        messages: (messages[ch] || []).slice(-HISTORY_SEND),
-        channel: ch
+        channel: ch,
+        messages: (messages[ch] || []).slice(-HISTORY_SEND).map(m => ({ ...m, reactions: reactions[m.id] || {} }))
       });
-
       break;
     }
   }
