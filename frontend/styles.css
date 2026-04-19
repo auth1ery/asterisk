@@ -1244,6 +1244,17 @@
 }
 #node-add-ch-btn:hover { color: var(--accent); }
 
+#input-row {
+  position: relative;
+}
+
+#emoji-picker {
+  position: absolute;
+  bottom: 48px;
+  right: 0;
+  z-index: 999;
+}
+
 @media (max-width: 600px) {
   #node-channels-bar { padding: 0 8px; height: 32px; }
   .node-ch-tab { font-size: 11px; padding: 3px 8px; }
