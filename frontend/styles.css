@@ -1255,6 +1255,42 @@
   z-index: 999;
 }
 
+#emoji-autocomplete {
+  display: none;
+  position: absolute;
+  bottom: 48px;
+  left: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  z-index: 1000;
+  max-width: 320px;
+  overflow: hidden;
+}
+
+.emoji-ac-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.emoji-ac-item:hover, .emoji-ac-item.selected {
+  background: var(--surface2);
+}
+
+.emoji-ac-native {
+  font-size: 18px;
+}
+
+.emoji-ac-name {
+  color: var(--muted);
+  font-size: 11px;
+}
+
 @media (max-width: 600px) {
   #node-channels-bar { padding: 0 8px; height: 32px; }
   .node-ch-tab { font-size: 11px; padding: 3px 8px; }
