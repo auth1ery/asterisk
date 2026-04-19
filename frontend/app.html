@@ -2250,6 +2250,7 @@ loadGifFaves();
 // ── Open / close ──────────────────────────────────────────────────────────────
 function toggleGifPicker() {
   gifPickerOpen = !gifPickerOpen;
+  console.log('gif open:', gifPickerOpen);
   document.getElementById('gif-picker').classList.toggle('hidden', !gifPickerOpen);
   document.getElementById('gif-btn').classList.toggle('active', gifPickerOpen);
   if (gifPickerOpen) {
@@ -2257,6 +2258,7 @@ function toggleGifPicker() {
     document.getElementById('gif-search').focus();
   }
 }
+  
 function closeGifPicker() {
   gifPickerOpen = false;
   document.getElementById('gif-picker').classList.add('hidden');
