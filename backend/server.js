@@ -47,6 +47,7 @@ const MAX_DM_STORED   = 5000;
 const DM_HISTORY_SEND = 100;
 const RATE_LIMIT      = 20;
 const RATE_WINDOW     = 60 * 1000;
+const leaveTimers = new Map(); // username → timeoutId
 
 // ── Load state ────────────────────────────────────────────────────────────────
 let accounts    = loadJSON(ACCOUNTS_FILE, {});
@@ -796,7 +797,6 @@ case 'node_history': {
 });
 
   // ── Disconnect ────────────────────────────────────────────────────────────
-const leaveTimers = new Map(); // username → timeoutId
 
 ws.on('close', () => {
   const self = clients.get(ws);
