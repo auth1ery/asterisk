@@ -777,7 +777,7 @@ async function verifyGate() {
   if (!key) return;
 
   // Use whatever BASE_URL is typed in the config bar, fallback to origin
-  const base = window.location.origin;
+  const base = 'https://api.authsrng.xyz';
 
   try {
     const res  = await fetch(base + '/api/admin/dashkey', {
