@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>asterisk</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
+  <script src="https://cdn.jsdelivr.net/npm/emoji-mart@5/dist/browser.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
   <link rel="manifest" href="/manifest.json">
@@ -136,6 +137,8 @@
             <input type="file" id="file-input" accept="image/*,video/mp4,video/webm,video/ogg,text/plain" style="display:none">
           </label>
           <button id="gif-btn" title="Send a GIF" onclick="toggleGifPicker()">GIF</button>
+          <button id="emoji-btn" title="Emoji">😀</button>
+          <div id="emoji-picker" style="display:none; position:absolute; z-index:999;"></div>
           <textarea id="msg-input" placeholder="say something..." rows="1" maxlength="2000"></textarea>
           <button id="send-btn" title="Send" onclick="sendMessage()">↑</button>
         </div>
@@ -718,7 +721,36 @@ function connectWS() {
   ws.addEventListener('error', () => setStatus('disconnected'));
 }
 
+// EMOJISSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS
+  
+const emojiBtn = document.getElementById('emoji-btn');
+const emojiContainer = document.getElementById('emoji-picker');
 
+const picker = new EmojiMart.Picker({
+  onEmojiSelect: (emoji) => {
+    // insert emoji into message input
+    const input = document.getElementById('msg-input');
+    input.value += emoji.native;
+    emojiContainer.style.display = 'none';
+    input.focus();
+  },
+  theme: 'dark'
+});
+
+emojiContainer.appendChild(picker);
+
+emojiBtn.addEventListener('click', () => {
+  emojiContainer.style.display =
+    emojiContainer.style.display === 'none' ? 'block' : 'none';
+});
+
+// close when clicking outside
+document.addEventListener('click', (e) => {
+  if (!emojiContainer.contains(e.target) && e.target !== emojiBtn) {
+    emojiContainer.style.display = 'none';
+  }
+});
+  
 function scheduleReconnect() {
   clearTimeout(reconnectTimer);
   reconnectTimer = setTimeout(() => {
@@ -889,6 +921,13 @@ case 'node_channel_deleted':
   }
 }
 
+function parseShortcodes(text) {
+  return text.replace(/:([a-zA-Z0-9_+-]+):/g, (match, code) => {
+    const emoji = EmojiMart.getEmojiDataFromNative?.(code);
+    return emoji ? emoji.native : match;
+  });
+}
+  
 // ── Render global message ─────────────────────────────────────────────────────
 function renderMessage(msg) {
   const container = document.getElementById('messages');
@@ -1445,7 +1484,7 @@ async function sendMessage() {
   if (rateRemaining <= 0) return;
   const input     = document.getElementById('msg-input');
   const fileInput = document.getElementById('file-input');
-  const text      = input.value.trim();
+  const text = parseShortcodes(input.value.trim());
   const file      = fileInput.files[0];
 
   console.log('[send] text:', JSON.stringify(text), '| file:', file?.name ?? 'none');
