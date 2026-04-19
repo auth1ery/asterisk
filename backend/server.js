@@ -8,6 +8,7 @@ const fs               = require('fs');
 const path             = require('path');
 const cors             = require('cors');
 const multer           = require('multer');
+const serveIndex = require('serve-index');
 
 // ── Config ────────────────────────────────────────────────────────────────────
 const PORT         = process.env.PORT        || 3001;
@@ -191,6 +192,9 @@ const upload = multer({
 });
 
 app.use('/uploads', express.static(path.join(DATA_DIR, 'uploads')));
+
+const downloadsPath = path.join(__dirname, 'electron-download');
+app.use('/downloads', express.static(downloadsPath), serveIndex(downloadsPath, { icons: true }));
 
 // ── Register ──────────────────────────────────────────────────────────────────
 app.post('/api/register', async (req, res) => {
