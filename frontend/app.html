@@ -372,6 +372,7 @@
       <button class="ch-tab" onclick="switchChannel('debate')">#debate</button>
       <button class="ch-tab" onclick="switchChannel('gaming')">#gaming</button>
       <button class="ch-tab" onclick="switchChannel('music')">#music</button>
+      <button class="ch-tab" onclick="switchChannel('memes')">#memes</button>
     </div>
   </div>
 
@@ -978,6 +979,8 @@ function enterChat(user) {
 
   connectWS();
 
+  requestNotifPermission();
+
   fetchMyNodes();
   const _inv = new URLSearchParams(location.search).get('invite');
   if (_inv) setTimeout(() => joinByInviteCode(_inv), 800);
@@ -1146,6 +1149,15 @@ function handleServerMessage(msg) {
       break;
 
     case 'message':
+
+    if (
+      userSettings.mentionNotif &&
+      msg.username !== currentUser?.username &&
+      msg.text?.toLowerCase().includes(currentUser?.username?.toLowerCase())
+    ) {
+      browserNotify(`${msg.username} mentioned you`, msg.text);
+    }
+      
     case 'system':
       console.log('[recv]', msg);
       if (!currentDM && (!msg.channel || msg.channel === currentChannel)) {
@@ -1269,6 +1281,7 @@ function handleServerMessage(msg) {
       if (currentDM !== other) {
         if (userSettings.dmNotif) {
           showToast(`${other}: ${msg.text}`);
+          browserNotify(`DM from ${other}`, msg.text || '📎 attachment');
           if (userSettings.sound !== 'off') playNotifSound(userSettings.sound);
         }
       }
@@ -1673,7 +1686,7 @@ function closeDM() {
   currentDM = null;
 
   const bar = document.getElementById('channel-bar');
-  bar.innerHTML = '<span id="channel-label">#' + currentChannel + '</span><div class="header-spacer"></div><div id="channel-tabs"><button class="ch-tab" onclick="switchChannel(\'global\')">#global</button><button class="ch-tab" onclick="switchChannel(\'debate\')">#debate</button><button class="ch-tab" onclick="switchChannel(\'gaming\')">#gaming</button><button class="ch-tab" onclick="switchChannel(\'music\')">#music</button></div>';
+  bar.innerHTML = '<span id="channel-label">#' + currentChannel + '</span><div class="header-spacer"></div><div id="channel-tabs"><button class="ch-tab" onclick="switchChannel(\'global\')">#global</button><button class="ch-tab" onclick="switchChannel(\'debate\')">#debate</button><button class="ch-tab" onclick="switchChannel(\'gaming\')">#gaming</button><button class="ch-tab" onclick="switchChannel(\'music\')">#music</button><button class="ch-tab" onclick="switchChannel(\'memes\')">#memes</button></div>';
   document.querySelectorAll('.ch-tab').forEach(b =>
     b.classList.toggle('active', b.textContent === '#' + currentChannel)
   );
@@ -1827,7 +1840,7 @@ function closeNode() {
   hideNodeChannelBar();
 
   const bar = document.getElementById('channel-bar');
-  bar.innerHTML = '<span id="channel-label">#' + currentChannel + '</span><div class="header-spacer"></div><div id="channel-tabs"><button class="ch-tab" onclick="switchChannel(\'global\')">#global</button><button class="ch-tab" onclick="switchChannel(\'debate\')">#debate</button><button class="ch-tab" onclick="switchChannel(\'gaming\')">#gaming</button><button class="ch-tab" onclick="switchChannel(\'music\')">#music</button></div>';
+  bar.innerHTML = '<span id="channel-label">#' + currentChannel + '</span><div class="header-spacer"></div><div id="channel-tabs"><button class="ch-tab" onclick="switchChannel(\'global\')">#global</button><button class="ch-tab" onclick="switchChannel(\'debate\')">#debate</button><button class="ch-tab" onclick="switchChannel(\'gaming\')">#gaming</button><button class="ch-tab" onclick="switchChannel(\'music\')">#music</button><button class="ch-tab" onclick="switchChannel(\'memes\')">#memes</button></div>';
   document.querySelectorAll('.ch-tab').forEach(b =>
     b.classList.toggle('active', b.textContent === '#' + currentChannel)
   );
@@ -2793,6 +2806,24 @@ function showToast(text) {
   setTimeout(() => { toast.remove(); }, 3000);
 }
 
+// ── Browser notifications ─────────────────────────────────────────────────────
+async function requestNotifPermission() {
+  if (!('Notification' in window)) return;
+  if (Notification.permission === 'default') {
+    await Notification.requestPermission();
+  }
+}
+
+function browserNotify(title, body, icon = '/icons/icon-192.png') {
+  if (Notification.permission !== 'granted') return;
+  if (document.visibilityState === 'visible') return; // don't fire if tab is focused
+  if (navigator.serviceWorker?.controller) {
+    navigator.serviceWorker.controller.postMessage({ type: 'notify', title, body, icon });
+  } else {
+    new Notification(title, { body, icon });
+  }
+}
+  
 // ── Settings ──────────────────────────────────────────────────────────────────
 const SETTINGS_KEY = 'asterisk_settings';
 
