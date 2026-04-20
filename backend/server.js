@@ -289,6 +289,54 @@ app.get('/api/giphy', auth, async (req, res) => {
   } catch { res.status(502).json({ error: 'Upstream error' }); }
 });
 
+// bot
+
+app.post('/api/bot/token', auth, (req, res) => {
+  const me = req.user.username;
+  const botUsername = `${me}.bot`;
+
+  if (!accounts[botUsername.toLowerCase()]) {
+    const color = `hsl(${Math.floor(Math.random() * 360)},60%,65%)`;
+    accounts[botUsername.toLowerCase()] = {
+      username: botUsername,
+      hash: '',
+      color,
+      isBot: true,
+      owner: me
+    };
+    saveJSON(ACCOUNTS_FILE, accounts);
+  }
+
+  const botAcc = accounts[botUsername.toLowerCase()];
+  const token  = jwt.sign(
+    { username: botAcc.username, color: botAcc.color, isBot: true },
+    JWT_SECRET,
+    { expiresIn: '365d' }
+  );
+
+  res.json({ token, username: botAcc.username, color: botAcc.color });
+});
+
+app.get('/api/bot', auth, (req, res) => {
+  const botUsername = `${req.user.username}.bot`;
+  const botAcc = accounts[botUsername.toLowerCase()];
+  if (!botAcc) return res.json({ bot: null });
+  res.json({ bot: { username: botAcc.username, color: botAcc.color } });
+});
+
+app.delete('/api/bot/token', auth, (req, res) => {
+  const botUsername = `${req.user.username}.bot`;
+  const botAcc = accounts[botUsername.toLowerCase()];
+  if (!botAcc) return res.status(404).json({ error: 'No bot found.' });
+  for (const [ws, info] of clients) {
+    if (info.username === botAcc.username) {
+      push(ws, { type: 'kicked', reason: 'Token revoked.' });
+      ws.close();
+    }
+  }
+  res.json({ status: 'revoked' });
+});
+
 // ── Friends ────────────────────────────────────────────────────────────────
 app.get('/api/friends', auth, (req, res) => res.json(buildFriendsState(req.user.username)));
 
@@ -555,7 +603,14 @@ const wss = new WebSocketServer({ server, path: '/ws' });
 
 function broadcast(data, skip = null) { const s = JSON.stringify(data); wss.clients.forEach(c => { if (c !== skip && c.readyState === 1) c.send(s); }); }
 const broadcastAll = data => broadcast(data, null);
-function userList() { return [...clients.values()].map(c => ({ username: c.username, color: c.color, status: c.status || 'online' })); }
+function userList() {
+  return [...clients.values()].map(c => ({
+    username: c.username,
+    color: c.color,
+    status: c.status || 'online',
+    isBot: c.isBot || false
+  }));
+}
 function syncUserList() { broadcastAll({ type: 'user_list', users: userList() }); }
 function syncTyping()   { broadcastAll({ type: 'typing',   users: [...typingUsers.keys()] }); }
 
@@ -574,7 +629,12 @@ wss.on('connection', (ws, req) => {
   }
   if (leaveTimers.has(user.username)) { clearTimeout(leaveTimers.get(user.username)); leaveTimers.delete(user.username); }
 
-  clients.set(ws, { username: user.username, color: user.color, status: accounts[user.username.toLowerCase()]?.status || 'online' });
+  clients.set(ws, {
+    username: user.username,
+    color: user.color,
+    isBot: user.isBot || false,
+    status: accounts[user.username.toLowerCase()]?.status || 'online'
+  });
 
   push(ws, { type: 'history', channel: 'global', messages: messages['global'].slice(-HISTORY_SEND).map(m => ({ ...m, reactions: reactions[m.id] || {} })) });
   push(ws, buildFriendsState(user.username));
