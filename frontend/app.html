@@ -741,7 +741,6 @@ const FILE_RENDERERS = [
       img.src = url;
       img.style.cssText = 'display:block;max-width:260px;margin-top:4px;border-radius:4px;cursor:pointer;';
       img.onclick = () => window.open(img.src);
-      img.onload = () => scrollToBottom();
       el.appendChild(img);
     }
   },
@@ -2098,11 +2097,11 @@ function highlightFriend(username) {
 }
 
 // ── Scroll ────────────────────────────────────────────────────────────────────
-function scrollToBottom() {
+function scrollToBottom(force = false) {
   const el = document.getElementById('messages');
-  const threshold = 120;
-  if (el.scrollHeight - el.scrollTop - el.clientHeight < threshold)
-    el.scrollTop = el.scrollHeight;
+  const threshold = 200;
+  const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < threshold;
+  if (force || nearBottom) el.scrollTop = el.scrollHeight;
 }
 
 // ── User list ─────────────────────────────────────────────────────────────────
@@ -3053,6 +3052,13 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   loadSettings();
+
+  // auto-scroll when images/videos expand the messages container
+  const messagesEl = document.getElementById('messages');
+  const scrollObserver = new ResizeObserver(() => {
+    scrollToBottom();
+  });
+  scrollObserver.observe(messagesEl);
 });
 
 function playNotifSound(type) {
