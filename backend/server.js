@@ -41,7 +41,7 @@ const DMS_FILE      = path.join(DATA_DIR, 'dms.json');
 const NODES_FILE    = path.join(DATA_DIR, 'nodes.json');
 const REACTIONS_FILE = path.join(DATA_DIR, 'reactions.json');
 
-const CHANNELS        = ['global', 'debate', 'gaming', 'music'];
+const CHANNELS = ['global', 'debate', 'gaming', 'music', 'memes'];
 const MAX_MESSAGES    = 30000;
 const HISTORY_SEND    = 6000;
 const MAX_DM_STORED   = 5000;
