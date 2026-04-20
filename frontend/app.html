@@ -2134,6 +2134,14 @@ function renderUserList(users) {
     item.append(dot, name);
     item.style.cursor = 'pointer';
     item.onclick = () => showProfile(u.username, item);
+
+    if (u.isBot) {
+      const badge = document.createElement('span');
+      badge.textContent = 'BOT';
+      badge.style.cssText = 'font-size:8px;background:var(--surface2);border:1px solid var(--border);border-radius:3px;padding:1px 4px;color:var(--muted);margin-left:4px;vertical-align:middle;';
+      item.appendChild(badge);
+    }
+    
     list.appendChild(item);
   });
 }
