@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>asterisk</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <script src="https://cdn.jsdelivr.net/npm/emoji-mart@5/dist/browser.js"></script>
@@ -15,6 +15,272 @@
   <meta http-equiv="Cache-Control" content="no-transform">
   <link rel="icon" href="/favicon.ico" type="image/x-icon">
   <link rel="icon" href="/icons/icon-192.png" type="image/png">
+
+  <style>
+    /* ── Mobile nav: 5-button layout ────────────────────────────────── */
+    #mobile-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 200;
+      display: flex;
+      align-items: stretch;
+      background: var(--bg, #0e0e14);
+      border-top: 1px solid var(--border, #2a2a38);
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    #mobile-nav.hidden { display: none !important; }
+
+    .mobile-nav-btn {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      padding: 8px 4px 6px;
+      background: none;
+      border: none;
+      color: var(--muted, #666);
+      font-family: inherit;
+      font-size: 9px;
+      letter-spacing: 0.04em;
+      cursor: pointer;
+      position: relative;
+      transition: color 0.15s;
+    }
+    .mobile-nav-btn.active { color: var(--accent, #8b7ef5); }
+    .mobile-nav-btn .nav-icon {
+      font-size: 18px;
+      line-height: 1;
+    }
+
+    /* badge on friends button */
+    .mobile-nav-badge {
+      position: absolute;
+      top: 6px;
+      right: calc(50% - 14px);
+      background: var(--danger, #ff4d6a);
+      color: #fff;
+      font-size: 9px;
+      font-weight: 700;
+      min-width: 14px;
+      height: 14px;
+      border-radius: 7px;
+      padding: 0 3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+    }
+    .mobile-nav-badge.hidden { display: none; }
+
+    /* ── Mobile panels ───────────────────────────────────────────────── */
+    .mobile-panel {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: calc(52px + env(safe-area-inset-bottom));
+      background: var(--bg, #0e0e14);
+      overflow-y: auto;
+      z-index: 150;
+      padding: 8px 0;
+      -webkit-overflow-scrolling: touch;
+    }
+    .mobile-panel.visible { display: block; }
+
+    /* Panel inner header */
+    .mobile-panel-head {
+      display: flex;
+      align-items: center;
+      padding: 10px 14px 6px;
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      color: var(--muted, #666);
+      font-weight: 500;
+    }
+
+    /* ── More page ───────────────────────────────────────────────────── */
+    .mobile-more-menu {
+      padding: 0 0 16px;
+    }
+    .mobile-more-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 16px 12px;
+      border-bottom: 1px solid var(--border, #2a2a38);
+      margin-bottom: 4px;
+    }
+    .mobile-more-username {
+      font-size: 15px;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+    }
+    .mobile-more-status-icon {
+      font-size: 20px;
+      cursor: pointer;
+    }
+    .mobile-more-section {
+      margin-top: 8px;
+    }
+    .mobile-more-label {
+      font-size: 9px;
+      letter-spacing: 0.12em;
+      color: var(--muted, #666);
+      padding: 6px 16px 4px;
+      font-weight: 500;
+    }
+    .mobile-more-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      padding: 13px 16px;
+      background: none;
+      border: none;
+      border-bottom: 1px solid var(--border, #2a2a38);
+      color: var(--text, #e8e8f0);
+      font-family: inherit;
+      font-size: 13px;
+      cursor: pointer;
+      text-decoration: none;
+      text-align: left;
+      transition: background 0.1s;
+    }
+    .mobile-more-item:active { background: var(--surface2, #1a1a26); }
+    .mobile-more-item:last-child { border-bottom: none; }
+    .mobile-more-item.danger { color: var(--danger, #ff4d6a); }
+    .mmi-icon { font-size: 16px; width: 22px; text-align: center; flex-shrink: 0; }
+    .mmi-text { flex: 1; }
+    .mmi-arrow { color: var(--muted, #666); font-size: 14px; }
+
+    /* ── Mobile profile edit sheet ───────────────────────────────────── */
+    .mobile-profile-sheet {
+      padding: 16px;
+    }
+    .mobile-profile-sheet h3 {
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      color: var(--muted, #666);
+      margin: 0 0 12px;
+    }
+    .mobile-profile-sheet .field {
+      margin-bottom: 12px;
+    }
+    .mobile-profile-sheet label {
+      display: block;
+      font-size: 9px;
+      letter-spacing: 0.1em;
+      color: var(--muted, #666);
+      margin-bottom: 4px;
+    }
+    .mobile-profile-sheet textarea,
+    .mobile-profile-sheet input {
+      width: 100%;
+      box-sizing: border-box;
+      background: var(--surface2, #1a1a26);
+      border: 1px solid var(--border, #2a2a38);
+      border-radius: var(--radius, 6px);
+      color: var(--text, #e8e8f0);
+      font-family: inherit;
+      font-size: 13px;
+      padding: 8px 10px;
+      resize: none;
+    }
+    .mobile-status-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 4px;
+    }
+    .mobile-status-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      background: var(--surface2, #1a1a26);
+      border: 1px solid var(--border, #2a2a38);
+      border-radius: var(--radius, 6px);
+      color: var(--text, #e8e8f0);
+      font-family: inherit;
+      font-size: 12px;
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+    .mobile-status-btn.active {
+      border-color: var(--accent, #8b7ef5);
+      color: var(--accent, #8b7ef5);
+    }
+    .mobile-save-btn {
+      width: 100%;
+      padding: 11px;
+      background: var(--accent, #8b7ef5);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius, 6px);
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+    .mobile-back-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: none;
+      border: none;
+      color: var(--accent, #8b7ef5);
+      font-family: inherit;
+      font-size: 12px;
+      cursor: pointer;
+      padding: 4px 0;
+      margin-bottom: 12px;
+    }
+
+    /* ── Mobile nodes panel ──────────────────────────────────────────── */
+    #mobile-nodes-panel .nodes-create-area { padding: 8px 12px; }
+
+    /* ── Chat screen: account for bottom nav on mobile ───────────────── */
+    @media (max-width: 600px) {
+      #chat-screen {
+        padding-bottom: calc(52px + env(safe-area-inset-bottom));
+      }
+      /* hide the desktop right-panel and header controls on mobile */
+      #right-panel { display: none !important; }
+      #rate-limit  { display: none !important; }
+      #my-status-icon { display: none; }
+      /* give the messages panel full width */
+      #chat-body { flex-direction: column; }
+      #messages-panel { flex: 1; min-width: 0; width: 100%; }
+      /* channel tabs: horizontally scrollable */
+      #channel-tabs {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        flex-wrap: nowrap;
+        scrollbar-width: none;
+      }
+      #channel-tabs::-webkit-scrollbar { display: none; }
+      .ch-tab { flex-shrink: 0; }
+      /* fix input row overflow */
+      #input-row { flex-wrap: nowrap; }
+      #msg-input { min-width: 0; }
+      /* toast above bottom nav */
+      #toast-container {
+        bottom: calc(64px + env(safe-area-inset-bottom)) !important;
+      }
+      /* emoji picker position */
+      #emoji-picker { bottom: 60px; top: auto !important; }
+      /* gif picker: keep above input */
+      #gif-picker { bottom: calc(52px + env(safe-area-inset-bottom)); }
+      /* header: compact */
+      #chat-header { flex-wrap: wrap; gap: 4px; padding: 6px 10px; }
+    }
+  </style>
 </head>
 <body>
 
@@ -157,7 +423,7 @@
       </div>
     </div>
 
-    <!-- Right panel -->
+    <!-- Right panel (desktop only) -->
     <div id="right-panel">
       <div id="right-tabs">
         <button class="right-tab active" id="tab-online"  onclick="switchRightTab('online')">ONLINE</button>
@@ -215,23 +481,31 @@
 
   </div><!-- /#chat-body -->
 
-<!-- Mobile bottom nav -->
-<div id="mobile-nav" class="hidden">
-  <button class="mobile-nav-btn active" id="mnav-chat" onclick="mobileNav('chat')">
-    <span class="nav-icon">💬</span>chat
-  </button>
-  <button class="mobile-nav-btn" id="mnav-online" onclick="mobileNav('online')">
-    <span class="nav-icon">●</span>online
-  </button>
-  <button class="mobile-nav-btn" id="mnav-friends" onclick="mobileNav('friends')">
-    <span class="nav-icon">★</span>friends
-    <span id="mobile-friends-badge" class="mobile-nav-badge hidden"></span>
-  </button>
-</div>
+  <!-- ── Mobile bottom nav (5 tabs) ─────────────────────────────────────── -->
+  <div id="mobile-nav" class="hidden">
+    <button class="mobile-nav-btn active" id="mnav-chat" onclick="mobileNav('chat')">
+      <span class="nav-icon">💬</span>chat
+    </button>
+    <button class="mobile-nav-btn" id="mnav-online" onclick="mobileNav('online')">
+      <span class="nav-icon">●</span>online
+    </button>
+    <button class="mobile-nav-btn" id="mnav-friends" onclick="mobileNav('friends')">
+      <span class="nav-icon">★</span>friends
+      <span id="mobile-friends-badge" class="mobile-nav-badge hidden"></span>
+    </button>
+    <button class="mobile-nav-btn" id="mnav-nodes" onclick="mobileNav('nodes')">
+      <span class="nav-icon">⬡</span>nodes
+    </button>
+    <button class="mobile-nav-btn" id="mnav-more" onclick="mobileNav('more')">
+      <span class="nav-icon">···</span>more
+    </button>
+  </div>
 
-<!-- Mobile overlay panels -->
-<div id="mobile-online-panel"></div>
-<div id="mobile-friends-panel"></div>
+  <!-- Mobile overlay panels -->
+  <div id="mobile-online-panel"  class="mobile-panel"></div>
+  <div id="mobile-friends-panel" class="mobile-panel"></div>
+  <div id="mobile-nodes-panel"   class="mobile-panel"></div>
+  <div id="mobile-more-panel"    class="mobile-panel"></div>
 
   <!-- ── Settings Modal ──────────────────────────────────────────────────────── -->
 <div id="settings-overlay" class="hidden" onclick="overlayClick(event)">
@@ -413,6 +687,8 @@
     </div>
   </div>
 </div>
+
+</div><!-- /#chat-screen -->
 
 <div id="toast-container" style="
   position: fixed;
@@ -669,6 +945,7 @@ function doLogout() {
   document.getElementById('users-list').innerHTML = '';
   document.getElementById('login-user').value     = '';
   document.getElementById('login-pass').value     = '';
+  document.getElementById('mobile-nav').classList.add('hidden');
   switchTab('login');
 }
 
@@ -705,9 +982,23 @@ function enterChat(user) {
   const _inv = new URLSearchParams(location.search).get('invite');
   if (_inv) setTimeout(() => joinByInviteCode(_inv), 800);
   
-  if (isMobile()) document.getElementById('mobile-nav').classList.remove('hidden');
+  updateMobileNavVisibility();
   document.getElementById('msg-input').focus();
 }
+
+// ── Responsive: show/hide mobile nav on resize ────────────────────────────────
+function updateMobileNavVisibility() {
+  const nav = document.getElementById('mobile-nav');
+  if (!currentUser) { nav.classList.add('hidden'); return; }
+  if (isMobile()) {
+    nav.classList.remove('hidden');
+  } else {
+    nav.classList.add('hidden');
+    // hide all mobile panels too
+    document.querySelectorAll('.mobile-panel').forEach(p => p.classList.remove('visible'));
+  }
+}
+window.addEventListener('resize', updateMobileNavVisibility);
 
 // ── WebSocket ─────────────────────────────────────────────────────────────────
 function connectWS() {
@@ -736,14 +1027,13 @@ function connectWS() {
   ws.addEventListener('error', () => setStatus('disconnected'));
 }
 
-// EMOJISSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS
+// EMOJIS
   
 const emojiBtn = document.getElementById('emoji-btn');
 const emojiContainer = document.getElementById('emoji-picker');
 
 const picker = new EmojiMart.Picker({
   onEmojiSelect: (emoji) => {
-    // insert emoji into message input
     const input = document.getElementById('msg-input');
     input.value += emoji.native;
     emojiContainer.style.display = 'none';
@@ -759,7 +1049,6 @@ emojiBtn.addEventListener('click', () => {
     emojiContainer.style.display === 'none' ? 'block' : 'none';
 });
 
-// close when clicking outside
 document.addEventListener('click', (e) => {
   if (!emojiContainer.contains(e.target) && e.target !== emojiBtn) {
     emojiContainer.style.display = 'none';
@@ -802,7 +1091,6 @@ function insertAcEmoji(emoji) {
   input.focus();
 }
 
-// Arrow keys + enter to navigate autocomplete
 document.getElementById('msg-input').addEventListener('keydown', e => {
   const ac = document.getElementById('emoji-autocomplete');
   if (ac.style.display === 'none' || !acResults.length) return;
@@ -868,6 +1156,9 @@ function handleServerMessage(msg) {
 
     case 'user_list':
       renderUserList(msg.users);
+      // if mobile online panel is visible, refresh it
+      if (document.getElementById('mobile-online-panel')?.classList.contains('visible'))
+        syncMobileOnline();
       break;
 
     case 'typing':
@@ -896,7 +1187,6 @@ function handleServerMessage(msg) {
       break;
 
     case 'friend_accepted':
-      // Move from outgoing to accepted
       friendsState.outgoing = (friendsState.outgoing || []).filter(r => r.to !== msg.username);
       friendsState.incoming = (friendsState.incoming || []).filter(r => r.from !== msg.username);
       friendsState.friends  = friendsState.friends || [];
@@ -911,67 +1201,67 @@ function handleServerMessage(msg) {
       if (currentDM === msg.username) closeDM();
       break;
 
-case 'node_message':
-  if (currentNode?.id === msg.nodeId) {
-    if (msg.channel === activeNodeChannel) {
-      renderNodeMessage(msg);
-      scrollToBottom();
-    }
-  } else {
-    highlightNode(msg.nodeId);
-  }
-  break;
+    case 'node_message':
+      if (currentNode?.id === msg.nodeId) {
+        if (msg.channel === activeNodeChannel) {
+          renderNodeMessage(msg);
+          scrollToBottom();
+        }
+      } else {
+        highlightNode(msg.nodeId);
+      }
+      break;
 
-case 'node_history':
-  if (currentNode?.id === msg.nodeId && msg.channel === activeNodeChannel) {
-    const c = document.getElementById('messages');
-    c.innerHTML = '';
-    msg.messages.forEach(renderNodeMessage);
-    c.scrollTop = c.scrollHeight;
-    setTimeout(() => { c.scrollTop = c.scrollHeight; }, 200);
-  }
-  break;
+    case 'node_history':
+      if (currentNode?.id === msg.nodeId && msg.channel === activeNodeChannel) {
+        const c = document.getElementById('messages');
+        c.innerHTML = '';
+        msg.messages.forEach(renderNodeMessage);
+        c.scrollTop = c.scrollHeight;
+        setTimeout(() => { c.scrollTop = c.scrollHeight; }, 200);
+      }
+      break;
 
-case 'node_kicked':
-  myNodes = myNodes.filter(n => n.id !== msg.nodeId);
-  if (currentNode?.id === msg.nodeId) closeNode();
-  showToast(`Removed from node: ${msg.nodeName}`);
-  renderNodesPanel();
-  break;
+    case 'node_kicked':
+      myNodes = myNodes.filter(n => n.id !== msg.nodeId);
+      if (currentNode?.id === msg.nodeId) closeNode();
+      showToast(`Removed from node: ${msg.nodeName}`);
+      renderNodesPanel();
+      break;
 
-case 'node_message_deleted':
-  if (currentNode?.id === msg.nodeId) {
-    document.querySelector(`.msg[data-msgid="${msg.msgId}"]`)?.closest('.msg-wrap')?.remove();
-  }
-  break;
+    case 'node_message_deleted':
+      if (currentNode?.id === msg.nodeId) {
+        document.querySelector(`.msg[data-msgid="${msg.msgId}"]`)?.closest('.msg-wrap')?.remove();
+      }
+      break;
 
-  case 'node_channel_created':
-  if (activeNodeData && msg.nodeId === activeNodeData.id) {
-    if (!activeNodeData.channels.includes(msg.channel))
-      activeNodeData.channels.push(msg.channel);
-    renderNodeChannelBar(activeNodeData);
-  }
-  break;
+    case 'node_channel_created':
+      if (activeNodeData && msg.nodeId === activeNodeData.id) {
+        if (!activeNodeData.channels.includes(msg.channel))
+          activeNodeData.channels.push(msg.channel);
+        renderNodeChannelBar(activeNodeData);
+      }
+      break;
 
-case 'node_channel_deleted':
-  if (activeNodeData && msg.nodeId === activeNodeData.id) {
-    activeNodeData.channels = activeNodeData.channels.filter(c => c !== msg.channel);
-    if (activeNodeChannel === msg.channel) {
-      activeNodeChannel = 'general';
-      document.getElementById('messages').innerHTML = '';
-      sendWS({ type: 'node_history', nodeId: activeNodeData.id, channel: 'general' });
-    }
-    renderNodeChannelBar(activeNodeData);
-  }
-  break;
+    case 'node_channel_deleted':
+      if (activeNodeData && msg.nodeId === activeNodeData.id) {
+        activeNodeData.channels = activeNodeData.channels.filter(c => c !== msg.channel);
+        if (activeNodeChannel === msg.channel) {
+          activeNodeChannel = 'general';
+          document.getElementById('messages').innerHTML = '';
+          sendWS({ type: 'node_history', nodeId: activeNodeData.id, channel: 'general' });
+        }
+        renderNodeChannelBar(activeNodeData);
+      }
+      break;
 
     case 'reaction_update': {
-  const bar = document.querySelector(`.reaction-bar[data-msgid="${msg.msgId}"]`);
-  if (!bar) return;
-  const newBar = buildReactionBar(msg.msgId, msg.reactions);
-  bar.replaceWith(newBar);
-  break;
-}
+      const bar = document.querySelector(`.reaction-bar[data-msgid="${msg.msgId}"]`);
+      if (!bar) return;
+      const newBar = buildReactionBar(msg.msgId, msg.reactions);
+      bar.replaceWith(newBar);
+      break;
+    }
       
     // ── DMs ──────────────────────────────────────────────────────────────────
     case 'dm': {
@@ -988,22 +1278,21 @@ case 'node_channel_deleted':
         renderDMMessage(msg);
         scrollToBottom();
       } else {
-        // Visual nudge on the friend's row in the panel
         highlightFriend(other);
       }
       break;
     }
 
     case 'dm_history':
-    dmCache[msg.with] = msg.messages;
-    if (currentDM === msg.with) {
-      const container = document.getElementById('messages');
-      container.innerHTML = '';
-      msg.messages.forEach(renderDMMessage);
-      container.scrollTop = container.scrollHeight;
-      setTimeout(() => { container.scrollTop = container.scrollHeight; }, 200);
-    }
-    break;
+      dmCache[msg.with] = msg.messages;
+      if (currentDM === msg.with) {
+        const container = document.getElementById('messages');
+        container.innerHTML = '';
+        msg.messages.forEach(renderDMMessage);
+        container.scrollTop = container.scrollHeight;
+        setTimeout(() => { container.scrollTop = container.scrollHeight; }, 200);
+      }
+      break;
   }
 }
 
@@ -1104,10 +1393,15 @@ async function showProfile(username, anchorEl) {
     ` : ''}
   `;
 
-  const rect = anchorEl.getBoundingClientRect();
-  const left = Math.min(rect.left, window.innerWidth - 300);
-  const top  = Math.min(rect.bottom + 4, window.innerHeight - 200);
-  popup.style.cssText = `position:fixed;left:${Math.max(0,left)}px;top:${top}px;`;
+  // On mobile: center popup
+  if (isMobile()) {
+    popup.style.cssText = 'position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:500;';
+  } else {
+    const rect = anchorEl.getBoundingClientRect();
+    const left = Math.min(rect.left, window.innerWidth - 300);
+    const top  = Math.min(rect.bottom + 4, window.innerHeight - 200);
+    popup.style.cssText = `position:fixed;left:${Math.max(0,left)}px;top:${top}px;`;
+  }
   document.body.appendChild(popup);
   setTimeout(() => document.addEventListener('click', e => {
     if (!popup.contains(e.target)) popup.remove();
@@ -1147,7 +1441,7 @@ function showStatusPicker() {
     };
     popup.appendChild(btn);
   });
-  popup.style.cssText = 'position:fixed;right:16px;top:46px;';
+  popup.style.cssText = 'position:fixed;right:16px;top:46px;z-index:1000;';
   document.body.appendChild(popup);
   setTimeout(() => document.addEventListener('click', () => popup.remove(), { once: true }), 0);
 }
@@ -1174,7 +1468,6 @@ function renderMessage(msg) {
   row.className = 'msg';
   if (msg.id) row.dataset.msgid = msg.id;
 
-  // Reply quote
   if (msg.replyTo) {
     const quote = document.createElement('div');
     quote.className = 'msg-reply-quote';
@@ -1221,7 +1514,6 @@ function renderMessage(msg) {
   row.appendChild(mainRow);
   wrap.appendChild(row);
 
-  // Reaction bar
   if (msg.id) {
     const rxBar = buildReactionBar(msg.id, msg.reactions || {});
     wrap.appendChild(rxBar);
@@ -1346,7 +1638,6 @@ function openDM(username) {
   const friend = friendsState.friends?.find(f => f.username === username);
   const color  = friend?.color || '#888';
 
-  // Update channel bar
   const bar   = document.getElementById('channel-bar');
   bar.innerHTML = '';
   const back  = document.createElement('button');
@@ -1358,10 +1649,8 @@ function openDM(username) {
   label.innerHTML = `dm — <span style="color:${color};font-weight:500">${username}</span>`;
   bar.append(back, label);
 
-  // Update input placeholder
   document.getElementById('msg-input').placeholder = `message ${username}...`;
 
-  // Clear messages and show DM history
   const container = document.getElementById('messages');
   container.innerHTML = '';
 
@@ -1370,13 +1659,13 @@ function openDM(username) {
     container.scrollTop = container.scrollHeight;
   }
 
-  // Request history from server
   sendWS({ type: 'dm_history', with: username });
 
-  // Clear unread highlight
   const row = document.querySelector(`.friend-item[data-user="${username}"]`);
   if (row) row.classList.remove('friend-unread');
 
+  // On mobile: switch to chat tab
+  if (isMobile()) mobileNav('chat');
   document.getElementById('msg-input').focus();
 }
 
@@ -1489,7 +1778,7 @@ function renderNodeMembers() {
 
 async function openNode(n) {
   currentNode = n; currentDM = null; currentNodeInfo = null;
-  activeNodeChannel = 'general';    // ← reset channel
+  activeNodeChannel = 'general';
   activeNodeData    = null;
 
   const bar = document.getElementById('channel-bar');
@@ -1510,7 +1799,6 @@ async function openNode(n) {
   document.getElementById('msg-input').placeholder = `message in ${n.name}...`;
   document.getElementById('messages').innerHTML = '';
 
-  // ← fetch full node data (includes channels)
   try {
     const res = await fetch(`${HTTP_BASE}/api/nodes/${n.id}`, {
       headers: { Authorization: 'Bearer ' + getToken() }
@@ -1521,11 +1809,14 @@ async function openNode(n) {
     activeNodeData = { ...n, channels: ['general'] };
   }
 
-  renderNodeChannelBar(activeNodeData);   // ← show channel tabs
-  sendWS({ type: 'node_history', nodeId: n.id, channel: 'general' });   // ← include channel
+  renderNodeChannelBar(activeNodeData);
+  sendWS({ type: 'node_history', nodeId: n.id, channel: 'general' });
 
   renderNodesPanel();
   switchRightTab('nodes');
+
+  // On mobile: switch to chat tab
+  if (isMobile()) mobileNav('chat');
   document.getElementById('msg-input').focus();
 }
 
@@ -1607,7 +1898,7 @@ function renderNodeMessage(msg) {
     const del = document.createElement('button');
     del.className = 'msg-action-btn'; del.textContent = '×'; del.title = 'delete';
     del.style.color = 'var(--muted)';
-    del.onclick = () => deleteNodeMessage(currentNode.id, msg.id, wrap); // ← targets wrap now
+    del.onclick = () => deleteNodeMessage(currentNode.id, msg.id, wrap);
     actions.appendChild(del);
   }
 
@@ -1648,6 +1939,9 @@ async function createNode() {
     renderNodesPanel();
     msgEl.className = 'ok'; msgEl.textContent = `created "${data.name}"`;
     setTimeout(() => { msgEl.textContent = ''; }, 3000);
+    // refresh mobile nodes panel if visible
+    if (document.getElementById('mobile-nodes-panel')?.classList.contains('visible'))
+      syncMobileNodes();
   } catch { msgEl.className = 'err'; msgEl.textContent = 'error'; }
 }
 
@@ -1679,6 +1973,8 @@ async function leaveNode(nodeId) {
     myNodes = myNodes.filter(n => n.id !== nodeId);
     if (currentNode?.id === nodeId) closeNode();
     renderNodesPanel();
+    if (document.getElementById('mobile-nodes-panel')?.classList.contains('visible'))
+      syncMobileNodes();
   } catch {}
 }
 
@@ -1753,10 +2049,7 @@ function highlightNode(nodeId) {
 // ── Highlight friend row (unread indicator) ───────────────────────────────────
 function highlightFriend(username) {
   const row = document.querySelector(`.friend-item[data-user="${username}"]`);
-  if (row) {
-    row.style.background = 'rgba(139,126,245,0.07)';
-  }
-  // Also switch to friends tab badge
+  if (row) row.style.background = 'rgba(139,126,245,0.07)';
   updateFriendsBadge();
 }
 
@@ -1965,12 +2258,17 @@ function renderFriendsPanel() {
 
 function updateFriendsBadge() {
   const count = (friendsState.incoming || []).length;
+  // desktop badge
   const badge = document.getElementById('friends-badge');
-  if (count > 0) {
-    badge.textContent = count;
-    badge.classList.remove('hidden');
-  } else {
-    badge.classList.add('hidden');
+  if (badge) {
+    if (count > 0) { badge.textContent = count; badge.classList.remove('hidden'); }
+    else badge.classList.add('hidden');
+  }
+  // mobile badge
+  const mobileBadge = document.getElementById('mobile-friends-badge');
+  if (mobileBadge) {
+    if (count > 0) { mobileBadge.textContent = count; mobileBadge.classList.remove('hidden'); }
+    else mobileBadge.classList.add('hidden');
   }
 }
 
@@ -2165,50 +2463,314 @@ function isMobile() { return window.innerWidth <= 600; }
 
 function mobileNav(tab) {
   if (!isMobile()) return;
-  document.getElementById('mnav-chat').classList.toggle('active',    tab === 'chat');
-  document.getElementById('mnav-online').classList.toggle('active',  tab === 'online');
-  document.getElementById('mnav-friends').classList.toggle('active', tab === 'friends');
-  document.getElementById('mobile-online-panel').classList.toggle('visible',  tab === 'online');
-  document.getElementById('mobile-friends-panel').classList.toggle('visible', tab === 'friends');
 
+  // update button active states
+  ['chat','online','friends','nodes','more'].forEach(t => {
+    document.getElementById('mnav-' + t)?.classList.toggle('active', t === tab);
+  });
+
+  // show/hide overlay panels
+  ['online','friends','nodes','more'].forEach(t => {
+    document.getElementById('mobile-' + t + '-panel')?.classList.toggle('visible', t === tab);
+  });
+
+  // sync panel content
   if (tab === 'online')  syncMobileOnline();
   if (tab === 'friends') syncMobileFriends();
+  if (tab === 'nodes')   syncMobileNodes();
+  if (tab === 'more')    syncMobileMore();
 }
 
 function syncMobileOnline() {
   const panel = document.getElementById('mobile-online-panel');
-  panel.innerHTML = document.getElementById('users-list').innerHTML;
+  panel.innerHTML = '<div class="mobile-panel-head">ONLINE</div>' + document.getElementById('users-list').innerHTML;
 }
 
 function syncMobileFriends() {
   const panel = document.getElementById('mobile-friends-panel');
-  // Clone the full friends tab content
-  panel.innerHTML = document.getElementById('friends-tab').innerHTML;
-  // Re-wire buttons since they're clones
+  panel.innerHTML = '<div class="mobile-panel-head">FRIENDS</div>';
+
+  // add-friend area
+  const addArea = document.createElement('div');
+  addArea.style.padding = '8px 12px 4px';
+  addArea.innerHTML = `
+    <div id="add-friend-row" style="display:flex;gap:6px;margin-bottom:4px;">
+      <input type="text" id="mfriend-input" placeholder="add by username" spellcheck="false"
+             style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:inherit;font-size:12px;padding:6px 8px;">
+      <button id="mfriend-send-btn" style="background:var(--accent);color:#fff;border:none;border-radius:var(--radius);padding:6px 10px;font-family:inherit;font-size:12px;cursor:pointer;">+</button>
+    </div>
+    <div id="mfriend-msg" style="font-size:11px;min-height:14px;margin-bottom:4px;"></div>
+  `;
+  panel.appendChild(addArea);
+
+  // clone friends tab content
+  const clone = document.getElementById('friends-tab').cloneNode(true);
+  clone.classList.remove('hidden');
+  clone.querySelector('#add-friend-area')?.remove(); // remove the original add area
+  panel.appendChild(clone);
+
+  // wire add-friend
+  const sendBtn = panel.querySelector('#mfriend-send-btn');
+  const mInput  = panel.querySelector('#mfriend-input');
+  const mMsg    = panel.querySelector('#mfriend-msg');
+  if (sendBtn) sendBtn.onclick = async () => {
+    const to = mInput?.value.trim();
+    if (!to) return;
+    try {
+      const res = await apiAuthPost('/api/friends/request', { to });
+      mInput.value = '';
+      mMsg.className = 'ok';
+      mMsg.textContent = res.status === 'accepted' ? `now friends with ${to}!` : `request sent to ${to}`;
+      setTimeout(() => { mMsg.textContent = ''; }, 3000);
+    } catch(e) { mMsg.className = 'err'; mMsg.textContent = e.message; }
+  };
+  if (mInput) mInput.addEventListener('keydown', e => { if (e.key === 'Enter') sendBtn?.click(); });
+
+  // re-wire DM buttons
   panel.querySelectorAll('.friend-dm-btn').forEach(btn => {
     const user = btn.closest('.friend-item')?.dataset.user;
-    if (user) btn.onclick = (e) => { e.stopPropagation(); openDM(user); mobileNav('chat'); };
+    if (user) btn.onclick = (e) => { e.stopPropagation(); openDM(user); };
   });
+  // re-wire remove buttons
   panel.querySelectorAll('.friend-remove-btn').forEach(btn => {
     const user = btn.closest('.friend-item')?.dataset.user;
     if (user) btn.onclick = (e) => { e.stopPropagation(); removeFriend(user); };
   });
-  // Wire add-friend button in the cloned panel
-  const addBtn = panel.querySelector('#add-friend-btn');
-  const addInput = panel.querySelector('#friend-input');
-  if (addBtn) addBtn.onclick = async () => {
-    if (!addInput) return;
-    const to = addInput.value.trim();
-    const msgEl = panel.querySelector('#add-friend-msg');
-    if (!to) return;
+  // re-wire accept/reject buttons
+  panel.querySelectorAll('.btn-accept').forEach(btn => {
+    const from = btn.closest('.request-item')?.querySelector('.request-from')?.textContent;
+    if (from) btn.onclick = () => acceptFriendRequest(from);
+  });
+  panel.querySelectorAll('.btn-reject').forEach(btn => {
+    const from = btn.closest('.request-item')?.querySelector('.request-from')?.textContent;
+    if (from) btn.onclick = () => rejectFriendRequest(from);
+  });
+}
+
+function syncMobileNodes() {
+  const panel = document.getElementById('mobile-nodes-panel');
+  panel.innerHTML = '<div class="mobile-panel-head">NODES</div>';
+
+  // create/join area
+  const createArea = document.createElement('div');
+  createArea.style.cssText = 'padding:8px 12px 4px;display:flex;flex-direction:column;gap:6px;';
+  createArea.innerHTML = `
+    <div style="display:flex;gap:6px;">
+      <input type="text" id="mnode-name" placeholder="node name" maxlength="32" spellcheck="false"
+             style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:inherit;font-size:12px;padding:6px 8px;">
+      <button id="mnode-create-btn" style="background:var(--accent);color:#fff;border:none;border-radius:var(--radius);padding:6px 10px;font-family:inherit;font-size:12px;cursor:pointer;">+</button>
+    </div>
+    <div style="display:flex;gap:6px;">
+      <input type="text" id="mnode-invite" placeholder="invite code" spellcheck="false"
+             style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:inherit;font-size:12px;padding:6px 8px;">
+      <button id="mnode-join-btn" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:var(--radius);padding:6px 10px;font-family:inherit;font-size:12px;cursor:pointer;">→</button>
+    </div>
+    <div id="mnode-msg" style="font-size:11px;min-height:14px;"></div>
+  `;
+  panel.appendChild(createArea);
+
+  // wire buttons
+  panel.querySelector('#mnode-create-btn').onclick = async () => {
+    const input = panel.querySelector('#mnode-name');
+    const msgEl = panel.querySelector('#mnode-msg');
+    const name = input?.value.trim();
+    if (!name) return;
     try {
-      const res = await apiAuthPost('/api/friends/request', { to });
-      addInput.value = '';
-      msgEl.className = 'ok';
-      msgEl.textContent = res.status === 'accepted' ? `now friends with ${to}!` : `request sent to ${to}`;
+      const res = await fetch(HTTP_BASE + '/api/nodes', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + getToken() },
+        body: JSON.stringify({ name })
+      });
+      const data = await res.json();
+      if (!res.ok) { msgEl.className = 'err'; msgEl.textContent = data.error; return; }
+      input.value = '';
+      myNodes.push({ id: data.id, name: data.name, owner: data.owner, memberCount: 1 });
+      renderNodesPanel();
+      syncMobileNodes();
+      msgEl.className = 'ok'; msgEl.textContent = `created "${data.name}"`;
       setTimeout(() => { msgEl.textContent = ''; }, 3000);
-    } catch(e) { msgEl.className = 'err'; msgEl.textContent = e.message; }
+    } catch { msgEl.className = 'err'; msgEl.textContent = 'error'; }
   };
+  panel.querySelector('#mnode-join-btn').onclick = async () => {
+    const input = panel.querySelector('#mnode-invite');
+    const code = input?.value.trim();
+    input.value = '';
+    if (code) { await joinByInviteCode(code); syncMobileNodes(); }
+  };
+
+  // node list
+  if (!myNodes.length) {
+    const empty = document.createElement('div');
+    empty.className = 'friends-empty';
+    empty.textContent = 'no nodes yet';
+    panel.appendChild(empty);
+  } else {
+    const label = document.createElement('div');
+    label.className = 'friends-section-label';
+    label.style.padding = '8px 12px 4px';
+    label.textContent = 'YOUR NODES';
+    panel.appendChild(label);
+
+    myNodes.forEach(n => {
+      const item = document.createElement('div');
+      item.className = 'friend-item';
+      item.style.padding = '8px 12px';
+
+      const dot = document.createElement('span');
+      dot.className = 'user-dot'; dot.style.background = 'var(--accent)';
+
+      const name = document.createElement('span');
+      name.className = 'friend-name';
+      name.textContent = (n.owner === currentUser?.username ? '♛ ' : '') + n.name;
+
+      const openBtn = document.createElement('button');
+      openBtn.className = 'friend-dm-btn'; openBtn.textContent = 'open';
+      openBtn.onclick = () => { openNode(n); };
+
+      item.append(dot, name, openBtn);
+      panel.appendChild(item);
+    });
+  }
+}
+
+// ── More page (profile settings, settings, legal, logout) ─────────────────────
+function syncMobileMore() {
+  const panel = document.getElementById('mobile-more-panel');
+  const statusIcon = document.getElementById('my-status-icon')?.textContent || '🟢';
+
+  panel.innerHTML = `
+    <div class="mobile-more-menu">
+      <div class="mobile-more-header">
+        <span class="mobile-more-username" style="color:${currentUser?.color || 'var(--text)'}">${currentUser?.username || ''}</span>
+        <span class="mobile-more-status-icon" onclick="showMobileStatusPicker()">${statusIcon}</span>
+      </div>
+
+      <div class="mobile-more-section">
+        <div class="mobile-more-label">PROFILE</div>
+        <button class="mobile-more-item" onclick="showMobileProfileEdit()">
+          <span class="mmi-icon">👤</span>
+          <span class="mmi-text">profile settings</span>
+          <span class="mmi-arrow">›</span>
+        </button>
+        <button class="mobile-more-item" onclick="showMobileStatusPicker()">
+          <span class="mmi-icon">${statusIcon}</span>
+          <span class="mmi-text">set status</span>
+          <span class="mmi-arrow">›</span>
+        </button>
+      </div>
+
+      <div class="mobile-more-section">
+        <div class="mobile-more-label">APP</div>
+        <button class="mobile-more-item" onclick="openSettings()">
+          <span class="mmi-icon">⚙</span>
+          <span class="mmi-text">settings</span>
+          <span class="mmi-arrow">›</span>
+        </button>
+      </div>
+
+      <div class="mobile-more-section">
+        <div class="mobile-more-label">LEGAL</div>
+        <a class="mobile-more-item" href="terms.html">
+          <span class="mmi-icon">📄</span>
+          <span class="mmi-text">terms of service</span>
+          <span class="mmi-arrow">›</span>
+        </a>
+        <a class="mobile-more-item" href="privacy.html">
+          <span class="mmi-icon">🔒</span>
+          <span class="mmi-text">privacy policy</span>
+          <span class="mmi-arrow">›</span>
+        </a>
+      </div>
+
+      <div class="mobile-more-section">
+        <button class="mobile-more-item danger" onclick="doLogout()">
+          <span class="mmi-icon">⏻</span>
+          <span class="mmi-text">sign out</span>
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+// ── Mobile profile edit ────────────────────────────────────────────────────────
+async function showMobileProfileEdit() {
+  const panel = document.getElementById('mobile-more-panel');
+
+  // fetch current profile
+  let data = {};
+  try {
+    const res = await fetch(`${HTTP_BASE}/api/profile/${encodeURIComponent(currentUser.username)}`, {
+      headers: { Authorization: 'Bearer ' + getToken() }
+    });
+    data = await res.json();
+  } catch {}
+
+  panel.innerHTML = `
+    <div class="mobile-profile-sheet">
+      <button class="mobile-back-btn" onclick="syncMobileMore()">← back</button>
+      <h3>PROFILE SETTINGS</h3>
+
+      <div class="field">
+        <label>BIO</label>
+        <textarea id="mprofile-bio" maxlength="160" rows="3" placeholder="write a bio…">${data.bio || ''}</textarea>
+        <div style="font-size:10px;color:var(--muted);margin-top:3px;">max 160 characters</div>
+      </div>
+
+      <button class="mobile-save-btn" onclick="saveMobileProfile()">save changes</button>
+      <div id="mprofile-msg" style="font-size:11px;margin-top:8px;text-align:center;"></div>
+    </div>
+  `;
+}
+
+async function saveMobileProfile() {
+  const panel = document.getElementById('mobile-more-panel');
+  const bio   = panel.querySelector('#mprofile-bio')?.value.trim() ?? '';
+  const msgEl = panel.querySelector('#mprofile-msg');
+
+  try {
+    await fetch(HTTP_BASE + '/api/profile', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + getToken() },
+      body: JSON.stringify({ bio })
+    });
+    msgEl.style.color = 'var(--accent)';
+    msgEl.textContent = 'saved!';
+    setTimeout(() => { msgEl.textContent = ''; }, 2000);
+  } catch {
+    msgEl.style.color = 'var(--danger)';
+    msgEl.textContent = 'failed to save';
+  }
+}
+
+// ── Mobile status picker ───────────────────────────────────────────────────────
+function showMobileStatusPicker() {
+  const panel = document.getElementById('mobile-more-panel');
+
+  panel.innerHTML = `
+    <div class="mobile-profile-sheet">
+      <button class="mobile-back-btn" onclick="syncMobileMore()">← back</button>
+      <h3>SET STATUS</h3>
+      <div class="mobile-status-grid">
+        ${[['online','🟢','online'],['away','🟡','away'],['busy','🔴','busy'],['invisible','⚫','invisible']]
+          .map(([val, icon, label]) => `
+            <button class="mobile-status-btn" onclick="setMobileStatus('${val}', '${icon}')">
+              <span>${icon}</span> ${label}
+            </button>
+          `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function setMobileStatus(val, icon) {
+  sendWS({ type: 'set_status', status: val });
+  fetch(HTTP_BASE + '/api/profile', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + getToken() },
+    body: JSON.stringify({ status: val })
+  });
+  document.getElementById('my-status-icon').textContent = STATUS_ICONS[val];
+  showToast(`status set to ${val}`);
+  syncMobileMore();
 }
 
 function showToast(text) {
@@ -2228,10 +2790,7 @@ function showToast(text) {
   `;
 
   container.appendChild(toast);
-
-  setTimeout(() => {
-    toast.remove();
-  }, 3000);
+  setTimeout(() => { toast.remove(); }, 3000);
 }
 
 // ── Settings ──────────────────────────────────────────────────────────────────
@@ -2278,16 +2837,13 @@ function applyAllSettings() {
   const s = userSettings;
   const root = document.documentElement;
 
-  // Accent color + glow
   root.style.setProperty('--accent', s.accentColor);
   const hex = s.accentColor.replace('#','');
   const r = parseInt(hex.slice(0,2),16), g = parseInt(hex.slice(2,4),16), b = parseInt(hex.slice(4,6),16);
   root.style.setProperty('--accent-glow', `rgba(${r},${g},${b},0.2)`);
 
-  // Font size
   document.body.style.fontSize = s.fontSize;
 
-  // Message density (vertical padding on .msg rows)
   const sheet = getOrCreateSettingsSheet();
   sheet.textContent = `
     .msg { padding-top: ${s.density}; padding-bottom: ${s.density}; }
@@ -2312,27 +2868,22 @@ function getOrCreateSettingsSheet() {
 function syncSettingsUI() {
   const s = userSettings;
 
-  // Accent swatches
   document.querySelectorAll('.s-swatch').forEach(sw => {
     sw.classList.toggle('selected', sw.dataset.color === s.accentColor);
   });
 
-  // Font size segment
   document.querySelectorAll('#seg-fontsize .s-seg-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.val === s.fontSize);
   });
 
-  // Density segment
   document.querySelectorAll('#seg-density .s-seg-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.val === s.density);
   });
 
-  // Sound segment
   document.querySelectorAll('#seg-sound .s-seg-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.val === s.sound);
   });
 
-  // Toggles
   const map = {
     'tog-timestamps':    s.timestamps,
     'tog-usernames':     s.usernames,
@@ -2357,7 +2908,6 @@ function resetSettings() {
   syncSettingsUI();
 }
 
-// ── Settings modal open/close ──────────────────────────────────────────────────
 function openSettings() {
   syncSettingsUI();
   document.getElementById('settings-overlay').classList.remove('hidden');
@@ -2371,12 +2921,10 @@ function overlayClick(e) {
   if (e.target === document.getElementById('settings-overlay')) closeSettings();
 }
 
-// Close on Escape
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') closeSettings();
 });
 
-// ── Settings tab switching ────────────────────────────────────────────────────
 function switchSettingsTab(tab) {
   ['appearance','notifications','behavior'].forEach(t => {
     document.getElementById('s-tab-' + t).classList.toggle('hidden', t !== tab);
@@ -2387,7 +2935,6 @@ function switchSettingsTab(tab) {
   });
 }
 
-// ── Wire up swatch clicks ─────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('.s-swatch').forEach(sw => {
     sw.addEventListener('click', () => {
@@ -2399,7 +2946,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Segment buttons: font size
   document.querySelectorAll('#seg-fontsize .s-seg-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('#seg-fontsize .s-seg-btn').forEach(b => b.classList.remove('active'));
@@ -2408,7 +2954,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Segment buttons: density
   document.querySelectorAll('#seg-density .s-seg-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('#seg-density .s-seg-btn').forEach(b => b.classList.remove('active'));
@@ -2417,7 +2962,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Segment buttons: sound
   document.querySelectorAll('#seg-sound .s-seg-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('#seg-sound .s-seg-btn').forEach(b => b.classList.remove('active'));
@@ -2430,7 +2974,6 @@ document.addEventListener('DOMContentLoaded', () => {
   loadSettings();
 });
 
-// ── Notification sound (Web Audio API, no files needed) ───────────────────────
 function playNotifSound(type) {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -2456,9 +2999,6 @@ function playNotifSound(type) {
     }
   } catch {}
 }
-
-// Call playNotifSound when a relevant toast fires.. maybe make that an option?????????????????/
-// In the 'dm' case: if (userSettings.dmNotif && currentDM !== other) { showToast(...); playNotifSound(userSettings.sound); }
 
 // ── Release banner ────────────────────────────────────────────────────────────
 async function checkRelease() {
@@ -2500,7 +3040,6 @@ function dismissRelease(tag) {
 }
   
 </script>
-<!-- might need to seperate these script files into different js files since its taking up a ton of index.html. -->
 <script>
 // ── GIF Integration ───────────────────────────────────────────────────────────
 const GIPHY_PROXY = HTTP_BASE + '/api/giphy';
@@ -2525,7 +3064,6 @@ function toggleGifFave(gif) {
 function isGifFaved(id) { return gifFaves.some(f => f.id === id); }
 loadGifFaves();
 
-// ── Open / close ──────────────────────────────────────────────────────────────
 function toggleGifPicker() {
   gifPickerOpen = !gifPickerOpen;
   console.log('gif open:', gifPickerOpen);
@@ -2548,7 +3086,6 @@ document.addEventListener('click', e => {
       e.target.id !== 'gif-btn') closeGifPicker();
 });
 
-// ── Tab switching ─────────────────────────────────────────────────────────────
 function gifSwitchTab(tab) {
   gifCurrentTab = tab;
   document.getElementById('gtab-trending').classList.toggle('active', tab === 'trending');
@@ -2557,7 +3094,6 @@ function gifSwitchTab(tab) {
   tab === 'trending' ? fetchTrending() : renderFaves();
 }
 
-// ── Search wire-up (runs after DOM ready) ─────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('gif-search').addEventListener('input', e => {
     clearTimeout(gifSearchTimer);
@@ -2567,7 +3103,6 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-// ── Proxy fetch ───────────────────────────────────────────────────────────────
 async function fetchTrending() {
   renderGifGrid(null, 'loading');
   try {
@@ -2589,7 +3124,6 @@ async function fetchSearch(query) {
   } catch { renderGifGrid(null, 'error'); }
 }
 
-// ── Render ────────────────────────────────────────────────────────────────────
 function gifToData(g) {
   return { id: g.id, preview: g.images.fixed_height_small.url, full: g.images.original.url, title: g.title || '' };
 }
@@ -2631,7 +3165,6 @@ function buildGifItem(g) {
   return wrap;
 }
 
-// ── Send ──────────────────────────────────────────────────────────────────────
 function sendGif(g) {
   if (rateRemaining <= 0) return;
   let payload;
@@ -2648,7 +3181,7 @@ function sendGif(g) {
 }
 </script>
 
-<script> // and finally............
+<script>
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/sw.js');
   }
