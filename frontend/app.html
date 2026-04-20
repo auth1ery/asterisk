@@ -1223,7 +1223,7 @@ function handleServerMessage(msg) {
       break;
 
     case 'friend_request':
-      if (userSettings.friendNotif) showToast(`friend request from ${msg.from}`);
+      if (userSettings.friendNotif) showToast(t('friend_request_from', { user: msg.from }))
       friendsState.incoming = friendsState.incoming || [];
       friendsState.incoming.push({ id: msg.id, from: msg.from, color: msg.color });
       renderFriendsPanel();
@@ -1722,7 +1722,7 @@ function closeDM() {
     b.classList.toggle('active', b.textContent === '#' + currentChannel)
   );
 
-  document.getElementById('msg-input').placeholder = 'say something...';
+  t('say_something')
   document.getElementById('messages').innerHTML = '';
   sendWS({ type: 'join_channel', channel: currentChannel });
   document.getElementById('msg-input').focus();
@@ -1745,7 +1745,7 @@ function renderNodesPanel() {
   if (!myNodes.length) {
     const empty = document.createElement('div');
     empty.className = 'friends-empty';
-    empty.textContent = 'no nodes yet';
+    t('no_nodes_yet')
     myList.appendChild(empty);
   } else {
     const label = document.createElement('div');
@@ -2152,7 +2152,7 @@ function renderTyping(users) {
   }
 
   dotsEl.style.display = 'inline';
-  if      (others.length === 1) textEl.textContent = others[0] + ' is typing';
+  if      (others.length === 1) t('typing_one', { user: others[0] })
   else if (others.length === 2) textEl.textContent = others[0] + ' and ' + others[1] + ' are typing';
   else                          textEl.textContent = others.length + ' people are typing';
 }
@@ -2398,7 +2398,7 @@ function renderFriendsList() {
   if (!friends.length) {
     const empty = document.createElement('div');
     empty.className   = 'friends-empty';
-    empty.textContent = 'no friends yet';
+    t('no_friends_yet')
     section.appendChild(empty);
     return;
   }
