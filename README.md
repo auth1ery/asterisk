@@ -2,4 +2,6 @@
 
 a global, fast, customizable real-time chatting app.
 
-see https://asterisk.authsrng.xyz/wiki/main.html
+more documentation will be here soon.
+
+we use weblate for translations!
