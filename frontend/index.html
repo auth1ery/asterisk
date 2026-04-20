@@ -3109,22 +3109,23 @@
             });
         });
         async function fetchTrending() {
-            renderGifGrid(null, "loading");
-            try {
-                const r = await fetch(`${GIPHY_PROXY}?endpoint=trending&limit=30`);
-                renderGifGrid((await r.json()).data);
-            } catch {
-                renderGifGrid(null, "error");
-            }
-        }
+          renderGifGrid(null, 'loading');
+          try {
+            const r = await fetch(`${GIPHY_PROXY}?endpoint=trending&limit=30`, {
+              headers: { Authorization: 'Bearer ' + getToken() }
+            });
+            renderGifGrid((await r.json()).data);
+          } catch { renderGifGrid(null, 'error'); }
+        }        
+
         async function fetchSearch(query) {
-            renderGifGrid(null, "loading");
-            try {
-                const r = await fetch(`${GIPHY_PROXY}?endpoint=search&q=${encodeURIComponent(query)}&limit=30`);
-                renderGifGrid((await r.json()).data);
-            } catch {
-                renderGifGrid(null, "error");
-            }
+          renderGifGrid(null, 'loading');
+          try {
+            const r = await fetch(`${GIPHY_PROXY}?endpoint=search&q=${encodeURIComponent(query)}&limit=30`, {
+              headers: { Authorization: 'Bearer ' + getToken() }
+            });
+            renderGifGrid((await r.json()).data);
+          } catch { renderGifGrid(null, 'error'); }
         }
         function gifToData(g) {
             return {
