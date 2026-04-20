@@ -9,12 +9,13 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
+  if (!e.request.url.startsWith(self.location.origin)) return;
   e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
 });
 
-self.addEventListener('message', event => {
-  if (event.data?.type === 'notify') {
-    const { title, body, icon } = event.data;
+self.addEventListener('message', e => {
+  if (e.data?.type === 'notify') {
+    const { title, body, icon } = e.data;
     self.registration.showNotification(title, {
       body,
       icon,
@@ -25,9 +26,9 @@ self.addEventListener('message', event => {
   }
 });
 
-self.addEventListener('notificationclick', event => {
-  event.notification.close();
-  event.waitUntil(
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  e.waitUntil(
     clients.matchAll({ type: 'window' }).then(list => {
       if (list.length) return list[0].focus();
       return clients.openWindow('/');
