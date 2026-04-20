@@ -30,12 +30,13 @@ const JWT_SECRET = process.env.JWT_SECRET || (() => {
 const ADMIN_SECRET = process.env.ADMIN_SECRET;
 if (!ADMIN_SECRET || ADMIN_SECRET === 'changeme') console.warn('[WARN] ADMIN_SECRET is weak or unset!');
 
-const ACCOUNTS_FILE  = path.join(DATA_DIR, 'accounts.json');
-const MESSAGES_FILE  = path.join(DATA_DIR, 'messages.json');
-const FRIENDS_FILE   = path.join(DATA_DIR, 'friends.json');
-const DMS_FILE       = path.join(DATA_DIR, 'dms.json');
-const NODES_FILE     = path.join(DATA_DIR, 'nodes.json');
-const REACTIONS_FILE = path.join(DATA_DIR, 'reactions.json');
+const ACCOUNTS_FILE   = path.join(DATA_DIR, 'accounts.json');
+const MESSAGES_FILE   = path.join(DATA_DIR, 'messages.json');
+const FRIENDS_FILE    = path.join(DATA_DIR, 'friends.json');
+const DMS_FILE        = path.join(DATA_DIR, 'dms.json');
+const NODES_FILE      = path.join(DATA_DIR, 'nodes.json');
+const REACTIONS_FILE  = path.join(DATA_DIR, 'reactions.json');
+const BOT_INVITES_FILE = path.join(DATA_DIR, 'bot_invites.json');
 
 const CHANNELS       = ['global', 'debate', 'gaming', 'music', 'memes'];
 const MAX_MESSAGES   = 30000;
@@ -53,6 +54,7 @@ let friendships = loadJSON(FRIENDS_FILE,  { requests: [], accepted: [] });
 let dms         = loadJSON(DMS_FILE,      {});
 let nodes       = loadJSON(NODES_FILE,    {});
 let reactions   = loadJSON(REACTIONS_FILE, {});
+let botInvites  = loadJSON(BOT_INVITES_FILE, {});
 
 CHANNELS.forEach(ch => { if (!messages[ch]) messages[ch] = []; });
 
@@ -73,7 +75,7 @@ const typingUsers = new Map();
 const userRates   = new Map();
 
 // ── Auth rate limiting (in-memory) ─────────────────────────────────────────
-const authAttempts = new Map(); // ip -> { count, resetTime }
+const authAttempts = new Map();
 function checkAuthRate(ip) {
   const now = Date.now();
   let r = authAttempts.get(ip);
@@ -88,6 +90,7 @@ const push = (ws, data) => { if (ws.readyState === 1) ws.send(JSON.stringify(dat
 function pushToUser(username, data) { for (const [ws, info] of clients) { if (info.username === username) push(ws, data); } }
 const areFriends = (a, b) => friendships.accepted.some(f => f.users.includes(a) && f.users.includes(b));
 const hasPending = (from, to) => friendships.requests.some(r => r.from === from && r.to === to);
+const isBot = (username) => accounts[username?.toLowerCase()]?.isBot === true;
 function getFriends(username) {
   return friendships.accepted.filter(f => f.users.includes(username)).map(f => {
     const other = f.users.find(u => u !== username);
@@ -130,7 +133,6 @@ function checkRate(username) {
   return { allowed: true, remaining: RATE_LIMIT - r.count, reset: r.resetTime };
 }
 
-// ── fileUrl validation — own uploads + Giphy CDN only ──────────────────────
 const UPLOAD_URL_RE = /^\/uploads\/[a-f0-9]{8,}$/;
 const GIPHY_URL_RE  = /^https:\/\/media[0-9]*\.giphy\.com\//;
 function validateFileUrl(url) {
@@ -140,11 +142,10 @@ function validateFileUrl(url) {
   return null;
 }
 
-// ── replyTo: sanitize and verify username exists ───────────────────────────
 function sanitizeReplyTo(rt) {
   if (!rt || typeof rt !== 'object') return null;
   const username = String(rt.username || '').slice(0, 20);
-  if (!accounts[username.toLowerCase()]) return null; // verify user exists
+  if (!accounts[username.toLowerCase()]) return null;
   return {
     id:       String(rt.id       || '').slice(0, 32),
     username,
@@ -156,7 +157,6 @@ function sanitizeReplyTo(rt) {
 // ── Express ────────────────────────────────────────────────────────────────
 const app = express();
 
-// Security headers
 app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
@@ -251,7 +251,6 @@ app.post('/api/reactions', auth, (req, res) => {
   const { msgId, emoji } = req.body;
   if (!msgId || !emoji) return res.status(400).json({ error: 'Missing fields.' });
   if (typeof msgId !== 'string' || msgId.length > 64) return res.status(400).json({ error: 'Invalid msgId.' });
-  // validate emoji is one of the allowed quick reactions
   const ALLOWED_EMOJI = ['👍','❤️','😂','😮','😢','🔥','✅','👀'];
   if (!ALLOWED_EMOJI.includes(emoji)) return res.status(400).json({ error: 'Invalid emoji.' });
   const me = req.user.username;
@@ -289,31 +288,17 @@ app.get('/api/giphy', auth, async (req, res) => {
   } catch { res.status(502).json({ error: 'Upstream error' }); }
 });
 
-// bot
-
+// ── Bot token management ───────────────────────────────────────────────────
 app.post('/api/bot/token', auth, (req, res) => {
   const me = req.user.username;
   const botUsername = `${me}.bot`;
-
   if (!accounts[botUsername.toLowerCase()]) {
     const color = `hsl(${Math.floor(Math.random() * 360)},60%,65%)`;
-    accounts[botUsername.toLowerCase()] = {
-      username: botUsername,
-      hash: '',
-      color,
-      isBot: true,
-      owner: me
-    };
+    accounts[botUsername.toLowerCase()] = { username: botUsername, hash: '', color, isBot: true, owner: me };
     saveJSON(ACCOUNTS_FILE, accounts);
   }
-
   const botAcc = accounts[botUsername.toLowerCase()];
-  const token  = jwt.sign(
-    { username: botAcc.username, color: botAcc.color, isBot: true },
-    JWT_SECRET,
-    { expiresIn: '365d' }
-  );
-
+  const token  = jwt.sign({ username: botAcc.username, color: botAcc.color, isBot: true }, JWT_SECRET, { expiresIn: '365d' });
   res.json({ token, username: botAcc.username, color: botAcc.color });
 });
 
@@ -329,12 +314,62 @@ app.delete('/api/bot/token', auth, (req, res) => {
   const botAcc = accounts[botUsername.toLowerCase()];
   if (!botAcc) return res.status(404).json({ error: 'No bot found.' });
   for (const [ws, info] of clients) {
-    if (info.username === botAcc.username) {
-      push(ws, { type: 'kicked', reason: 'Token revoked.' });
-      ws.close();
-    }
+    if (info.username === botAcc.username) { push(ws, { type: 'kicked', reason: 'Token revoked.' }); ws.close(); }
   }
   res.json({ status: 'revoked' });
+});
+
+// ── Bot registry ───────────────────────────────────────────────────────────
+app.get('/api/bots', auth, async (req, res) => {
+  try {
+    const r = await fetch('https://raw.githubusercontent.com/auth1ery/asterisk/main/bots.json');
+    if (!r.ok) throw new Error('upstream failed');
+    res.json(await r.json());
+  } catch {
+    const local = path.join(__dirname, 'bots.json');
+    if (fs.existsSync(local)) res.json(loadJSON(local, []));
+    else res.json([]);
+  }
+});
+
+// ── Bot invite / OAuth ─────────────────────────────────────────────────────
+app.post('/api/bots/invite', auth, (req, res) => {
+  const me = req.user.username;
+  const { botUsername, nodeId } = req.body || {};
+  if (!botUsername || !nodeId) return res.status(400).json({ error: 'Missing fields.' });
+  const node = nodes[nodeId];
+  if (!node) return res.status(404).json({ error: 'Node not found.' });
+  if (node.owner !== me) return res.status(403).json({ error: 'Only the node owner can invite bots.' });
+  const botAcc = accounts[botUsername.toLowerCase()];
+  if (!botAcc || !botAcc.isBot) return res.status(404).json({ error: 'Bot not found.' });
+  if (node.members.includes(botUsername)) return res.status(409).json({ error: 'Bot is already in this node.' });
+  const token   = crypto.randomBytes(16).toString('hex');
+  const expires = Date.now() + 10 * 60 * 1000;
+  botInvites[token] = { botUsername, nodeId, invitedBy: me, expires };
+  saveJSON(BOT_INVITES_FILE, botInvites);
+  res.json({ token, url: `${FRONTEND_URL}?bot-invite=${token}` });
+});
+
+app.post('/api/bots/accept', auth, (req, res) => {
+  const me = req.user.username;
+  const { token } = req.body || {};
+  const invite = botInvites[token];
+  if (!invite || invite.expires < Date.now()) {
+    delete botInvites[token];
+    saveJSON(BOT_INVITES_FILE, botInvites);
+    return res.status(404).json({ error: 'Invite invalid or expired.' });
+  }
+  const botAcc = accounts[invite.botUsername.toLowerCase()];
+  if (!botAcc || botAcc.owner !== me) return res.status(403).json({ error: 'You do not own this bot.' });
+  const node = nodes[invite.nodeId];
+  if (!node) return res.status(404).json({ error: 'Node no longer exists.' });
+  if (!node.members.includes(invite.botUsername)) {
+    node.members.push(invite.botUsername);
+    saveJSON(NODES_FILE, nodes);
+  }
+  delete botInvites[token];
+  saveJSON(BOT_INVITES_FILE, botInvites);
+  res.json({ node: { id: node.id, name: node.name } });
 });
 
 // ── Friends ────────────────────────────────────────────────────────────────
@@ -470,13 +505,11 @@ app.delete('/api/nodes/:id/channels/:channel', auth, (req, res) => {
   res.json({ status: 'deleted' });
 });
 
-// Must come before /:id/join
 app.post('/api/nodes/join/invite/:code', auth, (req, res) => {
   const me = req.user.username;
   const node = Object.values(nodes).find(n => n.invites.some(i => i.code === req.params.code && i.expires > Date.now()));
   if (!node) return res.status(404).json({ error: 'Invalid or expired invite.' });
   if (node.banned.includes(me)) return res.status(403).json({ error: 'You are banned.' });
-  // Clean expired invites
   node.invites = node.invites.filter(i => i.expires > Date.now());
   if (!node.members.includes(me)) {
     if (Object.values(nodes).filter(n => n.members.includes(me)).length >= 4) return res.status(400).json({ error: 'Max 4 nodes joined.' });
@@ -510,7 +543,6 @@ app.post('/api/nodes/:id/leave', auth, (req, res) => {
 app.post('/api/nodes/:id/invite', auth, (req, res) => {
   const me = req.user.username, node = nodes[req.params.id];
   if (!node || node.owner !== me) return res.status(403).json({ error: 'Not the owner.' });
-  // Clean expired invites before adding new one
   node.invites = node.invites.filter(i => i.expires > Date.now());
   const code = crypto.randomBytes(5).toString('hex');
   node.invites.push({ code, expires: Date.now() + 7 * 24 * 60 * 60 * 1000 });
@@ -615,7 +647,6 @@ function syncUserList() { broadcastAll({ type: 'user_list', users: userList() })
 function syncTyping()   { broadcastAll({ type: 'typing',   users: [...typingUsers.keys()] }); }
 
 wss.on('connection', (ws, req) => {
-  // Origin check
   const origin = req.headers.origin;
   if (FRONTEND_URL && origin && origin !== FRONTEND_URL) { ws.close(1008, 'Forbidden'); return; }
 
@@ -636,13 +667,18 @@ wss.on('connection', (ws, req) => {
     status: accounts[user.username.toLowerCase()]?.status || 'online'
   });
 
-  push(ws, { type: 'history', channel: 'global', messages: messages['global'].slice(-HISTORY_SEND).map(m => ({ ...m, reactions: reactions[m.id] || {} })) });
+  // bots don't get global history — they only operate in nodes they've been invited to
+  if (!user.isBot) {
+    push(ws, { type: 'history', channel: 'global', messages: messages['global'].slice(-HISTORY_SEND).map(m => ({ ...m, reactions: reactions[m.id] || {} })) });
+  }
   push(ws, buildFriendsState(user.username));
   syncUserList();
 
-  const joinMsg = { type: 'system', id: crypto.randomBytes(4).toString('hex'), text: `${user.username} joined`, timestamp: Date.now() };
-  appendMessage(joinMsg, 'global');
-  broadcast(joinMsg, ws);
+  if (!user.isBot) {
+    const joinMsg = { type: 'system', id: crypto.randomBytes(4).toString('hex'), text: `${user.username} joined`, timestamp: Date.now() };
+    appendMessage(joinMsg, 'global');
+    broadcast(joinMsg, ws);
+  }
 
   ws.on('message', raw => {
     if (raw.length > 4096) return;
@@ -653,6 +689,8 @@ wss.on('connection', (ws, req) => {
 
     switch (msg.type) {
       case 'message': {
+        // bots cannot post to global channels
+        if (self.isBot) return;
         const text = typeof msg.text === 'string' ? msg.text.trim() : '';
         const channel = CHANNELS.includes(msg.channel) ? msg.channel : 'global';
         if (!text && !msg.fileUrl) return;
@@ -690,6 +728,7 @@ wss.on('connection', (ws, req) => {
         break;
       }
       case 'typing': {
+        if (self.isBot) return;
         if (typingUsers.has(self.username)) clearTimeout(typingUsers.get(self.username));
         typingUsers.set(self.username, setTimeout(() => { typingUsers.delete(self.username); syncTyping(); }, 3500));
         syncTyping();
@@ -738,6 +777,8 @@ wss.on('connection', (ws, req) => {
         break;
       }
       case 'join_channel': {
+        // bots cannot join global channels
+        if (self.isBot) return;
         const ch = CHANNELS.includes(msg.channel) ? msg.channel : 'global';
         push(ws, { type: 'history', channel: ch, messages: (messages[ch] || []).slice(-HISTORY_SEND).map(m => ({ ...m, reactions: reactions[m.id] || {} })) });
         break;
@@ -751,6 +792,7 @@ wss.on('connection', (ws, req) => {
     clients.delete(ws);
     if (typingUsers.has(self.username)) { clearTimeout(typingUsers.get(self.username)); typingUsers.delete(self.username); }
     syncUserList(); syncTyping();
+    if (self.isBot) return;
     const timer = setTimeout(() => {
       leaveTimers.delete(self.username);
       const leaveMsg = { type: 'system', id: crypto.randomBytes(4).toString('hex'), text: `${self.username} left`, timestamp: Date.now() };
