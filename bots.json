@@ -1,0 +1,11 @@
+[
+  {
+    "id": "auth.bot",
+    "name": "auth.bot",
+    "description": "a multipurpose, full featured bot by auth!",
+    "author": "auth1ery",
+    "package": "@auth1ery/asterisk.js",
+    "url": "https://github.com/auth1ery/auth-bot",
+    "verified": true
+  }
+]
