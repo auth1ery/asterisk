@@ -673,6 +673,17 @@
             <span class="s-toggle-track"></span><span class="s-toggle-thumb"></span>
           </label>
         </div>
+        <div>
+          <div class="s-section-label">language</div>
+          <div class="s-row">
+            <div class="s-row-info">
+              <div class="s-row-label">interface language</div>
+            </div>
+            <select id="lang-select" onchange="changeLang(this.value)"
+              style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:inherit;font-size:12px;padding:4px 8px;cursor:pointer;">
+            </select>
+          </div>
+        </div>
       </div>
 
       <div>
@@ -703,6 +714,25 @@
   
 <script src="config.js"></script>
 <script>
+let locale = {};
+let currentLang = localStorage.getItem('asterisk_lang') || 'en';
+
+async function loadLocale(lang) {
+  try {
+    const res = await fetch(`/locales/${lang}.json`);
+    locale = await res.json();
+    currentLang = lang;
+    localStorage.setItem('asterisk_lang', lang);
+  } catch {}
+}
+
+function t(key, vars = {}) {
+  let str = locale[key] ?? key;
+  for (const [k, v] of Object.entries(vars))
+    str = str.replaceAll(`{${k}}`, v);
+  return str;
+}
+
 const FILE_RENDERERS = [
   {
     test: t => t?.startsWith('image/'),
@@ -952,6 +982,7 @@ function doLogout() {
 
 // ── Auto-login on load ────────────────────────────────────────────────────────
 window.addEventListener('load', async () => {
+  await loadLocale(currentLang);
   const token = getToken();
   if (!token) return;
   try {
@@ -2896,6 +2927,24 @@ function getOrCreateSettingsSheet() {
   return el;
 }
 
+const AVAILABLE_LANGS = [
+  { code: 'en', name: 'English' },
+  // yknow add more yknow yknow
+];
+
+function populateLangSelect() {
+  const sel = document.getElementById('lang-select');
+  if (!sel) return;
+  sel.innerHTML = AVAILABLE_LANGS
+    .map(l => `<option value="${l.code}" ${l.code === currentLang ? 'selected' : ''}>${l.name}</option>`)
+    .join('');
+}
+
+async function changeLang(lang) {
+  await loadLocale(lang);
+  showToast('language changed — refresh to apply fully');
+}
+
 function syncSettingsUI() {
   const s = userSettings;
 
@@ -2941,6 +2990,7 @@ function resetSettings() {
 
 function openSettings() {
   syncSettingsUI();
+  populateLangSelect();
   document.getElementById('settings-overlay').classList.remove('hidden');
 }
 
