@@ -1,177 +1,176 @@
-require('dotenv').config({ path: __dirname + '/.env' })
-const express          = require('express');
+require('dotenv').config({ path: __dirname + '/.env' });
+const express = require('express');
 const { WebSocketServer } = require('ws');
-const http             = require('http');
-const bcrypt           = require('bcrypt');
-const jwt              = require('jsonwebtoken');
-const fs               = require('fs');
-const path             = require('path');
-const cors             = require('cors');
-const multer           = require('multer');
-const serveIndex = require('serve-index');
+const http = require('http');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const fs = require('fs');
+const path = require('path');
+const cors = require('cors');
+const multer = require('multer');
+const crypto = require('crypto');
 
-// ── Config ────────────────────────────────────────────────────────────────────
-const PORT         = process.env.PORT        || 3001;
-const FRONTEND_URL = process.env.FRONTEND_URL || '*';
-const DATA_DIR     = path.join(__dirname, 'data');
+const PORT = process.env.PORT || 3001;
+const FRONTEND_URL = process.env.FRONTEND_URL;
+if (!FRONTEND_URL) { console.warn('[WARN] FRONTEND_URL not set — CORS will be restrictive'); }
+const DATA_DIR = path.join(__dirname, 'data');
 
-// ── Disk helpers ──────────────────────────────────────────────────────────────
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 
-const loadJSON = (file, def) => {
-  try { return JSON.parse(fs.readFileSync(file, 'utf8')); }
-  catch { return def; }
-};
-const saveJSON = (file, data) =>
-  fs.writeFileSync(file, JSON.stringify(data, null, 2));
+const loadJSON = (file, def) => { try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return def; } };
+const saveJSON = (file, data) => fs.writeFileSync(file, JSON.stringify(data, null, 2));
 
-// ── Constants ─────────────────────────────────────────────────────────────────
 const JWT_SECRET = process.env.JWT_SECRET || (() => {
   const f = path.join(DATA_DIR, '.secret');
   if (fs.existsSync(f)) return fs.readFileSync(f, 'utf8').trim();
-  const s = require('crypto').randomBytes(48).toString('hex');
-  fs.writeFileSync(f, s);
-  return s;
+  const s = crypto.randomBytes(48).toString('hex');
+  fs.writeFileSync(f, s); return s;
 })();
 
-const ACCOUNTS_FILE = path.join(DATA_DIR, 'accounts.json');
-const MESSAGES_FILE = path.join(DATA_DIR, 'messages.json');
-const FRIENDS_FILE  = path.join(DATA_DIR, 'friends.json');
-const DMS_FILE      = path.join(DATA_DIR, 'dms.json');
-const NODES_FILE    = path.join(DATA_DIR, 'nodes.json');
+const ADMIN_SECRET = process.env.ADMIN_SECRET;
+if (!ADMIN_SECRET || ADMIN_SECRET === 'changeme') console.warn('[WARN] ADMIN_SECRET is weak or unset!');
+
+const ACCOUNTS_FILE  = path.join(DATA_DIR, 'accounts.json');
+const MESSAGES_FILE  = path.join(DATA_DIR, 'messages.json');
+const FRIENDS_FILE   = path.join(DATA_DIR, 'friends.json');
+const DMS_FILE       = path.join(DATA_DIR, 'dms.json');
+const NODES_FILE     = path.join(DATA_DIR, 'nodes.json');
 const REACTIONS_FILE = path.join(DATA_DIR, 'reactions.json');
 
-const CHANNELS = ['global', 'debate', 'gaming', 'music', 'memes'];
-const MAX_MESSAGES    = 30000;
-const HISTORY_SEND    = 6000;
-const MAX_DM_STORED   = 5000;
+const CHANNELS       = ['global', 'debate', 'gaming', 'music', 'memes'];
+const MAX_MESSAGES   = 30000;
+const HISTORY_SEND   = 6000;
+const MAX_DM_STORED  = 5000;
 const DM_HISTORY_SEND = 100;
-const RATE_LIMIT      = 20;
-const RATE_WINDOW     = 60 * 1000;
-const leaveTimers = new Map(); // username → timeoutId
+const RATE_LIMIT     = 20;
+const RATE_WINDOW    = 60 * 1000;
+const JWT_EXPIRY     = '7d';
+const leaveTimers    = new Map();
 
-// ── Load state ────────────────────────────────────────────────────────────────
 let accounts    = loadJSON(ACCOUNTS_FILE, {});
 let messages    = loadJSON(MESSAGES_FILE, {});
 let friendships = loadJSON(FRIENDS_FILE,  { requests: [], accepted: [] });
 let dms         = loadJSON(DMS_FILE,      {});
 let nodes       = loadJSON(NODES_FILE,    {});
-let reactions = loadJSON(REACTIONS_FILE, {});
+let reactions   = loadJSON(REACTIONS_FILE, {});
 
 CHANNELS.forEach(ch => { if (!messages[ch]) messages[ch] = []; });
 
-// ── Migrate existing nodes to per-channel messages ────────────────────────────
+// Migrate nodes to per-channel messages
 let nodesDirty = false, msgsDirty = false;
 Object.values(nodes).forEach(node => {
-  if (!node.channels) {
-    node.channels = ['general'];
-    nodesDirty = true;
-  }
+  if (!node.channels) { node.channels = ['general']; nodesDirty = true; }
   const oldKey = `node:${node.id}`;
   const newKey = `node:${node.id}:general`;
-  if (messages[oldKey] && !messages[newKey]) {
-    messages[newKey] = messages[oldKey];
-    delete messages[oldKey];
-    msgsDirty = true;
-  } else if (!messages[newKey]) {
-    messages[newKey] = [];
-    msgsDirty = true;
-  }
+  if (messages[oldKey] && !messages[newKey]) { messages[newKey] = messages[oldKey]; delete messages[oldKey]; msgsDirty = true; }
+  else if (!messages[newKey]) { messages[newKey] = []; msgsDirty = true; }
 });
 if (nodesDirty) saveJSON(NODES_FILE, nodes);
 if (msgsDirty)  saveJSON(MESSAGES_FILE, messages);
 
-// ── In-memory state ───────────────────────────────────────────────────────────
-const clients     = new Map();  // ws → { username, color }
-const typingUsers = new Map();  // username → timeoutId
-const userRates   = new Map();  // username → { count, resetTime }
+const clients     = new Map();
+const typingUsers = new Map();
+const userRates   = new Map();
 
-// ── WS send helpers ───────────────────────────────────────────────────────────
-const push = (ws, data) => {
-  if (ws.readyState === 1) ws.send(JSON.stringify(data));
-};
-
-function pushToUser(username, data) {
-  for (const [ws, info] of clients) {
-    if (info.username === username) push(ws, data);
-  }
+// ── Auth rate limiting (in-memory) ─────────────────────────────────────────
+const authAttempts = new Map(); // ip -> { count, resetTime }
+function checkAuthRate(ip) {
+  const now = Date.now();
+  let r = authAttempts.get(ip);
+  if (!r || now > r.resetTime) r = { count: 0, resetTime: now + 15 * 60 * 1000 };
+  r.count++;
+  authAttempts.set(ip, r);
+  return r.count <= 20;
 }
 
-// ── Friend helpers ────────────────────────────────────────────────────────────
-const areFriends = (a, b) =>
-  friendships.accepted.some(f => f.users.includes(a) && f.users.includes(b));
-
-const hasPending = (from, to) =>
-  friendships.requests.some(r => r.from === from && r.to === to);
-
+// ── Helpers ────────────────────────────────────────────────────────────────
+const push = (ws, data) => { if (ws.readyState === 1) ws.send(JSON.stringify(data)); };
+function pushToUser(username, data) { for (const [ws, info] of clients) { if (info.username === username) push(ws, data); } }
+const areFriends = (a, b) => friendships.accepted.some(f => f.users.includes(a) && f.users.includes(b));
+const hasPending = (from, to) => friendships.requests.some(r => r.from === from && r.to === to);
 function getFriends(username) {
-  return friendships.accepted
-    .filter(f => f.users.includes(username))
-    .map(f => {
-      const other = f.users.find(u => u !== username);
-      return { username: other, color: accounts[other.toLowerCase()]?.color || '#888' };
-    });
+  return friendships.accepted.filter(f => f.users.includes(username)).map(f => {
+    const other = f.users.find(u => u !== username);
+    return { username: other, color: accounts[other.toLowerCase()]?.color || '#888' };
+  });
 }
-
 function buildFriendsState(username) {
   return {
-    type:     'friends_state',
-    friends:  getFriends(username),
-    incoming: friendships.requests
-      .filter(r => r.to === username)
-      .map(r => ({ id: r.id, from: r.from, color: accounts[r.from.toLowerCase()]?.color || '#888' })),
-    outgoing: friendships.requests
-      .filter(r => r.from === username)
-      .map(r => ({ id: r.id, to: r.to }))
+    type: 'friends_state',
+    friends: getFriends(username),
+    incoming: friendships.requests.filter(r => r.to === username).map(r => ({ id: r.id, from: r.from, color: accounts[r.from.toLowerCase()]?.color || '#888' })),
+    outgoing: friendships.requests.filter(r => r.from === username).map(r => ({ id: r.id, to: r.to }))
   };
 }
-
 function pushToNodeMembers(nodeId, data) {
-  const node = nodes[nodeId];
-  if (!node) return;
-  for (const [ws, info] of clients)
-    if (node.members.includes(info.username)) push(ws, data);
+  const node = nodes[nodeId]; if (!node) return;
+  for (const [ws, info] of clients) if (node.members.includes(info.username)) push(ws, data);
 }
-
-// ── Message helpers ───────────────────────────────────────────────────────────
 function appendMessage(msg, channel = 'global') {
   if (!messages[channel]) messages[channel] = [];
   messages[channel].push(msg);
-  if (messages[channel].length > MAX_MESSAGES)
-    messages[channel].splice(0, messages[channel].length - MAX_MESSAGES);
+  if (messages[channel].length > MAX_MESSAGES) messages[channel].splice(0, messages[channel].length - MAX_MESSAGES);
   saveJSON(MESSAGES_FILE, messages);
 }
-
 const dmKey = (a, b) => [a, b].sort().join(':');
-
 function appendDM(a, b, msg) {
   const key = dmKey(a, b);
   if (!dms[key]) dms[key] = [];
   dms[key].push(msg);
-  if (dms[key].length > MAX_DM_STORED)
-    dms[key].splice(0, dms[key].length - MAX_DM_STORED);
+  if (dms[key].length > MAX_DM_STORED) dms[key].splice(0, dms[key].length - MAX_DM_STORED);
   saveJSON(DMS_FILE, dms);
 }
-
-// ── Rate limit ────────────────────────────────────────────────────────────────
 function checkRate(username) {
   const now = Date.now();
   let r = userRates.get(username);
   if (!r || now > r.resetTime) r = { count: 0, resetTime: now + RATE_WINDOW };
-  if (r.count >= RATE_LIMIT) {
-    userRates.set(username, r);
-    return { allowed: false, remaining: 0, reset: r.resetTime };
-  }
+  if (r.count >= RATE_LIMIT) { userRates.set(username, r); return { allowed: false, remaining: 0, reset: r.resetTime }; }
   r.count++;
   userRates.set(username, r);
   return { allowed: true, remaining: RATE_LIMIT - r.count, reset: r.resetTime };
 }
 
-// ── Express ───────────────────────────────────────────────────────────────────
-const app = express();
-app.use(cors({ origin: FRONTEND_URL }));
-app.use(express.json());
+// ── fileUrl validation — own uploads + Giphy CDN only ──────────────────────
+const UPLOAD_URL_RE = /^\/uploads\/[a-f0-9]{8,}$/;
+const GIPHY_URL_RE  = /^https:\/\/media[0-9]*\.giphy\.com\//;
+function validateFileUrl(url) {
+  if (typeof url !== 'string') return null;
+  if (UPLOAD_URL_RE.test(url))  return url;
+  if (GIPHY_URL_RE.test(url))   return url;
+  return null;
+}
 
+// ── replyTo: sanitize and verify username exists ───────────────────────────
+function sanitizeReplyTo(rt) {
+  if (!rt || typeof rt !== 'object') return null;
+  const username = String(rt.username || '').slice(0, 20);
+  if (!accounts[username.toLowerCase()]) return null; // verify user exists
+  return {
+    id:       String(rt.id       || '').slice(0, 32),
+    username,
+    text:     String(rt.text     || '').slice(0, 200)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+  };
+}
+
+// ── Express ────────────────────────────────────────────────────────────────
+const app = express();
+
+// Security headers
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'no-referrer');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  next();
+});
+
+app.use(cors({
+  origin: FRONTEND_URL || false,
+  methods: ['GET','POST','PATCH','DELETE'],
+  allowedHeaders: ['Content-Type','Authorization']
+}));
+app.use(express.json({ limit: '64kb' }));
 app.get('/api/health', (_, res) => res.json({ ok: true }));
 
 const auth = (req, res, next) => {
@@ -183,75 +182,61 @@ const auth = (req, res, next) => {
 
 const upload = multer({
   dest: path.join(DATA_DIR, 'uploads'),
-  limits: { fileSize: 8 * 1024 * 1024 }, // 8MB max
+  limits: { fileSize: 8 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
-    const allowed = [
-      'image/jpeg', 'image/png', 'image/gif', 'image/webp',
-      'video/mp4', 'video/webm', 'video/ogg',
-      'text/plain'
-    ];
+    const allowed = ['image/jpeg','image/png','image/gif','image/webp','video/mp4','video/webm','video/ogg','text/plain'];
     cb(null, allowed.includes(file.mimetype));
   }
 });
 
 app.use('/uploads', express.static(path.join(DATA_DIR, 'uploads')));
 
-const downloadsPath = path.join(__dirname, 'electron-download');
-app.use('/downloads', express.static(downloadsPath), serveIndex(downloadsPath, { icons: true }));
-
-// ── Register ──────────────────────────────────────────────────────────────────
-app.post('/api/register', async (req, res) => {
+// ── Register ───────────────────────────────────────────────────────────────
+app.post('/api/register', (req, res, next) => {
+  const ip = req.headers['cf-connecting-ip'] || req.ip;
+  if (!checkAuthRate(ip)) return res.status(429).json({ error: 'Too many attempts. Try again later.' });
+  next();
+}, async (req, res) => {
   const { username, password } = req.body || {};
-  if (!username || !password)
-    return res.status(400).json({ error: 'Username and password are required.' });
-  if (username.length < 2 || username.length > 20)
-    return res.status(400).json({ error: 'Username must be 2–20 characters.' });
-  if (!/^[a-zA-Z0-9_-]+$/.test(username))
-    return res.status(400).json({ error: 'Username: letters, numbers, _ and - only.' });
-  if (password.length < 6)
-    return res.status(400).json({ error: 'Password must be at least 6 characters.' });
-  if (accounts[username.toLowerCase()])
-    return res.status(409).json({ error: 'That username is taken.' });
-
+  if (!username || !password) return res.status(400).json({ error: 'Username and password are required.' });
+  if (username.length < 2 || username.length > 20) return res.status(400).json({ error: 'Username must be 2–20 characters.' });
+  if (!/^[a-zA-Z0-9_-]+$/.test(username)) return res.status(400).json({ error: 'Username: letters, numbers, _ and - only.' });
+  if (password.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters.' });
+  if (accounts[username.toLowerCase()]) return res.status(409).json({ error: 'That username is taken.' });
   const hash  = await bcrypt.hash(password, 10);
   const color = `hsl(${Math.floor(Math.random() * 360)},70%,68%)`;
   accounts[username.toLowerCase()] = { username, hash, color };
   saveJSON(ACCOUNTS_FILE, accounts);
-
-  const token = jwt.sign({ username, color }, JWT_SECRET);
+  const token = jwt.sign({ username, color }, JWT_SECRET, { expiresIn: JWT_EXPIRY });
   res.json({ token, username, color });
 });
 
-// ── Login ─────────────────────────────────────────────────────────────────────
-app.post('/api/login', async (req, res) => {
+// ── Login ──────────────────────────────────────────────────────────────────
+app.post('/api/login', (req, res, next) => {
+  const ip = req.headers['cf-connecting-ip'] || req.ip;
+  if (!checkAuthRate(ip)) return res.status(429).json({ error: 'Too many attempts. Try again later.' });
+  next();
+}, async (req, res) => {
   const { username, password } = req.body || {};
   const account = accounts[username?.toLowerCase()];
   if (!account || !await bcrypt.compare(password, account.hash))
     return res.status(401).json({ error: 'Invalid credentials.' });
-  const token = jwt.sign({ username: account.username, color: account.color }, JWT_SECRET);
+  const token = jwt.sign({ username: account.username, color: account.color }, JWT_SECRET, { expiresIn: JWT_EXPIRY });
   res.json({ token, username: account.username, color: account.color });
 });
 
-// ── Verify ────────────────────────────────────────────────────────────────────
-app.get('/api/verify', auth, (req, res) => {
-  res.json({ username: req.user.username, color: req.user.color });
-});
+app.get('/api/verify', auth, (req, res) => res.json({ username: req.user.username, color: req.user.color }));
 
-// Update profile (bio + status)
 app.patch('/api/profile', auth, (req, res) => {
   const me = req.user.username;
   const acc = accounts[me.toLowerCase()];
   if (!acc) return res.status(404).json({ error: 'Not found.' });
   if (req.body.bio !== undefined) acc.bio = String(req.body.bio).slice(0, 160);
   if (req.body.status !== undefined) {
-    const allowed = ['online','away','busy','invisible'];
-    if (allowed.includes(req.body.status)) acc.status = req.body.status;
+    if (['online','away','busy','invisible'].includes(req.body.status)) acc.status = req.body.status;
   }
   saveJSON(ACCOUNTS_FILE, accounts);
-  // live-update the connected client entry
-  for (const [ws, info] of clients) {
-    if (info.username === me) { info.status = acc.status; break; }
-  }
+  for (const [ws, info] of clients) { if (info.username === me) { info.status = acc.status; break; } }
   syncUserList();
   res.json({ ok: true });
 });
@@ -265,6 +250,10 @@ app.get('/api/profile/:username', auth, (req, res) => {
 app.post('/api/reactions', auth, (req, res) => {
   const { msgId, emoji } = req.body;
   if (!msgId || !emoji) return res.status(400).json({ error: 'Missing fields.' });
+  if (typeof msgId !== 'string' || msgId.length > 64) return res.status(400).json({ error: 'Invalid msgId.' });
+  // validate emoji is one of the allowed quick reactions
+  const ALLOWED_EMOJI = ['👍','❤️','😂','😮','😢','🔥','✅','👀'];
+  if (!ALLOWED_EMOJI.includes(emoji)) return res.status(400).json({ error: 'Invalid emoji.' });
   const me = req.user.username;
   if (!reactions[msgId]) reactions[msgId] = {};
   if (!reactions[msgId][emoji]) reactions[msgId][emoji] = [];
@@ -278,142 +267,104 @@ app.post('/api/reactions', auth, (req, res) => {
   res.json({ ok: true });
 });
 
-// the files
-
 app.post('/api/upload', auth, upload.single('file'), (req, res) => {
-  if (!req.file) return res.status(400).json({ error: 'No file uploaded.' });
+  if (!req.file) return res.status(400).json({ error: 'No file or unsupported type.' });
   res.json({ url: `/uploads/${req.file.filename}` });
 });
 
-// ── Friends: get ──────────────────────────────────────────────────────────────
-app.get('/api/friends', auth, (req, res) => {
-  res.json(buildFriendsState(req.user.username));
-});
-
-// gif
-app.get('/api/giphy', async (req, res) => {
+// ── GIPHY proxy ────────────────────────────────────────────────────────────
+app.get('/api/giphy', auth, async (req, res) => {
   const key = process.env.GIPHY_KEY;
   if (!key) return res.status(500).json({ error: 'GIPHY_KEY not set' });
-
   const { endpoint = 'trending', limit = 20, q } = req.query;
+  const safeLimit = Math.min(parseInt(limit) || 20, 50);
   const base = 'https://api.giphy.com/v1/gifs';
-  const url = endpoint === 'search'
-    ? `${base}/search?api_key=${key}&q=${encodeURIComponent(q)}&limit=${limit}`
-    : `${base}/trending?api_key=${key}&limit=${limit}`;
-
-  const response = await fetch(url);
-  const data = await response.json();
-  res.json(data);
+  const url = endpoint === 'search' && q
+    ? `${base}/search?api_key=${key}&q=${encodeURIComponent(String(q).slice(0,100))}&limit=${safeLimit}`
+    : `${base}/trending?api_key=${key}&limit=${safeLimit}`;
+  try {
+    const response = await fetch(url);
+    const data = await response.json();
+    res.json(data);
+  } catch { res.status(502).json({ error: 'Upstream error' }); }
 });
 
-// ── Friends: send request ─────────────────────────────────────────────────────
+// ── Friends ────────────────────────────────────────────────────────────────
+app.get('/api/friends', auth, (req, res) => res.json(buildFriendsState(req.user.username)));
+
 app.post('/api/friends/request', auth, (req, res) => {
-  const me  = req.user.username;
+  const me = req.user.username;
   const { to } = req.body || {};
-
-  if (!to)
-    return res.status(400).json({ error: 'Missing target.' });
-  if (to.toLowerCase() === me.toLowerCase())
-    return res.status(400).json({ error: "Can't friend yourself." });
-  if (!accounts[to.toLowerCase()])
-    return res.status(404).json({ error: 'User not found.' });
-  if (areFriends(me, to))
-    return res.status(409).json({ error: 'Already friends.' });
-  if (hasPending(me, to))
-    return res.status(409).json({ error: 'Request already sent.' });
-
-  // Mutual request → auto-accept
+  if (!to) return res.status(400).json({ error: 'Missing target.' });
+  if (to.toLowerCase() === me.toLowerCase()) return res.status(400).json({ error: "Can't friend yourself." });
+  if (!accounts[to.toLowerCase()]) return res.status(404).json({ error: 'User not found.' });
+  if (areFriends(me, to)) return res.status(409).json({ error: 'Already friends.' });
+  if (hasPending(me, to)) return res.status(409).json({ error: 'Request already sent.' });
   const mutual = friendships.requests.find(r => r.from === to && r.to === me);
   if (mutual) {
     friendships.requests = friendships.requests.filter(r => r !== mutual);
-    friendships.accepted.push({
-      id: Math.random().toString(36).slice(2),
-      users: [me, to].sort(),
-      timestamp: Date.now()
-    });
+    friendships.accepted.push({ id: crypto.randomBytes(6).toString('hex'), users: [me, to].sort(), timestamp: Date.now() });
     saveJSON(FRIENDS_FILE, friendships);
     const toColor = accounts[to.toLowerCase()]?.color || '#888';
     pushToUser(me,  { type: 'friend_accepted', username: to,  color: toColor });
     pushToUser(to,  { type: 'friend_accepted', username: me,  color: req.user.color });
     return res.json({ status: 'accepted' });
   }
-
-  const r = { id: Math.random().toString(36).slice(2), from: me, to, timestamp: Date.now() };
+  const r = { id: crypto.randomBytes(6).toString('hex'), from: me, to, timestamp: Date.now() };
   friendships.requests.push(r);
   saveJSON(FRIENDS_FILE, friendships);
   pushToUser(to, { type: 'friend_request', id: r.id, from: me, color: req.user.color });
   res.json({ status: 'sent' });
 });
 
-// ── Friends: accept ───────────────────────────────────────────────────────────
 app.post('/api/friends/accept', auth, (req, res) => {
-  const me   = req.user.username;
+  const me = req.user.username;
   const { from } = req.body || {};
   const r = friendships.requests.find(r => r.from === from && r.to === me);
   if (!r) return res.status(404).json({ error: 'Request not found.' });
-
   friendships.requests = friendships.requests.filter(x => x !== r);
-  friendships.accepted.push({
-    id: Math.random().toString(36).slice(2),
-    users: [me, from].sort(),
-    timestamp: Date.now()
-  });
+  friendships.accepted.push({ id: crypto.randomBytes(6).toString('hex'), users: [me, from].sort(), timestamp: Date.now() });
   saveJSON(FRIENDS_FILE, friendships);
-
-  const fromColor = accounts[from.toLowerCase()]?.color || '#888';
-  pushToUser(me,   { type: 'friend_accepted', username: from, color: fromColor });
+  pushToUser(me,   { type: 'friend_accepted', username: from, color: accounts[from.toLowerCase()]?.color || '#888' });
   pushToUser(from, { type: 'friend_accepted', username: me,   color: req.user.color });
   res.json({ status: 'accepted' });
 });
 
-// ── Friends: reject ───────────────────────────────────────────────────────────
 app.post('/api/friends/reject', auth, (req, res) => {
-  const me   = req.user.username;
+  const me = req.user.username;
   const { from } = req.body || {};
   friendships.requests = friendships.requests.filter(r => !(r.from === from && r.to === me));
   saveJSON(FRIENDS_FILE, friendships);
   res.json({ status: 'rejected' });
 });
 
-// ── Friends: cancel outgoing ──────────────────────────────────────────────────
 app.post('/api/friends/cancel', auth, (req, res) => {
-  const me  = req.user.username;
+  const me = req.user.username;
   const { to } = req.body || {};
   friendships.requests = friendships.requests.filter(r => !(r.from === me && r.to === to));
   saveJSON(FRIENDS_FILE, friendships);
   res.json({ status: 'cancelled' });
 });
 
-// ── Friends: remove ───────────────────────────────────────────────────────────
 app.delete('/api/friends/:username', auth, (req, res) => {
-  const me    = req.user.username;
-  const other = req.params.username;
-  friendships.accepted = friendships.accepted.filter(
-    f => !(f.users.includes(me) && f.users.includes(other))
-  );
+  const me = req.user.username, other = req.params.username;
+  friendships.accepted = friendships.accepted.filter(f => !(f.users.includes(me) && f.users.includes(other)));
   saveJSON(FRIENDS_FILE, friendships);
   pushToUser(me,    { type: 'friend_removed', username: other });
   pushToUser(other, { type: 'friend_removed', username: me });
   res.json({ status: 'removed' });
 });
 
-// ── Nodes ─────────────────────────────────────────────────────────────────────
+// ── Nodes ──────────────────────────────────────────────────────────────────
 app.post('/api/nodes', auth, (req, res) => {
   const me = req.user.username;
   const { name } = req.body || {};
-  if (!name?.trim() || name.length < 2 || name.length > 32)
-    return res.status(400).json({ error: 'Name must be 2–32 chars.' });
+  if (!name?.trim() || name.length < 2 || name.length > 32) return res.status(400).json({ error: 'Name must be 2–32 chars.' });
   const all = Object.values(nodes);
-  if (all.filter(n => n.owner === me).length >= 2)
-    return res.status(400).json({ error: 'Max 2 nodes owned.' });
-  if (all.filter(n => n.members.includes(me)).length >= 4)
-    return res.status(400).json({ error: 'Max 4 nodes joined.' });
-  const id = require('crypto').randomBytes(6).toString('hex');
-  nodes[id] = {
-    id, name: name.trim(), owner: me,
-    members: [me], banned: [], invites: [],
-    channels: ['general']         
-  };
+  if (all.filter(n => n.owner === me).length >= 2) return res.status(400).json({ error: 'Max 2 nodes owned.' });
+  if (all.filter(n => n.members.includes(me)).length >= 4) return res.status(400).json({ error: 'Max 4 nodes joined.' });
+  const id = crypto.randomBytes(6).toString('hex');
+  nodes[id] = { id, name: name.trim(), owner: me, members: [me], banned: [], invites: [], channels: ['general'] };
   messages[`node:${id}:general`] = [];
   saveJSON(NODES_FILE, nodes);
   saveJSON(MESSAGES_FILE, messages);
@@ -433,32 +384,23 @@ app.get('/api/nodes/discover', auth, (req, res) => {
 });
 
 app.get('/api/nodes/:id', auth, (req, res) => {
-  const me = req.user.username;
-  const node = nodes[req.params.id];
+  const me = req.user.username, node = nodes[req.params.id];
   if (!node || !node.members.includes(me)) return res.status(404).json({ error: 'Not found.' });
   res.json({
-    id: node.id, name: node.name, owner: node.owner,
-    channels: node.channels || ['general'], 
-    members: node.members.map(u => ({
-      username: u,
-      color: accounts[u?.toLowerCase()]?.color || '#888'
-    }))
+    id: node.id, name: node.name, owner: node.owner, channels: node.channels || ['general'],
+    members: node.members.map(u => ({ username: u, color: accounts[u?.toLowerCase()]?.color || '#888' }))
   });
 });
 
-// ── Node channels: create ─────────────────────────────────────────────────────
 app.post('/api/nodes/:id/channels', auth, (req, res) => {
-  const me   = req.user.username;
-  const node = nodes[req.params.id];
+  const me = req.user.username, node = nodes[req.params.id];
   if (!node || node.owner !== me) return res.status(403).json({ error: 'Not owner.' });
   if (!node.channels) node.channels = ['general'];
   if (node.channels.length >= 10) return res.status(400).json({ error: 'Max 10 channels.' });
-
-  const raw   = req.body?.name?.trim() || '';
+  const raw = req.body?.name?.trim() || '';
   const cname = raw.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').slice(0, 24);
-  if (cname.length < 2)            return res.status(400).json({ error: 'Name too short.' });
+  if (cname.length < 2) return res.status(400).json({ error: 'Name too short.' });
   if (node.channels.includes(cname)) return res.status(409).json({ error: 'Channel already exists.' });
-
   node.channels.push(cname);
   messages[`node:${node.id}:${cname}`] = [];
   saveJSON(NODES_FILE, nodes);
@@ -467,15 +409,11 @@ app.post('/api/nodes/:id/channels', auth, (req, res) => {
   res.json({ channel: cname });
 });
 
-// ── Node channels: delete ─────────────────────────────────────────────────────
 app.delete('/api/nodes/:id/channels/:channel', auth, (req, res) => {
-  const me      = req.user.username;
-  const node    = nodes[req.params.id];
-  const channel = req.params.channel;
-  if (!node || node.owner !== me)      return res.status(403).json({ error: 'Not owner.' });
-  if (channel === 'general')           return res.status(400).json({ error: "Can't delete #general." });
+  const me = req.user.username, node = nodes[req.params.id], channel = req.params.channel;
+  if (!node || node.owner !== me) return res.status(403).json({ error: 'Not owner.' });
+  if (channel === 'general') return res.status(400).json({ error: "Can't delete #general." });
   if (!node.channels?.includes(channel)) return res.status(404).json({ error: 'Channel not found.' });
-
   node.channels = node.channels.filter(c => c !== channel);
   delete messages[`node:${node.id}:${channel}`];
   saveJSON(NODES_FILE, nodes);
@@ -487,13 +425,13 @@ app.delete('/api/nodes/:id/channels/:channel', auth, (req, res) => {
 // Must come before /:id/join
 app.post('/api/nodes/join/invite/:code', auth, (req, res) => {
   const me = req.user.username;
-  const node = Object.values(nodes).find(n =>
-    n.invites.some(i => i.code === req.params.code && i.expires > Date.now()));
+  const node = Object.values(nodes).find(n => n.invites.some(i => i.code === req.params.code && i.expires > Date.now()));
   if (!node) return res.status(404).json({ error: 'Invalid or expired invite.' });
   if (node.banned.includes(me)) return res.status(403).json({ error: 'You are banned.' });
+  // Clean expired invites
+  node.invites = node.invites.filter(i => i.expires > Date.now());
   if (!node.members.includes(me)) {
-    if (Object.values(nodes).filter(n => n.members.includes(me)).length >= 4)
-      return res.status(400).json({ error: 'Max 4 nodes joined.' });
+    if (Object.values(nodes).filter(n => n.members.includes(me)).length >= 4) return res.status(400).json({ error: 'Max 4 nodes joined.' });
     node.members.push(me);
     saveJSON(NODES_FILE, nodes);
   }
@@ -501,13 +439,11 @@ app.post('/api/nodes/join/invite/:code', auth, (req, res) => {
 });
 
 app.post('/api/nodes/:id/join', auth, (req, res) => {
-  const me = req.user.username;
-  const node = nodes[req.params.id];
+  const me = req.user.username, node = nodes[req.params.id];
   if (!node) return res.status(404).json({ error: 'Node not found.' });
   if (node.banned.includes(me)) return res.status(403).json({ error: 'You are banned.' });
   if (!node.members.includes(me)) {
-    if (Object.values(nodes).filter(n => n.members.includes(me)).length >= 4)
-      return res.status(400).json({ error: 'Max 4 nodes joined.' });
+    if (Object.values(nodes).filter(n => n.members.includes(me)).length >= 4) return res.status(400).json({ error: 'Max 4 nodes joined.' });
     node.members.push(me);
     saveJSON(NODES_FILE, nodes);
   }
@@ -515,8 +451,7 @@ app.post('/api/nodes/:id/join', auth, (req, res) => {
 });
 
 app.post('/api/nodes/:id/leave', auth, (req, res) => {
-  const me = req.user.username;
-  const node = nodes[req.params.id];
+  const me = req.user.username, node = nodes[req.params.id];
   if (!node) return res.status(404).json({ error: 'Not found.' });
   if (node.owner === me) return res.status(400).json({ error: 'Owner cannot leave.' });
   node.members = node.members.filter(u => u !== me);
@@ -525,18 +460,18 @@ app.post('/api/nodes/:id/leave', auth, (req, res) => {
 });
 
 app.post('/api/nodes/:id/invite', auth, (req, res) => {
-  const me = req.user.username;
-  const node = nodes[req.params.id];
+  const me = req.user.username, node = nodes[req.params.id];
   if (!node || node.owner !== me) return res.status(403).json({ error: 'Not the owner.' });
-  const code = require('crypto').randomBytes(5).toString('hex');
+  // Clean expired invites before adding new one
+  node.invites = node.invites.filter(i => i.expires > Date.now());
+  const code = crypto.randomBytes(5).toString('hex');
   node.invites.push({ code, expires: Date.now() + 7 * 24 * 60 * 60 * 1000 });
   saveJSON(NODES_FILE, nodes);
   res.json({ code });
 });
 
 app.post('/api/nodes/:id/kick/:username', auth, (req, res) => {
-  const me = req.user.username;
-  const node = nodes[req.params.id];
+  const me = req.user.username, node = nodes[req.params.id];
   if (!node || node.owner !== me) return res.status(403).json({ error: 'Not owner.' });
   const target = req.params.username;
   node.members = node.members.filter(u => u !== target);
@@ -546,8 +481,7 @@ app.post('/api/nodes/:id/kick/:username', auth, (req, res) => {
 });
 
 app.post('/api/nodes/:id/ban/:username', auth, (req, res) => {
-  const me = req.user.username;
-  const node = nodes[req.params.id];
+  const me = req.user.username, node = nodes[req.params.id];
   if (!node || node.owner !== me) return res.status(403).json({ error: 'Not owner.' });
   const target = req.params.username;
   node.members = node.members.filter(u => u !== target);
@@ -558,359 +492,215 @@ app.post('/api/nodes/:id/ban/:username', auth, (req, res) => {
 });
 
 app.delete('/api/nodes/:id/messages/:msgId', auth, (req, res) => {
-  const me = req.user.username;
-  const node = nodes[req.params.id];
+  const me = req.user.username, node = nodes[req.params.id];
   if (!node || node.owner !== me) return res.status(403).json({ error: 'Not owner.' });
   const allKeys = Object.keys(messages).filter(k => k.startsWith(`node:${req.params.id}:`));
-  for (const key of allKeys) {
-    if (messages[key]) messages[key] = messages[key].filter(m => m.id !== req.params.msgId);
-  }
-  saveJSON(MESSAGES_FILE, messages);  // ← moved outside the loop, called once
+  for (const key of allKeys) { if (messages[key]) messages[key] = messages[key].filter(m => m.id !== req.params.msgId); }
+  saveJSON(MESSAGES_FILE, messages);
   pushToNodeMembers(req.params.id, { type: 'node_message_deleted', nodeId: req.params.id, msgId: req.params.msgId });
   res.json({ status: 'deleted' });
 });
 
-// ── Admin endpoints ────────────────────────────────────────────────────────
-const ADMIN_SECRET = process.env.ADMIN_SECRET || 'changeme';
-
+// ── Admin ──────────────────────────────────────────────────────────────────
+const adminAttempts = new Map();
 const adminAuth = (req, res, next) => {
-  if (req.headers['x-admin-secret'] !== ADMIN_SECRET)
-    return res.status(403).json({ error: 'Forbidden.' });
+  const ip = req.headers['cf-connecting-ip'] || req.ip;
+  const now = Date.now();
+  let r = adminAttempts.get(ip);
+  if (!r || now > r.resetTime) r = { count: 0, resetTime: now + 15 * 60 * 1000 };
+  r.count++;
+  adminAttempts.set(ip, r);
+  if (r.count > 10) return res.status(429).json({ error: 'Too many attempts.' });
+  const provided = req.headers['x-admin-secret'];
+  if (!ADMIN_SECRET || !provided) return res.status(403).json({ error: 'Forbidden.' });
+  try {
+    const a = Buffer.from(provided.padEnd(64).slice(0, 64));
+    const b = Buffer.from((ADMIN_SECRET).padEnd(64).slice(0, 64));
+    if (!crypto.timingSafeEqual(a, b) || provided !== ADMIN_SECRET) return res.status(403).json({ error: 'Forbidden.' });
+  } catch { return res.status(403).json({ error: 'Forbidden.' }); }
   next();
 };
 
-// List online sessions
-app.get('/api/admin/online', adminAuth, (req, res) => {
-  res.json([...clients.values()].map(c => ({ username: c.username, color: c.color })));
-});
-
-// List all accounts
-app.get('/api/admin/accounts', adminAuth, (req, res) => {
-  res.json(Object.values(accounts).map(a => ({ username: a.username, color: a.color })));
-});
-
-// Kick a session
+app.get('/api/admin/online',   adminAuth, (req, res) => res.json([...clients.values()].map(c => ({ username: c.username, color: c.color }))));
+app.get('/api/admin/accounts', adminAuth, (req, res) => res.json(Object.values(accounts).map(a => ({ username: a.username, color: a.color }))));
 app.post('/api/admin/kick/:username', adminAuth, (req, res) => {
-  const target = req.params.username;
-  let kicked = false;
-  for (const [ws, info] of clients) {
-    if (info.username === target) {
-      push(ws, { type: 'kicked', reason: 'Kicked by admin.' });
-      ws.close(); kicked = true;
-    }
-  }
+  const target = req.params.username; let kicked = false;
+  for (const [ws, info] of clients) { if (info.username === target) { push(ws, { type: 'kicked', reason: 'Kicked by admin.' }); ws.close(); kicked = true; } }
   res.json({ kicked });
 });
-
-// Delete an account (also kicks active session)
 app.delete('/api/admin/accounts/:username', adminAuth, (req, res) => {
   const target = req.params.username;
-  for (const [ws, info] of clients) {
-    if (info.username === target) {
-      push(ws, { type: 'kicked', reason: 'Account deleted by admin.' });
-      ws.close();
-    }
-  }
+  for (const [ws, info] of clients) { if (info.username === target) { push(ws, { type: 'kicked', reason: 'Account deleted by admin.' }); ws.close(); } }
   delete accounts[target.toLowerCase()];
   saveJSON(ACCOUNTS_FILE, accounts);
   res.json({ deleted: true });
 });
 
-// ── Admin dashboard key gate ───────────────────────────────────────────────
 app.post('/api/admin/dashkey', (req, res) => {
-  const { key } = req.body || {};
   const DASHKEY = process.env.ADMIN_DASHKEY;
-  console.log('got key:', JSON.stringify(key));
-  console.log('env key:', JSON.stringify(DASHKEY));
-  console.log('match:', key === DASHKEY);
   if (!DASHKEY) return res.status(500).json({ error: 'ADMIN_DASHKEY not set in .env' });
-  if (key !== DASHKEY) return res.status(403).json({ error: 'wrong key' });
+  const { key } = req.body || {};
+  if (!key || typeof key !== 'string') return res.status(403).json({ error: 'wrong key' });
+  try {
+    const a = Buffer.from(key.padEnd(64).slice(0, 64));
+    const b = Buffer.from(DASHKEY.padEnd(64).slice(0, 64));
+    if (!crypto.timingSafeEqual(a, b) || key !== DASHKEY) return res.status(403).json({ error: 'wrong key' });
+  } catch { return res.status(403).json({ error: 'wrong key' }); }
   res.json({ ok: true });
 });
 
-// ── WebSocket ─────────────────────────────────────────────────────────────────
+// ── WebSocket ──────────────────────────────────────────────────────────────
 const server = http.createServer(app);
-const wss    = new WebSocketServer({ server, path: '/ws' });
+const wss = new WebSocketServer({ server, path: '/ws' });
 
-function broadcast(data, skip = null) {
-  const s = JSON.stringify(data);
-  wss.clients.forEach(c => { if (c !== skip && c.readyState === 1) c.send(s); });
-}
+function broadcast(data, skip = null) { const s = JSON.stringify(data); wss.clients.forEach(c => { if (c !== skip && c.readyState === 1) c.send(s); }); }
 const broadcastAll = data => broadcast(data, null);
-
-function userList() {
-  return [...clients.values()].map(c => ({
-    username: c.username, color: c.color, status: c.status || 'online'
-  }));
-}
+function userList() { return [...clients.values()].map(c => ({ username: c.username, color: c.color, status: c.status || 'online' })); }
 function syncUserList() { broadcastAll({ type: 'user_list', users: userList() }); }
 function syncTyping()   { broadcastAll({ type: 'typing',   users: [...typingUsers.keys()] }); }
 
 wss.on('connection', (ws, req) => {
+  // Origin check
+  const origin = req.headers.origin;
+  if (FRONTEND_URL && origin && origin !== FRONTEND_URL) { ws.close(1008, 'Forbidden'); return; }
+
   const params = new URL(req.url, 'http://x').searchParams;
   let user;
-  try   { user = jwt.verify(params.get('token'), JWT_SECRET); }
+  try { user = jwt.verify(params.get('token'), JWT_SECRET); }
   catch { ws.close(1008, 'Unauthorized'); return; }
 
-  // Kick duplicate session
   for (const [oldWs, info] of clients) {
-    if (info.username === user.username) {
-      push(oldWs, { type: 'kicked', reason: 'Signed in from another window.' });
-      oldWs.close();
-    }
+    if (info.username === user.username) { push(oldWs, { type: 'kicked', reason: 'Signed in from another window.' }); oldWs.close(); }
   }
+  if (leaveTimers.has(user.username)) { clearTimeout(leaveTimers.get(user.username)); leaveTimers.delete(user.username); }
 
-  // Cancel pending leave message if reconnecting
-  if (leaveTimers.has(user.username)) {
-    clearTimeout(leaveTimers.get(user.username));
-    leaveTimers.delete(user.username);
-  }
+  clients.set(ws, { username: user.username, color: user.color, status: accounts[user.username.toLowerCase()]?.status || 'online' });
 
-  clients.set(ws, {
-    username: user.username,
-    color:    user.color,
-    status:   accounts[user.username.toLowerCase()]?.status || 'online'
-  });
-  
-  // Send initial state
-  push(ws, {
-    type: 'history',
-    channel: 'global',
-    messages: messages['global'].slice(-HISTORY_SEND).map(m => ({ ...m, reactions: reactions[m.id] || {} }))
-  });
+  push(ws, { type: 'history', channel: 'global', messages: messages['global'].slice(-HISTORY_SEND).map(m => ({ ...m, reactions: reactions[m.id] || {} })) });
   push(ws, buildFriendsState(user.username));
   syncUserList();
 
-  // Broadcast join
-  const joinMsg = {
-    type: 'system', id: Math.random().toString(36).slice(2),
-    text: `${user.username} joined`, timestamp: Date.now()
-  };
+  const joinMsg = { type: 'system', id: crypto.randomBytes(4).toString('hex'), text: `${user.username} joined`, timestamp: Date.now() };
   appendMessage(joinMsg, 'global');
   broadcast(joinMsg, ws);
 
-  // ── Incoming messages ─────────────────────────────────────────────────────
   ws.on('message', raw => {
-  let msg;
-  try { msg = JSON.parse(raw); } catch { return; }
+    if (raw.length > 4096) return;
+    let msg;
+    try { msg = JSON.parse(raw); } catch { return; }
+    const self = clients.get(ws);
+    if (!self) return;
 
-  const self = clients.get(ws);
-  if (!self) return;
-
-  switch (msg.type) {
-
-    case 'message': {
-      const text = msg.text?.trim();
-      const channel = CHANNELS.includes(msg.channel) ? msg.channel : 'global';
-      if ((!text && !msg.fileUrl) || text?.length > 2000) return;
-
-      const rate = checkRate(self.username);
-      push(ws, { type: 'rate_limit', remaining: rate.remaining, reset: rate.reset });
-      if (!rate.allowed) return;
-
-      if (typingUsers.has(self.username)) {
-        clearTimeout(typingUsers.get(self.username));
-        typingUsers.delete(self.username);
-        syncTyping();
+    switch (msg.type) {
+      case 'message': {
+        const text = typeof msg.text === 'string' ? msg.text.trim() : '';
+        const channel = CHANNELS.includes(msg.channel) ? msg.channel : 'global';
+        if (!text && !msg.fileUrl) return;
+        if (text.length > 2000) return;
+        const rate = checkRate(self.username);
+        push(ws, { type: 'rate_limit', remaining: rate.remaining, reset: rate.reset });
+        if (!rate.allowed) return;
+        if (typingUsers.has(self.username)) { clearTimeout(typingUsers.get(self.username)); typingUsers.delete(self.username); syncTyping(); }
+        const fileUrl = validateFileUrl(msg.fileUrl);
+        const m = { type: 'message', id: crypto.randomBytes(4).toString('hex'), username: self.username, color: self.color, text, channel,
+          fileUrl, fileType: fileUrl ? (msg.fileType || null) : null, timestamp: Date.now(), replyTo: sanitizeReplyTo(msg.replyTo) };
+        appendMessage(m, channel);
+        broadcastAll(m);
+        break;
       }
-
-      const m = {
-        type: 'message',
-        id: Math.random().toString(36).slice(2),
-        username: self.username,
-        color: self.color,
-        text,
-        channel,
-        fileUrl:  msg.fileUrl  || msg.imageUrl || null,   // accept both for compat
-        fileType: msg.fileType || null,           
-        timestamp: Date.now(),
-        replyTo: msg.replyTo ? {
-        id:       String(msg.replyTo.id || ''),
-        username: String(msg.replyTo.username || ''),
-        text:     String(msg.replyTo.text || '').slice(0, 200)
-      } : null,
-      };
-
-      appendMessage(m, channel);
-      broadcastAll(m);
-
-      break;
-    }
-
-    case 'dm': {
-      const { to, text } = msg;
-      if (!to || (!text?.trim() && !msg.fileUrl) || (text?.trim().length > 2000)) return;
-      if (!areFriends(self.username, to)) return;
-
-      const rate = checkRate(self.username);
-      push(ws, { type: 'rate_limit', remaining: rate.remaining, reset: rate.reset });
-      if (!rate.allowed) return;
-
-      const m = {
-        type: 'dm',
-        id: Math.random().toString(36).slice(2),
-        from: self.username,
-        to,
-        color: self.color,
-        text: text?.trim() || '',
-        fileUrl: msg.fileUrl || null,
-        fileType: msg.fileType || null,
-        timestamp: Date.now(),
-        replyTo: msg.replyTo ? {
-        id:       String(msg.replyTo.id || ''),
-        username: String(msg.replyTo.username || ''),
-        text:     String(msg.replyTo.text || '').slice(0, 200)
-      } : null,
-      };
-
-      appendDM(self.username, to, m);
-      push(ws, m);
-      pushToUser(to, m);
-
-      break;
-    }
-
-    case 'dm_history': {
-      if (!msg.with) return;
-      if (!areFriends(self.username, msg.with)) return;
-
-      const history =
-        (dms[dmKey(self.username, msg.with)] || []).slice(-DM_HISTORY_SEND);
-
-      push(ws, {
-        type: 'dm_history',
-        with: msg.with,
-        messages: history
-      });
-
-      break;
-    }
-
-    case 'typing': {
-      if (typingUsers.has(self.username)) {
-        clearTimeout(typingUsers.get(self.username));
+      case 'dm': {
+        const { to } = msg;
+        const text = typeof msg.text === 'string' ? msg.text.trim() : '';
+        if (!to || (!text && !msg.fileUrl) || text.length > 2000) return;
+        if (!areFriends(self.username, to)) return;
+        const rate = checkRate(self.username);
+        push(ws, { type: 'rate_limit', remaining: rate.remaining, reset: rate.reset });
+        if (!rate.allowed) return;
+        const fileUrl = validateFileUrl(msg.fileUrl);
+        const m = { type: 'dm', id: crypto.randomBytes(4).toString('hex'), from: self.username, to, color: self.color,
+          text, fileUrl, fileType: fileUrl ? (msg.fileType || null) : null, timestamp: Date.now(), replyTo: sanitizeReplyTo(msg.replyTo) };
+        appendDM(self.username, to, m);
+        push(ws, m); pushToUser(to, m);
+        break;
       }
-
-      const t = setTimeout(() => {
-        typingUsers.delete(self.username);
-        syncTyping();
-      }, 3500);
-
-      typingUsers.set(self.username, t);
-      syncTyping();
-
-      break;
-    }
-
-    case 'stop_typing': {
-      if (typingUsers.has(self.username)) {
-        clearTimeout(typingUsers.get(self.username));
-        typingUsers.delete(self.username);
-        syncTyping();
+      case 'dm_history': {
+        if (!msg.with) return;
+        if (!areFriends(self.username, msg.with)) return;
+        push(ws, { type: 'dm_history', with: msg.with, messages: (dms[dmKey(self.username, msg.with)] || []).slice(-DM_HISTORY_SEND) });
+        break;
       }
-      break;
-    }
-
-    case 'set_status': {
-  const allowed = ['online','away','busy','invisible'];
-  if (!allowed.includes(msg.status)) return;
-  self.status = msg.status;
-  const acc = accounts[self.username.toLowerCase()];
-  if (acc) { acc.status = msg.status; saveJSON(ACCOUNTS_FILE, accounts); }
-  syncUserList();
-  break;
-}
-      
-    case 'node_message': {
-  const node = nodes[msg.nodeId];
-  if (!node || !node.members.includes(self.username)) return;
-  const text    = msg.text?.trim();
-  if (!text && !msg.fileUrl) return;
-  const channel = node.channels?.includes(msg.channel) ? msg.channel : 'general';  // ← scoped
-
-  const rate = checkRate(self.username);
-  push(ws, { type: 'rate_limit', remaining: rate.remaining, reset: rate.reset });
-  if (!rate.allowed) return;
-
-  const m = {
-    type: 'node_message', id: Math.random().toString(36).slice(2),
-    nodeId: msg.nodeId, channel,
-    username: self.username, color: self.color,
-    text: text || '', fileUrl: msg.fileUrl || null, fileType: msg.fileType || null,
-    timestamp: Date.now(),
-    replyTo: msg.replyTo ? {
-      id:       String(msg.replyTo.id || ''),
-      username: String(msg.replyTo.username || ''),
-      text:     String(msg.replyTo.text || '').slice(0, 20)
-    } : null,
-  };
-  const key = `node:${msg.nodeId}:${channel}`;     // ← new key format
-  if (!messages[key]) messages[key] = [];
-  messages[key].push(m);
-  if (messages[key].length > MAX_MESSAGES)
-    messages[key].splice(0, messages[key].length - MAX_MESSAGES);
-  saveJSON(MESSAGES_FILE, messages);
-  pushToNodeMembers(msg.nodeId, m);
-  break;
-}
-
-case 'node_history': {
-  const node    = nodes[msg.nodeId];
-  if (!node || !node.members.includes(self.username)) return;
-  const channel = node.channels?.includes(msg.channel) ? msg.channel : 'general';
-  push(ws, {
-    type: 'node_history', nodeId: msg.nodeId, channel,
-    messages: (messages[`node:${msg.nodeId}:${channel}`] || [])
-      .slice(-HISTORY_SEND)
-      .map(m => ({ ...m, reactions: reactions[m.id] || {} }))
-  });
-  break;
-}
-
+      case 'typing': {
+        if (typingUsers.has(self.username)) clearTimeout(typingUsers.get(self.username));
+        typingUsers.set(self.username, setTimeout(() => { typingUsers.delete(self.username); syncTyping(); }, 3500));
+        syncTyping();
+        break;
+      }
+      case 'stop_typing': {
+        if (typingUsers.has(self.username)) { clearTimeout(typingUsers.get(self.username)); typingUsers.delete(self.username); syncTyping(); }
+        break;
+      }
+      case 'set_status': {
+        if (!['online','away','busy','invisible'].includes(msg.status)) return;
+        self.status = msg.status;
+        const acc = accounts[self.username.toLowerCase()];
+        if (acc) { acc.status = msg.status; saveJSON(ACCOUNTS_FILE, accounts); }
+        syncUserList();
+        break;
+      }
+      case 'node_message': {
+        const node = nodes[msg.nodeId];
+        if (!node || !node.members.includes(self.username)) return;
+        const text = typeof msg.text === 'string' ? msg.text.trim() : '';
+        if (!text && !msg.fileUrl) return;
+        if (text.length > 2000) return;
+        const channel = node.channels?.includes(msg.channel) ? msg.channel : 'general';
+        const rate = checkRate(self.username);
+        push(ws, { type: 'rate_limit', remaining: rate.remaining, reset: rate.reset });
+        if (!rate.allowed) return;
+        const fileUrl = validateFileUrl(msg.fileUrl);
+        const m = { type: 'node_message', id: crypto.randomBytes(4).toString('hex'), nodeId: msg.nodeId, channel,
+          username: self.username, color: self.color, text, fileUrl, fileType: fileUrl ? (msg.fileType || null) : null,
+          timestamp: Date.now(), replyTo: sanitizeReplyTo(msg.replyTo) };
+        const key = `node:${msg.nodeId}:${channel}`;
+        if (!messages[key]) messages[key] = [];
+        messages[key].push(m);
+        if (messages[key].length > MAX_MESSAGES) messages[key].splice(0, messages[key].length - MAX_MESSAGES);
+        saveJSON(MESSAGES_FILE, messages);
+        pushToNodeMembers(msg.nodeId, m);
+        break;
+      }
+      case 'node_history': {
+        const node = nodes[msg.nodeId];
+        if (!node || !node.members.includes(self.username)) return;
+        const channel = node.channels?.includes(msg.channel) ? msg.channel : 'general';
+        push(ws, { type: 'node_history', nodeId: msg.nodeId, channel,
+          messages: (messages[`node:${msg.nodeId}:${channel}`] || []).slice(-HISTORY_SEND).map(m => ({ ...m, reactions: reactions[m.id] || {} })) });
+        break;
+      }
       case 'join_channel': {
         const ch = CHANNELS.includes(msg.channel) ? msg.channel : 'global';
-        push(ws, {
-        type: 'history',
-        channel: ch,
-        messages: (messages[ch] || []).slice(-HISTORY_SEND).map(m => ({ ...m, reactions: reactions[m.id] || {} }))
-      });
-      break;
+        push(ws, { type: 'history', channel: ch, messages: (messages[ch] || []).slice(-HISTORY_SEND).map(m => ({ ...m, reactions: reactions[m.id] || {} })) });
+        break;
+      }
     }
-  }
-});
+  });
 
-  // ── Disconnect ────────────────────────────────────────────────────────────
-
-ws.on('close', () => {
-  const self = clients.get(ws);
-  if (!self) return;
-  clients.delete(ws);
-
-  if (typingUsers.has(self.username)) {
-    clearTimeout(typingUsers.get(self.username));
-    typingUsers.delete(self.username);
-  }
-
-  syncUserList();
-  syncTyping();
-
-  // Wait 8 seconds before broadcasting leave — cancels if they reconnect
-  const timer = setTimeout(() => {
-    leaveTimers.delete(self.username);
-    const leaveMsg = {
-      type: 'system', id: Math.random().toString(36).slice(2),
-      text: `${self.username} left`, timestamp: Date.now()
-    };
-    appendMessage(leaveMsg, 'global');
-    broadcastAll(leaveMsg);
-  }, 8000);
-
-  leaveTimers.set(self.username, timer);
-});
+  ws.on('close', () => {
+    const self = clients.get(ws);
+    if (!self) return;
+    clients.delete(ws);
+    if (typingUsers.has(self.username)) { clearTimeout(typingUsers.get(self.username)); typingUsers.delete(self.username); }
+    syncUserList(); syncTyping();
+    const timer = setTimeout(() => {
+      leaveTimers.delete(self.username);
+      const leaveMsg = { type: 'system', id: crypto.randomBytes(4).toString('hex'), text: `${self.username} left`, timestamp: Date.now() };
+      appendMessage(leaveMsg, 'global');
+      broadcastAll(leaveMsg);
+    }, 8000);
+    leaveTimers.set(self.username, timer);
+  });
 
   ws.on('error', err => console.error('[ws error]', err.message));
 });
 
-server.listen(PORT, () => {
-  console.log(`\n  * asterisk backend\n  → http://localhost:${PORT}\n`);
-});
+server.listen(PORT, () => console.log(`\n  * asterisk backend\n  → http://localhost:${PORT}\n`));
