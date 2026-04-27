@@ -311,25 +311,24 @@
                 padding: 6px 10px;
             }
         }
-
         .msg-date-sep {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 12px 0 6px;
-    font-size: 10px;
-    letter-spacing: 0.1em;
-    color: var(--muted, #666);
-    font-weight: 500;
-    user-select: none;
-}
-.msg-date-sep::before,
-.msg-date-sep::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: var(--border, #2a2a38);
-}
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 0 6px;
+            font-size: 10px;
+            letter-spacing: 0.1em;
+            color: var(--muted, #666);
+            font-weight: 500;
+            user-select: none;
+        }
+        .msg-date-sep::before,
+        .msg-date-sep::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border, #2a2a38);
+        }
     </style>
     <div id="auth-screen">
         <div class="auth-card">
@@ -584,32 +583,12 @@
                     <div>
                         <div class="s-section-label">accent color</div>
                         <div class="s-swatches" id="accent-swatches">
-                            <span
-                                class="s-swatch"
-                                data-color="#8b7ef5"
-                                style="background: #8b7ef5"
-                                title="Purple"
-                            ></span>
+                            <span class="s-swatch" data-color="#8b7ef5" style="background: #8b7ef5" title="Purple"></span>
                             <span class="s-swatch" data-color="#5b9ef5" style="background: #5b9ef5" title="Blue"></span>
-                            <span
-                                class="s-swatch"
-                                data-color="#4dffa0"
-                                style="background: #4dffa0"
-                                title="Green"
-                            ></span>
-                            <span
-                                class="s-swatch"
-                                data-color="#f5a742"
-                                style="background: #f5a742"
-                                title="Orange"
-                            ></span>
+                            <span class="s-swatch" data-color="#4dffa0" style="background: #4dffa0" title="Green"></span>
+                            <span class="s-swatch" data-color="#f5a742" style="background: #f5a742" title="Orange"></span>
                             <span class="s-swatch" data-color="#f55b9e" style="background: #f55b9e" title="Pink"></span>
-                            <span
-                                class="s-swatch"
-                                data-color="#f5e642"
-                                style="background: #f5e642"
-                                title="Yellow"
-                            ></span>
+                            <span class="s-swatch" data-color="#f5e642" style="background: #f5e642" title="Yellow"></span>
                         </div>
                     </div>
                     <div>
@@ -636,14 +615,7 @@
                                 <div class="s-row-sub">time on each message</div>
                             </div>
                             <label class="s-toggle"
-                                ><input
-                                    type="checkbox"
-                                    id="tog-timestamps"
-                                    checked="checked"
-                                    onchange="applySetting('timestamps',this.checked)" /><span
-                                    class="s-toggle-track"
-                                ></span
-                                ><span class="s-toggle-thumb"></span
+                                ><input type="checkbox" id="tog-timestamps" checked="checked" onchange="applySetting('timestamps',this.checked)" /><span class="s-toggle-track"></span><span class="s-toggle-thumb"></span
                             ></label>
                         </div>
                         <div class="s-row">
@@ -652,14 +624,7 @@
                                 <div class="s-row-sub">colored name on each message</div>
                             </div>
                             <label class="s-toggle"
-                                ><input
-                                    type="checkbox"
-                                    id="tog-usernames"
-                                    checked="checked"
-                                    onchange="applySetting('usernames',this.checked)" /><span
-                                    class="s-toggle-track"
-                                ></span
-                                ><span class="s-toggle-thumb"></span
+                                ><input type="checkbox" id="tog-usernames" checked="checked" onchange="applySetting('usernames',this.checked)" /><span class="s-toggle-track"></span><span class="s-toggle-thumb"></span
                             ></label>
                         </div>
                     </div>
@@ -673,12 +638,7 @@
                                 <div class="s-row-sub">popup when you receive a DM</div>
                             </div>
                             <label class="s-toggle"
-                                ><input
-                                    type="checkbox"
-                                    id="tog-dm-notif"
-                                    checked="checked"
-                                    onchange="saveSetting('dmNotif',this.checked)" /><span class="s-toggle-track"></span
-                                ><span class="s-toggle-thumb"></span
+                                ><input type="checkbox" id="tog-dm-notif" checked="checked" onchange="saveSetting('dmNotif',this.checked)" /><span class="s-toggle-track"></span><span class="s-toggle-thumb"></span
                             ></label>
                         </div>
                         <div class="s-row">
@@ -687,14 +647,7 @@
                                 <div class="s-row-sub">popup on incoming request</div>
                             </div>
                             <label class="s-toggle"
-                                ><input
-                                    type="checkbox"
-                                    id="tog-friend-notif"
-                                    checked="checked"
-                                    onchange="saveSetting('friendNotif',this.checked)" /><span
-                                    class="s-toggle-track"
-                                ></span
-                                ><span class="s-toggle-thumb"></span
+                                ><input type="checkbox" id="tog-friend-notif" checked="checked" onchange="saveSetting('friendNotif',this.checked)" /><span class="s-toggle-track"></span><span class="s-toggle-thumb"></span
                             ></label>
                         </div>
                         <div class="s-row">
@@ -703,14 +656,7 @@
                                 <div class="s-row-sub">popup when your name appears</div>
                             </div>
                             <label class="s-toggle"
-                                ><input
-                                    type="checkbox"
-                                    id="tog-mention-notif"
-                                    checked="checked"
-                                    onchange="saveSetting('mentionNotif',this.checked)" /><span
-                                    class="s-toggle-track"
-                                ></span
-                                ><span class="s-toggle-thumb"></span
+                                ><input type="checkbox" id="tog-mention-notif" checked="checked" onchange="saveSetting('mentionNotif',this.checked)" /><span class="s-toggle-track"></span><span class="s-toggle-thumb"></span
                             ></label>
                         </div>
                     </div>
@@ -732,14 +678,7 @@
                                 <div class="s-row-sub">shift+enter for newline</div>
                             </div>
                             <label class="s-toggle"
-                                ><input
-                                    type="checkbox"
-                                    id="tog-enter-send"
-                                    checked="checked"
-                                    onchange="saveSetting('enterSend',this.checked)" /><span
-                                    class="s-toggle-track"
-                                ></span
-                                ><span class="s-toggle-thumb"></span
+                                ><input type="checkbox" id="tog-enter-send" checked="checked" onchange="saveSetting('enterSend',this.checked)" /><span class="s-toggle-track"></span><span class="s-toggle-thumb"></span
                             ></label>
                         </div>
                     </div>
@@ -751,12 +690,7 @@
                                 <div class="s-row-sub">show who's typing</div>
                             </div>
                             <label class="s-toggle"
-                                ><input
-                                    type="checkbox"
-                                    id="tog-typing"
-                                    checked="checked"
-                                    onchange="applySetting('typing',this.checked)" /><span class="s-toggle-track"></span
-                                ><span class="s-toggle-thumb"></span
+                                ><input type="checkbox" id="tog-typing" checked="checked" onchange="applySetting('typing',this.checked)" /><span class="s-toggle-track"></span><span class="s-toggle-thumb"></span
                             ></label>
                         </div>
                         <div class="s-row">
@@ -765,14 +699,7 @@
                                 <div class="s-row-sub">animated scroll on new messages</div>
                             </div>
                             <label class="s-toggle"
-                                ><input
-                                    type="checkbox"
-                                    id="tog-smooth-scroll"
-                                    checked="checked"
-                                    onchange="saveSetting('smoothScroll',this.checked)" /><span
-                                    class="s-toggle-track"
-                                ></span
-                                ><span class="s-toggle-thumb"></span
+                                ><input type="checkbox" id="tog-smooth-scroll" checked="checked" onchange="saveSetting('smoothScroll',this.checked)" /><span class="s-toggle-track"></span><span class="s-toggle-thumb"></span
                             ></label>
                         </div>
                         <div class="s-row">
@@ -781,13 +708,7 @@
                                 <div class="s-row-sub">narrower online/friends sidebar</div>
                             </div>
                             <label class="s-toggle"
-                                ><input
-                                    type="checkbox"
-                                    id="tog-compact-panel"
-                                    onchange="applySetting('compactPanel',this.checked)" /><span
-                                    class="s-toggle-track"
-                                ></span
-                                ><span class="s-toggle-thumb"></span
+                                ><input type="checkbox" id="tog-compact-panel" onchange="applySetting('compactPanel',this.checked)" /><span class="s-toggle-track"></span><span class="s-toggle-thumb"></span
                             ></label>
                         </div>
                         <div>
@@ -797,16 +718,7 @@
                                 <select
                                     id="lang-select"
                                     onchange="changeLang(this.value)"
-                                    style="
-                                        background: var(--surface2);
-                                        border: 1px solid var(--border);
-                                        border-radius: var(--radius);
-                                        color: var(--text);
-                                        font-family: inherit;
-                                        font-size: 12px;
-                                        padding: 4px 8px;
-                                        cursor: pointer;
-                                    "
+                                    style="background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); font-family: inherit; font-size: 12px; padding: 4px 8px; cursor: pointer;"
                                 ></select>
                             </div>
                         </div>
@@ -818,11 +730,7 @@
                                 <div class="s-row-label">reset all settings</div>
                                 <div class="s-row-sub">restore defaults</div>
                             </div>
-                            <button
-                                class="s-seg-btn"
-                                onclick="resetSettings()"
-                                style="color: var(--danger); border-color: rgba(255, 77, 106, 0.3)"
-                            >
+                            <button class="s-seg-btn" onclick="resetSettings()" style="color: var(--danger); border-color: rgba(255, 77, 106, 0.3)">
                                 reset
                             </button>
                         </div>
@@ -833,15 +741,7 @@
     </div>
     <div
         id="toast-container"
-        style="
-            position: fixed;
-            bottom: 16px;
-            right: 16px;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            z-index: 9999;
-        "
+        style="position: fixed; bottom: 16px; right: 16px; display: flex; flex-direction: column; gap: 8px; z-index: 9999;"
     ></div>
     <script src="config.js"></script>
     <script>
@@ -866,72 +766,41 @@
             return s;
         }
 
-        const FILE_RENDERERS = [
-            {
-                test: (t) => t?.startsWith("image/"),
-                render(url, el) {
-                    const img = document.createElement("img");
-                    img.src = url;
-                    img.style.cssText =
-                        "display:block;max-width:260px;margin-top:4px;border-radius:4px;cursor:pointer;";
-                    img.onclick = () => window.open(img.src);
-                    el.appendChild(img);
-                },
-            },
-            {
-                test: (t) => t?.startsWith("video/"),
-                render(url, el) {
-                    const v = document.createElement("video");
-                    v.src = url;
-                    v.controls = true;
-                    v.style.cssText = "display:block;max-width:260px;margin-top:4px;border-radius:4px;";
-                    el.appendChild(v);
-                },
-            },
-            {
-                test: (t) => t === "text/plain",
-                render(url, el) {
-                    const a = document.createElement("a");
-                    a.href = url;
-                    a.target = "_blank";
-                    a.textContent = "view text file";
-                    a.style.marginTop = "4px";
-                    el.appendChild(a);
-                },
-            },
-        ];
+        // ── File preview (with scroll-on-load hooks) ──────────────────────────────
         function appendFilePreview(fileUrl, fileType, textEl) {
-    if (!fileUrl) return;
-    const url = fileUrl.startsWith('http') ? fileUrl : HTTP_BASE + fileUrl;
-    const r = FILE_RENDERERS.find((r) => r.test(fileType));
-    if (r) {
-        // Intercept image renderer to hook onload
-        if (fileType?.startsWith('image/')) {
-            const img = document.createElement('img');
-            img.src = url;
-            img.style.cssText = 'display:block;max-width:260px;margin-top:4px;border-radius:4px;cursor:pointer;';
-            img.onclick = () => window.open(img.src);
-            img.onload = () => scrollToBottom(false);
-            textEl.appendChild(img);
-        } else if (fileType?.startsWith('video/')) {
-            const v = document.createElement('video');
-            v.src = url;
-            v.controls = true;
-            v.style.cssText = 'display:block;max-width:260px;margin-top:4px;border-radius:4px;';
-            v.onloadedmetadata = () => scrollToBottom(false);
-            textEl.appendChild(v);
-        } else {
-            r.render(url, textEl);
+            if (!fileUrl) return;
+            const url = fileUrl.startsWith('http') ? fileUrl : HTTP_BASE + fileUrl;
+            if (fileType?.startsWith('image/')) {
+                const img = document.createElement('img');
+                img.src = url;
+                img.style.cssText = 'display:block;max-width:260px;margin-top:4px;border-radius:4px;cursor:pointer;';
+                img.onclick = () => window.open(img.src);
+                img.onload = () => scrollToBottom(false);
+                textEl.appendChild(img);
+            } else if (fileType?.startsWith('video/')) {
+                const v = document.createElement('video');
+                v.src = url;
+                v.controls = true;
+                v.style.cssText = 'display:block;max-width:260px;margin-top:4px;border-radius:4px;';
+                v.onloadedmetadata = () => scrollToBottom(false);
+                textEl.appendChild(v);
+            } else if (fileType === 'text/plain') {
+                const a = document.createElement('a');
+                a.href = url;
+                a.target = '_blank';
+                a.textContent = 'view text file';
+                a.style.marginTop = '4px';
+                textEl.appendChild(a);
+            } else {
+                const a = document.createElement('a');
+                a.href = url;
+                a.target = '_blank';
+                a.textContent = '⬇ download file';
+                a.style.marginTop = '4px';
+                textEl.appendChild(a);
+            }
         }
-    } else {
-        const a = document.createElement('a');
-        a.href = url;
-        a.target = '_blank';
-        a.textContent = '⬇ download file';
-        a.style.marginTop = '4px';
-        textEl.appendChild(a);
-    }
-}
+
         const RAW_URL = (
             typeof ASTERISK_CONFIG !== "undefined"
                 ? ASTERISK_CONFIG.BACKEND_URL
@@ -963,34 +832,57 @@
             activeNodeChannel = "general",
             activeNodeData = null,
             replyingTo = null;
-        let lastRenderedDate = null;
-
-function formatDateSep(ts) {
-    const d = new Date(ts);
-    const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(today.getDate() - 1);
-    if (d.toDateString() === today.toDateString()) return 'Today';
-    if (d.toDateString() === yesterday.toDateString()) return 'Yesterday';
-    return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
-}
-
-function maybeInsertDateSep(container, timestamp) {
-    const d = new Date(timestamp);
-    const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
-    if (key === lastRenderedDate) return;
-    lastRenderedDate = key;
-    const sep = document.createElement('div');
-    sep.className = 'msg-date-sep';
-    sep.textContent = formatDateSep(timestamp);
-    container.appendChild(sep);
-}
         const STATUS_ICONS = { online: "🟢", away: "🟡", busy: "🔴", invisible: "⚫" };
         const QUICK_REACTIONS = ["👍", "❤️", "😂", "😮", "😢", "🔥", "✅", "👀"];
+
+        // ── Date separator helpers ────────────────────────────────────────────────
+        let lastRenderedDate = null;
+
+        function formatDateSep(ts) {
+            const d = new Date(ts);
+            const today = new Date();
+            const yesterday = new Date(today);
+            yesterday.setDate(today.getDate() - 1);
+            if (d.toDateString() === today.toDateString()) return 'Today';
+            if (d.toDateString() === yesterday.toDateString()) return 'Yesterday';
+            return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+        }
+
+        function maybeInsertDateSep(container, timestamp) {
+            const d = new Date(timestamp);
+            const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+            if (key === lastRenderedDate) return;
+            lastRenderedDate = key;
+            const sep = document.createElement('div');
+            sep.className = 'msg-date-sep';
+            sep.textContent = formatDateSep(timestamp);
+            container.appendChild(sep);
+        }
+
+        // ── Scroll helper ─────────────────────────────────────────────────────────
+        function scrollToBottom(force = false) {
+            const el = document.getElementById('messages');
+            const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 300;
+            if (force || nearBottom) {
+                el.scrollTop = el.scrollHeight;
+                requestAnimationFrame(() => { el.scrollTop = el.scrollHeight; });
+            }
+        }
+
+        function forceScrollBottom() {
+            const el = document.getElementById('messages');
+            el.scrollTop = el.scrollHeight;
+            requestAnimationFrame(() => {
+                el.scrollTop = el.scrollHeight;
+                requestAnimationFrame(() => { el.scrollTop = el.scrollHeight; });
+            });
+            setTimeout(() => { el.scrollTop = el.scrollHeight; }, 300);
+        }
 
         function switchChannel(ch) {
             if (currentDM) closeDM();
             currentChannel = ch;
+            lastRenderedDate = null;
             document
                 .querySelectorAll(".ch-tab")
                 .forEach((b) => b.classList.toggle("active", b.textContent === "#" + ch));
@@ -1024,6 +916,7 @@ function maybeInsertDateSep(container, timestamp) {
         }
         function switchNodeChannel(channel) {
             activeNodeChannel = channel;
+            lastRenderedDate = null;
             document
                 .querySelectorAll(".node-ch-tab")
                 .forEach((btn) => btn.classList.toggle("active", btn.dataset.ch === channel));
@@ -1066,10 +959,7 @@ function maybeInsertDateSep(container, timestamp) {
                 password = document.getElementById("login-pass").value,
                 errEl = document.getElementById("login-error"),
                 btn = document.getElementById("login-btn");
-            if (!username || !password) {
-                errEl.textContent = "Fill in all fields.";
-                return;
-            }
+            if (!username || !password) { errEl.textContent = "Fill in all fields."; return; }
             errEl.textContent = "";
             btn.disabled = true;
             try {
@@ -1088,14 +978,8 @@ function maybeInsertDateSep(container, timestamp) {
                 pass2 = document.getElementById("reg-pass2").value,
                 errEl = document.getElementById("reg-error"),
                 btn = document.getElementById("reg-btn");
-            if (!username || !password || !pass2) {
-                errEl.textContent = "Fill in all fields.";
-                return;
-            }
-            if (password !== pass2) {
-                errEl.textContent = "Passwords do not match.";
-                return;
-            }
+            if (!username || !password || !pass2) { errEl.textContent = "Fill in all fields."; return; }
+            if (password !== pass2) { errEl.textContent = "Passwords do not match."; return; }
             errEl.textContent = "";
             btn.disabled = true;
             try {
@@ -1135,6 +1019,7 @@ function maybeInsertDateSep(container, timestamp) {
             clearToken();
             currentUser = null;
             currentDM = null;
+            lastRenderedDate = null;
             document.getElementById("chat-screen").classList.add("hidden");
             document.getElementById("auth-screen").classList.remove("hidden");
             document.getElementById("messages").innerHTML = "";
@@ -1151,10 +1036,7 @@ function maybeInsertDateSep(container, timestamp) {
             if (!token) return;
             try {
                 const r = await fetch(HTTP_BASE + "/api/verify", { headers: { Authorization: "Bearer " + token } });
-                if (!r.ok) {
-                    clearToken();
-                    return;
-                }
+                if (!r.ok) { clearToken(); return; }
                 const { username, color } = await r.json();
                 enterChat({ username, color });
             } catch {}
@@ -1179,10 +1061,7 @@ function maybeInsertDateSep(container, timestamp) {
         }
         function updateMobileNavVisibility() {
             const nav = document.getElementById("mobile-nav");
-            if (!currentUser) {
-                nav.classList.add("hidden");
-                return;
-            }
+            if (!currentUser) { nav.classList.add("hidden"); return; }
             if (isMobile()) nav.classList.remove("hidden");
             else {
                 nav.classList.add("hidden");
@@ -1196,25 +1075,15 @@ function maybeInsertDateSep(container, timestamp) {
             if (!token) return;
             setStatus("connecting");
             ws = new WebSocket(`${WS_BASE}/ws?token=${encodeURIComponent(token)}`);
-            ws.addEventListener("open", () => {
-                setStatus("connected");
-                reconnectDelay = 2000;
-            });
+            ws.addEventListener("open", () => { setStatus("connected"); reconnectDelay = 2000; });
             ws.addEventListener("message", (e) => {
                 let msg;
-                try {
-                    msg = JSON.parse(e.data);
-                } catch {
-                    return;
-                }
+                try { msg = JSON.parse(e.data); } catch { return; }
                 handleServerMessage(msg);
             });
             ws.addEventListener("close", (e) => {
                 setStatus("disconnected");
-                if (e.code === 1008) {
-                    doLogout();
-                    return;
-                }
+                if (e.code === 1008) { doLogout(); return; }
                 if (shouldReconnect) scheduleReconnect();
             });
             ws.addEventListener("error", () => setStatus("disconnected"));
@@ -1239,25 +1108,17 @@ function maybeInsertDateSep(container, timestamp) {
             if (!emojiContainer.contains(e.target) && e.target !== emojiBtn) emojiContainer.style.display = "none";
         });
 
-        let acResults = [],
-            acIndex = 0;
+        let acResults = [], acIndex = 0;
         document.getElementById("msg-input").addEventListener("input", async () => {
             const input = document.getElementById("msg-input"),
                 val = input.value,
                 ac = document.getElementById("emoji-autocomplete");
             const match = val.match(/:([a-zA-Z0-9_+-]{2,})$/);
-            if (!match) {
-                ac.style.display = "none";
-                acResults = [];
-                return;
-            }
+            if (!match) { ac.style.display = "none"; acResults = []; return; }
             const results = await EmojiMart.SearchIndex.search(match[1]);
             acResults = (results || []).slice(0, 8);
             acIndex = 0;
-            if (!acResults.length) {
-                ac.style.display = "none";
-                return;
-            }
+            if (!acResults.length) { ac.style.display = "none"; return; }
             ac.innerHTML = "";
             ac.style.display = "block";
             acResults.forEach((emoji, i) => {
@@ -1278,29 +1139,17 @@ function maybeInsertDateSep(container, timestamp) {
         document.getElementById("msg-input").addEventListener("keydown", (e) => {
             const ac = document.getElementById("emoji-autocomplete");
             if (ac.style.display === "none" || !acResults.length) return;
-            if (e.key === "ArrowDown") {
-                e.preventDefault();
-                acIndex = (acIndex + 1) % acResults.length;
-            } else if (e.key === "ArrowUp") {
-                e.preventDefault();
-                acIndex = (acIndex - 1 + acResults.length) % acResults.length;
-            } else if (e.key === "Enter" || e.key === "Tab") {
-                e.preventDefault();
-                insertAcEmoji(acResults[acIndex]);
-                return;
-            } else if (e.key === "Escape") {
-                ac.style.display = "none";
-                acResults = [];
-                return;
-            } else return;
+            if (e.key === "ArrowDown") { e.preventDefault(); acIndex = (acIndex + 1) % acResults.length; }
+            else if (e.key === "ArrowUp") { e.preventDefault(); acIndex = (acIndex - 1 + acResults.length) % acResults.length; }
+            else if (e.key === "Enter" || e.key === "Tab") { e.preventDefault(); insertAcEmoji(acResults[acIndex]); return; }
+            else if (e.key === "Escape") { ac.style.display = "none"; acResults = []; return; }
+            else return;
             ac.querySelectorAll(".emoji-ac-item").forEach((el, i) => el.classList.toggle("selected", i === acIndex));
         });
 
         function scheduleReconnect() {
             clearTimeout(reconnectTimer);
-            reconnectTimer = setTimeout(() => {
-                if (shouldReconnect) connectWS();
-            }, reconnectDelay);
+            reconnectTimer = setTimeout(() => { if (shouldReconnect) connectWS(); }, reconnectDelay);
             reconnectDelay = Math.min(reconnectDelay * 1.5, 30000);
         }
         function setStatus(s) {
@@ -1318,11 +1167,9 @@ function maybeInsertDateSep(container, timestamp) {
                     if (msg.channel && msg.channel !== currentChannel) break;
                     const el = document.getElementById("messages");
                     el.innerHTML = "";
+                    lastRenderedDate = null;
                     msg.messages.forEach(renderMessage);
-                    el.scrollTop = el.scrollHeight;
-                    setTimeout(() => {
-                        el.scrollTop = el.scrollHeight;
-                    }, 200);
+                    forceScrollBottom();
                     break;
                 case "message":
                     if (
@@ -1386,11 +1233,9 @@ function maybeInsertDateSep(container, timestamp) {
                     if (currentNode?.id === msg.nodeId && msg.channel === activeNodeChannel) {
                         const c = document.getElementById("messages");
                         c.innerHTML = "";
+                        lastRenderedDate = null;
                         msg.messages.forEach(renderNodeMessage);
-                        c.scrollTop = c.scrollHeight;
-                        setTimeout(() => {
-                            c.scrollTop = c.scrollHeight;
-                        }, 200);
+                        forceScrollBottom();
                     }
                     break;
                 case "node_kicked":
@@ -1414,6 +1259,7 @@ function maybeInsertDateSep(container, timestamp) {
                         activeNodeData.channels = activeNodeData.channels.filter((c) => c !== msg.channel);
                         if (activeNodeChannel === msg.channel) {
                             activeNodeChannel = "general";
+                            lastRenderedDate = null;
                             document.getElementById("messages").innerHTML = "";
                             sendWS({ type: "node_history", nodeId: activeNodeData.id, channel: "general" });
                         }
@@ -1448,11 +1294,9 @@ function maybeInsertDateSep(container, timestamp) {
                     if (currentDM === msg.with) {
                         const c = document.getElementById("messages");
                         c.innerHTML = "";
+                        lastRenderedDate = null;
                         msg.messages.forEach(renderDMMessage);
-                        c.scrollTop = c.scrollHeight;
-                        setTimeout(() => {
-                            c.scrollTop = c.scrollHeight;
-                        }, 200);
+                        forceScrollBottom();
                     }
                     break;
             }
@@ -1483,11 +1327,7 @@ function maybeInsertDateSep(container, timestamp) {
             QUICK_REACTIONS.forEach((emoji) => {
                 const btn = document.createElement("button");
                 btn.textContent = emoji;
-                btn.onclick = (ev) => {
-                    ev.stopPropagation();
-                    toggleReaction(msgId, emoji);
-                    popup.remove();
-                };
+                btn.onclick = (ev) => { ev.stopPropagation(); toggleReaction(msgId, emoji); popup.remove(); };
                 popup.appendChild(btn);
             });
             const rect = e.target.getBoundingClientRect();
@@ -1525,7 +1365,6 @@ function maybeInsertDateSep(container, timestamp) {
             bar.innerHTML = "";
         }
 
-        // ── Safe DOM helper for reply quotes ─────────────────────────────────────────
         function buildReplyQuote(replyTo, targetMsgId) {
             const quote = document.createElement("div");
             quote.className = "msg-reply-quote";
@@ -1553,7 +1392,6 @@ function maybeInsertDateSep(container, timestamp) {
             const popup = document.createElement("div");
             popup.className = "profile-popup";
             const isMe = username === currentUser?.username;
-            // Build popup with safe DOM methods to avoid XSS via bio/username
             const head = document.createElement("div");
             head.className = "profile-head";
             const dot = document.createElement("span");
@@ -1604,14 +1442,7 @@ function maybeInsertDateSep(container, timestamp) {
             }
             document.body.appendChild(popup);
             setTimeout(
-                () =>
-                    document.addEventListener(
-                        "click",
-                        (e) => {
-                            if (!popup.contains(e.target)) popup.remove();
-                        },
-                        { once: true }
-                    ),
+                () => document.addEventListener("click", (e) => { if (!popup.contains(e.target)) popup.remove(); }, { once: true }),
                 0
             );
         }
@@ -1626,9 +1457,7 @@ function maybeInsertDateSep(container, timestamp) {
             });
             popup.querySelector(".profile-bio").textContent = bio || "no bio set";
             btn.textContent = "saved!";
-            setTimeout(() => {
-                btn.textContent = "save bio";
-            }, 1500);
+            setTimeout(() => { btn.textContent = "save bio"; }, 1500);
         }
 
         function showStatusPicker() {
@@ -1660,6 +1489,8 @@ function maybeInsertDateSep(container, timestamp) {
             setTimeout(() => document.addEventListener("click", () => popup.remove(), { once: true }), 0);
         }
 
+        // ── Message renderers ─────────────────────────────────────────────────────
+
         function renderMessage(msg) {
             const container = document.getElementById("messages");
             if (msg.type === "system") {
@@ -1669,6 +1500,7 @@ function maybeInsertDateSep(container, timestamp) {
                 container.appendChild(el);
                 return;
             }
+            maybeInsertDateSep(container, msg.timestamp);
             const ts = new Date(msg.timestamp),
                 time = ts.getHours().toString().padStart(2, "0") + ":" + ts.getMinutes().toString().padStart(2, "0");
             const wrap = document.createElement("div");
@@ -1687,10 +1519,7 @@ function maybeInsertDateSep(container, timestamp) {
             userEl.style.color = msg.color || "#888";
             userEl.textContent = msg.username;
             userEl.style.cursor = "pointer";
-            userEl.onclick = (e) => {
-                e.stopPropagation();
-                showProfile(msg.username, userEl);
-            };
+            userEl.onclick = (e) => { e.stopPropagation(); showProfile(msg.username, userEl); };
             const sepEl = document.createElement("span");
             sepEl.className = "msg-sep";
             sepEl.textContent = "›";
@@ -1714,15 +1543,14 @@ function maybeInsertDateSep(container, timestamp) {
             mainRow.append(tsEl, userEl, sepEl, textEl, actions);
             row.appendChild(mainRow);
             wrap.appendChild(row);
-            if (msg.id) {
-                wrap.appendChild(buildReactionBar(msg.id, msg.reactions || {}));
-            }
+            if (msg.id) wrap.appendChild(buildReactionBar(msg.id, msg.reactions || {}));
             container.appendChild(wrap);
         }
 
         function renderDMMessage(msg) {
             const container = document.getElementById("messages"),
                 isSelf = msg.from === currentUser?.username;
+            maybeInsertDateSep(container, msg.timestamp);
             const ts = new Date(msg.timestamp),
                 time = ts.getHours().toString().padStart(2, "0") + ":" + ts.getMinutes().toString().padStart(2, "0");
             const wrap = document.createElement("div");
@@ -1741,10 +1569,7 @@ function maybeInsertDateSep(container, timestamp) {
             userEl.style.color = msg.color || "#888";
             userEl.textContent = msg.from;
             userEl.style.cursor = "pointer";
-            userEl.onclick = (e) => {
-                e.stopPropagation();
-                showProfile(msg.from, userEl);
-            };
+            userEl.onclick = (e) => { e.stopPropagation(); showProfile(msg.from, userEl); };
             const sepEl = document.createElement("span");
             sepEl.className = "msg-sep";
             sepEl.textContent = "›";
@@ -1782,10 +1607,7 @@ function maybeInsertDateSep(container, timestamp) {
                     del.className = "node-ch-del";
                     del.textContent = "×";
                     del.title = "Delete channel";
-                    del.addEventListener("click", (e) => {
-                        e.stopPropagation();
-                        deleteNodeChannel(node.id, ch);
-                    });
+                    del.addEventListener("click", (e) => { e.stopPropagation(); deleteNodeChannel(node.id, ch); });
                     inner.appendChild(del);
                 }
                 btn.appendChild(inner);
@@ -1810,6 +1632,7 @@ function maybeInsertDateSep(container, timestamp) {
 
         function openDM(username) {
             currentDM = username;
+            lastRenderedDate = null;
             const friend = friendsState.friends?.find((f) => f.username === username),
                 color = friend?.color || "#888";
             const bar = document.getElementById("channel-bar");
@@ -1831,7 +1654,7 @@ function maybeInsertDateSep(container, timestamp) {
             container.innerHTML = "";
             if (dmCache[username]) {
                 dmCache[username].forEach(renderDMMessage);
-                container.scrollTop = container.scrollHeight;
+                forceScrollBottom();
             }
             sendWS({ type: "dm_history", with: username });
             const row = document.querySelector(`.friend-item[data-user="${username}"]`);
@@ -1841,14 +1664,11 @@ function maybeInsertDateSep(container, timestamp) {
         }
         function closeDM() {
             currentDM = null;
+            lastRenderedDate = null;
             const bar = document.getElementById("channel-bar");
             bar.innerHTML =
-                '<span id="channel-label">#' +
-                currentChannel +
-                '</span><div class="header-spacer"></div><div id="channel-tabs"><button class="ch-tab" onclick="switchChannel(\'global\')">#global</button><button class="ch-tab" onclick="switchChannel(\'debate\')">#debate</button><button class="ch-tab" onclick="switchChannel(\'gaming\')">#gaming</button><button class="ch-tab" onclick="switchChannel(\'music\')">#music</button><button class="ch-tab" onclick="switchChannel(\'memes\')">#memes</button></div>';
-            document
-                .querySelectorAll(".ch-tab")
-                .forEach((b) => b.classList.toggle("active", b.textContent === "#" + currentChannel));
+                '<span id="channel-label">#' + currentChannel + '</span><div class="header-spacer"></div><div id="channel-tabs"><button class="ch-tab" onclick="switchChannel(\'global\')">#global</button><button class="ch-tab" onclick="switchChannel(\'debate\')">#debate</button><button class="ch-tab" onclick="switchChannel(\'gaming\')">#gaming</button><button class="ch-tab" onclick="switchChannel(\'music\')">#music</button><button class="ch-tab" onclick="switchChannel(\'memes\')">#memes</button></div>';
+            document.querySelectorAll(".ch-tab").forEach((b) => b.classList.toggle("active", b.textContent === "#" + currentChannel));
             document.getElementById("messages").innerHTML = "";
             sendWS({ type: "join_channel", channel: currentChannel });
             document.getElementById("msg-input").focus();
@@ -1856,9 +1676,7 @@ function maybeInsertDateSep(container, timestamp) {
 
         async function fetchMyNodes() {
             try {
-                const r = await fetch(HTTP_BASE + "/api/nodes/mine", {
-                    headers: { Authorization: "Bearer " + getToken() },
-                });
+                const r = await fetch(HTTP_BASE + "/api/nodes/mine", { headers: { Authorization: "Bearer " + getToken() } });
                 myNodes = await r.json();
                 renderNodesPanel();
             } catch {}
@@ -1891,20 +1709,14 @@ function maybeInsertDateSep(container, timestamp) {
                     const openBtn = document.createElement("button");
                     openBtn.className = "friend-dm-btn";
                     openBtn.textContent = "open";
-                    openBtn.onclick = (e) => {
-                        e.stopPropagation();
-                        openNode(n);
-                    };
+                    openBtn.onclick = (e) => { e.stopPropagation(); openNode(n); };
                     actions.appendChild(openBtn);
                     if (n.owner !== currentUser?.username) {
                         const leaveBtn = document.createElement("button");
                         leaveBtn.className = "friend-remove-btn";
                         leaveBtn.textContent = "×";
                         leaveBtn.title = "leave";
-                        leaveBtn.onclick = (e) => {
-                            e.stopPropagation();
-                            leaveNode(n.id);
-                        };
+                        leaveBtn.onclick = (e) => { e.stopPropagation(); leaveNode(n.id); };
                         actions.appendChild(leaveBtn);
                     }
                     item.append(dot, name, actions);
@@ -1958,6 +1770,7 @@ function maybeInsertDateSep(container, timestamp) {
             currentNodeInfo = null;
             activeNodeChannel = "general";
             activeNodeData = null;
+            lastRenderedDate = null;
             const bar = document.getElementById("channel-bar");
             bar.innerHTML = "";
             const back = document.createElement("button");
@@ -1982,9 +1795,7 @@ function maybeInsertDateSep(container, timestamp) {
             document.getElementById("msg-input").placeholder = `message in ${n.name}...`;
             document.getElementById("messages").innerHTML = "";
             try {
-                const r = await fetch(`${HTTP_BASE}/api/nodes/${n.id}`, {
-                    headers: { Authorization: "Bearer " + getToken() },
-                });
+                const r = await fetch(`${HTTP_BASE}/api/nodes/${n.id}`, { headers: { Authorization: "Bearer " + getToken() } });
                 activeNodeData = await r.json();
                 if (n.owner === currentUser?.username) currentNodeInfo = activeNodeData;
             } catch {
@@ -2002,15 +1813,12 @@ function maybeInsertDateSep(container, timestamp) {
             currentNodeInfo = null;
             activeNodeData = null;
             activeNodeChannel = "general";
+            lastRenderedDate = null;
             hideNodeChannelBar();
             const bar = document.getElementById("channel-bar");
             bar.innerHTML =
-                '<span id="channel-label">#' +
-                currentChannel +
-                '</span><div class="header-spacer"></div><div id="channel-tabs"><button class="ch-tab" onclick="switchChannel(\'global\')">#global</button><button class="ch-tab" onclick="switchChannel(\'debate\')">#debate</button><button class="ch-tab" onclick="switchChannel(\'gaming\')">#gaming</button><button class="ch-tab" onclick="switchChannel(\'music\')">#music</button><button class="ch-tab" onclick="switchChannel(\'memes\')">#memes</button></div>';
-            document
-                .querySelectorAll(".ch-tab")
-                .forEach((b) => b.classList.toggle("active", b.textContent === "#" + currentChannel));
+                '<span id="channel-label">#' + currentChannel + '</span><div class="header-spacer"></div><div id="channel-tabs"><button class="ch-tab" onclick="switchChannel(\'global\')">#global</button><button class="ch-tab" onclick="switchChannel(\'debate\')">#debate</button><button class="ch-tab" onclick="switchChannel(\'gaming\')">#gaming</button><button class="ch-tab" onclick="switchChannel(\'music\')">#music</button><button class="ch-tab" onclick="switchChannel(\'memes\')">#memes</button></div>';
+            document.querySelectorAll(".ch-tab").forEach((b) => b.classList.toggle("active", b.textContent === "#" + currentChannel));
             document.getElementById("msg-input").placeholder = "say something...";
             document.getElementById("messages").innerHTML = "";
             sendWS({ type: "join_channel", channel: currentChannel });
@@ -2020,6 +1828,7 @@ function maybeInsertDateSep(container, timestamp) {
         function renderNodeMessage(msg) {
             const container = document.getElementById("messages"),
                 isOwner = currentNode?.owner === currentUser?.username;
+            maybeInsertDateSep(container, msg.timestamp);
             const ts = new Date(msg.timestamp),
                 time = ts.getHours().toString().padStart(2, "0") + ":" + ts.getMinutes().toString().padStart(2, "0");
             const wrap = document.createElement("div");
@@ -2038,10 +1847,7 @@ function maybeInsertDateSep(container, timestamp) {
             userEl.style.color = msg.color || "#888";
             userEl.textContent = (msg.username === currentNode?.owner ? "♛ " : "") + msg.username;
             userEl.style.cursor = "pointer";
-            userEl.onclick = (e) => {
-                e.stopPropagation();
-                showProfile(msg.username, userEl);
-            };
+            userEl.onclick = (e) => { e.stopPropagation(); showProfile(msg.username, userEl); };
             const sepEl = document.createElement("span");
             sepEl.className = "msg-sep";
             sepEl.textContent = "›";
@@ -2099,19 +1905,13 @@ function maybeInsertDateSep(container, timestamp) {
                     body: JSON.stringify({ name }),
                 });
                 const d = await r.json();
-                if (!r.ok) {
-                    msgEl.className = "err";
-                    msgEl.textContent = d.error;
-                    return;
-                }
+                if (!r.ok) { msgEl.className = "err"; msgEl.textContent = d.error; return; }
                 input.value = "";
                 myNodes.push({ id: d.id, name: d.name, owner: d.owner, memberCount: 1 });
                 renderNodesPanel();
                 msgEl.className = "ok";
                 msgEl.textContent = `created "${d.name}"`;
-                setTimeout(() => {
-                    msgEl.textContent = "";
-                }, 3000);
+                setTimeout(() => { msgEl.textContent = ""; }, 3000);
                 if (document.getElementById("mobile-nodes-panel")?.classList.contains("visible")) syncMobileNodes();
             } catch {
                 msgEl.className = "err";
@@ -2132,10 +1932,7 @@ function maybeInsertDateSep(container, timestamp) {
                 });
                 const d = await r.json();
                 if (!r.ok) {
-                    if (msgEl) {
-                        msgEl.className = "err";
-                        msgEl.textContent = d.error;
-                    }
+                    if (msgEl) { msgEl.className = "err"; msgEl.textContent = d.error; }
                     showToast(d.error);
                     return;
                 }
@@ -2145,9 +1942,7 @@ function maybeInsertDateSep(container, timestamp) {
                 if (msgEl) {
                     msgEl.className = "ok";
                     msgEl.textContent = `joined "${d.node.name}"`;
-                    setTimeout(() => {
-                        msgEl.textContent = "";
-                    }, 3000);
+                    setTimeout(() => { msgEl.textContent = ""; }, 3000);
                 }
                 showToast(`Joined "${d.node.name}"`);
             } catch {}
@@ -2211,15 +2006,10 @@ function maybeInsertDateSep(container, timestamp) {
             const list = document.getElementById("nodes-discover-list");
             list.innerHTML = '<div class="friends-empty">loading...</div>';
             try {
-                const r = await fetch(HTTP_BASE + "/api/nodes/discover", {
-                    headers: { Authorization: "Bearer " + getToken() },
-                });
+                const r = await fetch(HTTP_BASE + "/api/nodes/discover", { headers: { Authorization: "Bearer " + getToken() } });
                 const data = await r.json();
                 list.innerHTML = "";
-                if (!data.length) {
-                    list.innerHTML = '<div class="friends-empty">nothing here yet</div>';
-                    return;
-                }
+                if (!data.length) { list.innerHTML = '<div class="friends-empty">nothing here yet</div>'; return; }
                 data.forEach((n) => {
                     const item = document.createElement("div");
                     item.className = "discover-item";
@@ -2238,10 +2028,7 @@ function maybeInsertDateSep(container, timestamp) {
                             headers: { Authorization: "Bearer " + getToken() },
                         });
                         const dj = await rj.json();
-                        if (!rj.ok) {
-                            showToast(dj.error);
-                            return;
-                        }
+                        if (!rj.ok) { showToast(dj.error); return; }
                         if (!myNodes.find((x) => x.id === n.id))
                             myNodes.push({ id: n.id, name: n.name, owner: n.owner, memberCount: n.memberCount });
                         renderNodesPanel();
@@ -2256,23 +2043,14 @@ function maybeInsertDateSep(container, timestamp) {
             }
         }
         function highlightNode(nodeId) {
-            document
-                .querySelector(`.node-item[data-node-id="${nodeId}"]`)
-                ?.style.setProperty("background", "rgba(139,126,245,0.07)");
+            document.querySelector(`.node-item[data-node-id="${nodeId}"]`)?.style.setProperty("background", "rgba(139,126,245,0.07)");
         }
         function highlightFriend(username) {
             const row = document.querySelector(`.friend-item[data-user="${username}"]`);
             if (row) row.style.background = "rgba(139,126,245,0.07)";
             updateFriendsBadge();
         }
-        function scrollToBottom(force = false) {
-            const el = document.getElementById('messages');
-            const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 300;
-            if (force || nearBottom) {
-                el.scrollTop = el.scrollHeight;
-                requestAnimationFrame(() => { el.scrollTop = el.scrollHeight; });
-            }
-        }
+
         function renderUserList(users) {
             const list = document.getElementById("users-list");
             list.innerHTML = "";
@@ -2287,13 +2065,10 @@ function maybeInsertDateSep(container, timestamp) {
                 const dot = document.createElement("span");
                 dot.className = "user-dot";
                 dot.style.background =
-                    u.status === "invisible"
-                        ? "var(--muted)"
-                        : u.status === "busy"
-                          ? "var(--danger)"
-                          : u.status === "away"
-                            ? "#f5c842"
-                            : u.color;
+                    u.status === "invisible" ? "var(--muted)"
+                    : u.status === "busy" ? "var(--danger)"
+                    : u.status === "away" ? "#f5c842"
+                    : u.color;
                 dot.title = u.status || "online";
                 const name = document.createElement("span");
                 name.className = "user-name" + (u.username === currentUser?.username ? " is-you" : "");
@@ -2309,11 +2084,7 @@ function maybeInsertDateSep(container, timestamp) {
             const others = users.filter((u) => u !== currentUser?.username),
                 textEl = document.getElementById("typing-text"),
                 dotsEl = document.getElementById("typing-dots");
-            if (!others.length) {
-                textEl.textContent = "";
-                dotsEl.style.display = "none";
-                return;
-            }
+            if (!others.length) { textEl.textContent = ""; dotsEl.style.display = "none"; return; }
             dotsEl.style.display = "inline";
             if (others.length === 1) textEl.textContent = others[0] + " is typing";
             else if (others.length === 2) textEl.textContent = others[0] + " and " + others[1] + " are typing";
@@ -2327,8 +2098,7 @@ function maybeInsertDateSep(container, timestamp) {
             const text = await parseShortcodes(input.value.trim()),
                 file = fileInput.files[0];
             if (!text && !file) return;
-            let fileUrl = null,
-                fileType = null;
+            let fileUrl = null, fileType = null;
             if (file) {
                 try {
                     const form = new FormData();
@@ -2352,24 +2122,13 @@ function maybeInsertDateSep(container, timestamp) {
             }
             let payload;
             if (currentNode)
-                payload = {
-                    type: "node_message",
-                    nodeId: currentNode.id,
-                    channel: activeNodeChannel,
-                    text: text || " ",
-                };
+                payload = { type: "node_message", nodeId: currentNode.id, channel: activeNodeChannel, text: text || " " };
             else {
                 payload = { type: currentDM ? "dm" : "message", text: text || " ", channel: currentChannel };
                 if (currentDM) payload.to = currentDM;
             }
-            if (replyingTo) {
-                payload.replyTo = replyingTo;
-                clearReply();
-            }
-            if (fileUrl) {
-                payload.fileUrl = fileUrl;
-                payload.fileType = fileType;
-            }
+            if (replyingTo) { payload.replyTo = replyingTo; clearReply(); }
+            if (fileUrl) { payload.fileUrl = fileUrl; payload.fileType = fileType; }
             sendWS(payload);
             input.value = "";
             input.style.height = "";
@@ -2392,18 +2151,10 @@ function maybeInsertDateSep(container, timestamp) {
                     else stopTyping();
                 }
             });
-            document.getElementById("login-pass").addEventListener("keydown", (e) => {
-                if (e.key === "Enter") doLogin();
-            });
-            document.getElementById("login-user").addEventListener("keydown", (e) => {
-                if (e.key === "Enter") document.getElementById("login-pass").focus();
-            });
-            document.getElementById("reg-pass").addEventListener("keydown", (e) => {
-                if (e.key === "Enter") document.getElementById("reg-pass2").focus();
-            });
-            document.getElementById("reg-pass2").addEventListener("keydown", (e) => {
-                if (e.key === "Enter") doRegister();
-            });
+            document.getElementById("login-pass").addEventListener("keydown", (e) => { if (e.key === "Enter") doLogin(); });
+            document.getElementById("login-user").addEventListener("keydown", (e) => { if (e.key === "Enter") document.getElementById("login-pass").focus(); });
+            document.getElementById("reg-pass").addEventListener("keydown", (e) => { if (e.key === "Enter") document.getElementById("reg-pass2").focus(); });
+            document.getElementById("reg-pass2").addEventListener("keydown", (e) => { if (e.key === "Enter") doRegister(); });
             document.getElementById("file-input").addEventListener("change", () => {
                 const file = document.getElementById("file-input").files[0];
                 if (!file) return;
@@ -2413,18 +2164,12 @@ function maybeInsertDateSep(container, timestamp) {
         });
 
         function startTyping() {
-            if (!isTyping) {
-                isTyping = true;
-                sendWS({ type: "typing" });
-            }
+            if (!isTyping) { isTyping = true; sendWS({ type: "typing" }); }
             clearTimeout(typingTimeout);
             typingTimeout = setTimeout(stopTyping, 3000);
         }
         function stopTyping() {
-            if (isTyping) {
-                isTyping = false;
-                sendWS({ type: "stop_typing" });
-            }
+            if (isTyping) { isTyping = false; sendWS({ type: "stop_typing" }); }
             clearTimeout(typingTimeout);
         }
 
@@ -2441,11 +2186,7 @@ function maybeInsertDateSep(container, timestamp) {
             if (!rateReset) return;
             const el = document.getElementById("rate-limit");
             const remaining = Math.max(0, rateReset - Date.now());
-            if (remaining <= 0) {
-                rateRemaining = 20;
-                el.textContent = "20 messages / min";
-                return;
-            }
+            if (remaining <= 0) { rateRemaining = 20; el.textContent = "20 messages / min"; return; }
             if (rateRemaining <= 0) el.textContent = `rate limit — resets in ${Math.ceil(remaining / 1000)}s`;
         }, 500);
 
@@ -2459,17 +2200,13 @@ function maybeInsertDateSep(container, timestamp) {
             const count = (friendsState.incoming || []).length;
             const badge = document.getElementById("friends-badge");
             if (badge) {
-                if (count > 0) {
-                    badge.textContent = count;
-                    badge.classList.remove("hidden");
-                } else badge.classList.add("hidden");
+                if (count > 0) { badge.textContent = count; badge.classList.remove("hidden"); }
+                else badge.classList.add("hidden");
             }
             const mobileBadge = document.getElementById("mobile-friends-badge");
             if (mobileBadge) {
-                if (count > 0) {
-                    mobileBadge.textContent = count;
-                    mobileBadge.classList.remove("hidden");
-                } else mobileBadge.classList.add("hidden");
+                if (count > 0) { mobileBadge.textContent = count; mobileBadge.classList.remove("hidden"); }
+                else mobileBadge.classList.add("hidden");
             }
         }
         function renderIncoming() {
@@ -2541,46 +2278,35 @@ function maybeInsertDateSep(container, timestamp) {
                 section.appendChild(empty);
                 return;
             }
-            [...friends]
-                .sort((a, b) => a.username.localeCompare(b.username))
-                .forEach((f) => {
-                    const item = document.createElement("div");
-                    item.className = "friend-item";
-                    item.dataset.user = f.username;
-                    const dot = document.createElement("span");
-                    dot.className = "friend-dot";
-                    dot.style.background = f.color || "#888";
-                    const name = document.createElement("span");
-                    name.className = "friend-name";
-                    name.textContent = f.username;
-                    const actions = document.createElement("div");
-                    actions.className = "friend-actions";
-                    const dmBtn = document.createElement("button");
-                    dmBtn.className = "friend-dm-btn";
-                    dmBtn.textContent = "dm";
-                    dmBtn.title = "DM " + f.username;
-                    dmBtn.onclick = (e) => {
-                        e.stopPropagation();
-                        openDM(f.username);
-                    };
-                    const removeBtn = document.createElement("button");
-                    removeBtn.className = "friend-remove-btn";
-                    removeBtn.textContent = "×";
-                    removeBtn.title = "remove friend";
-                    removeBtn.onclick = (e) => {
-                        e.stopPropagation();
-                        removeFriend(f.username);
-                    };
-                    actions.append(dmBtn, removeBtn);
-                    item.append(dot, name, actions);
-                    item.ondblclick = () => openDM(f.username);
-                    name.style.cursor = "pointer";
-                    name.onclick = (e) => {
-                        e.stopPropagation();
-                        showProfile(f.username, item);
-                    };
-                    section.appendChild(item);
-                });
+            [...friends].sort((a, b) => a.username.localeCompare(b.username)).forEach((f) => {
+                const item = document.createElement("div");
+                item.className = "friend-item";
+                item.dataset.user = f.username;
+                const dot = document.createElement("span");
+                dot.className = "friend-dot";
+                dot.style.background = f.color || "#888";
+                const name = document.createElement("span");
+                name.className = "friend-name";
+                name.textContent = f.username;
+                const actions = document.createElement("div");
+                actions.className = "friend-actions";
+                const dmBtn = document.createElement("button");
+                dmBtn.className = "friend-dm-btn";
+                dmBtn.textContent = "dm";
+                dmBtn.title = "DM " + f.username;
+                dmBtn.onclick = (e) => { e.stopPropagation(); openDM(f.username); };
+                const removeBtn = document.createElement("button");
+                removeBtn.className = "friend-remove-btn";
+                removeBtn.textContent = "×";
+                removeBtn.title = "remove friend";
+                removeBtn.onclick = (e) => { e.stopPropagation(); removeFriend(f.username); };
+                actions.append(dmBtn, removeBtn);
+                item.append(dot, name, actions);
+                item.ondblclick = () => openDM(f.username);
+                name.style.cursor = "pointer";
+                name.onclick = (e) => { e.stopPropagation(); showProfile(f.username, item); };
+                section.appendChild(item);
+            });
         }
 
         async function sendFriendRequest() {
@@ -2595,9 +2321,7 @@ function maybeInsertDateSep(container, timestamp) {
                 input.value = "";
                 msgEl.className = "ok";
                 msgEl.textContent = res.status === "accepted" ? `now friends with ${to}!` : `request sent to ${to}`;
-                setTimeout(() => {
-                    msgEl.textContent = "";
-                }, 3000);
+                setTimeout(() => { msgEl.textContent = ""; }, 3000);
             } catch (e) {
                 msgEl.className = "err";
                 msgEl.textContent = e.message;
@@ -2633,9 +2357,7 @@ function maybeInsertDateSep(container, timestamp) {
             } catch {}
         }
 
-        function isMobile() {
-            return window.innerWidth <= 600;
-        }
+        function isMobile() { return window.innerWidth <= 600; }
         function mobileNav(tab) {
             if (!isMobile()) return;
             ["chat", "online", "friends", "nodes", "more"].forEach((t) =>
@@ -2651,8 +2373,7 @@ function maybeInsertDateSep(container, timestamp) {
         }
         function syncMobileOnline() {
             const panel = document.getElementById("mobile-online-panel");
-            panel.innerHTML =
-                '<div class="mobile-panel-head">ONLINE</div>' + document.getElementById("users-list").innerHTML;
+            panel.innerHTML = '<div class="mobile-panel-head">ONLINE</div>' + document.getElementById("users-list").innerHTML;
         }
         function syncMobileFriends() {
             const panel = document.getElementById("mobile-friends-panel");
@@ -2677,35 +2398,21 @@ function maybeInsertDateSep(container, timestamp) {
                         const res = await apiAuthPost("/api/friends/request", { to });
                         mInput.value = "";
                         mMsg.className = "ok";
-                        mMsg.textContent =
-                            res.status === "accepted" ? `now friends with ${to}!` : `request sent to ${to}`;
-                        setTimeout(() => {
-                            mMsg.textContent = "";
-                        }, 3000);
+                        mMsg.textContent = res.status === "accepted" ? `now friends with ${to}!` : `request sent to ${to}`;
+                        setTimeout(() => { mMsg.textContent = ""; }, 3000);
                     } catch (e) {
                         mMsg.className = "err";
                         mMsg.textContent = e.message;
                     }
                 };
-            if (mInput)
-                mInput.addEventListener("keydown", (e) => {
-                    if (e.key === "Enter") sendBtn?.click();
-                });
+            if (mInput) mInput.addEventListener("keydown", (e) => { if (e.key === "Enter") sendBtn?.click(); });
             panel.querySelectorAll(".friend-dm-btn").forEach((btn) => {
                 const user = btn.closest(".friend-item")?.dataset.user;
-                if (user)
-                    btn.onclick = (e) => {
-                        e.stopPropagation();
-                        openDM(user);
-                    };
+                if (user) btn.onclick = (e) => { e.stopPropagation(); openDM(user); };
             });
             panel.querySelectorAll(".friend-remove-btn").forEach((btn) => {
                 const user = btn.closest(".friend-item")?.dataset.user;
-                if (user)
-                    btn.onclick = (e) => {
-                        e.stopPropagation();
-                        removeFriend(user);
-                    };
+                if (user) btn.onclick = (e) => { e.stopPropagation(); removeFriend(user); };
             });
             panel.querySelectorAll(".btn-accept").forEach((btn) => {
                 const from = btn.closest(".request-item")?.querySelector(".request-from")?.textContent;
@@ -2736,20 +2443,14 @@ function maybeInsertDateSep(container, timestamp) {
                         body: JSON.stringify({ name }),
                     });
                     const d = await r.json();
-                    if (!r.ok) {
-                        msgEl.className = "err";
-                        msgEl.textContent = d.error;
-                        return;
-                    }
+                    if (!r.ok) { msgEl.className = "err"; msgEl.textContent = d.error; return; }
                     input.value = "";
                     myNodes.push({ id: d.id, name: d.name, owner: d.owner, memberCount: 1 });
                     renderNodesPanel();
                     syncMobileNodes();
                     msgEl.className = "ok";
                     msgEl.textContent = `created "${d.name}"`;
-                    setTimeout(() => {
-                        msgEl.textContent = "";
-                    }, 3000);
+                    setTimeout(() => { msgEl.textContent = ""; }, 3000);
                 } catch {
                     msgEl.className = "err";
                     msgEl.textContent = "error";
@@ -2759,10 +2460,7 @@ function maybeInsertDateSep(container, timestamp) {
                 const input = panel.querySelector("#mnode-invite"),
                     code = input?.value.trim();
                 input.value = "";
-                if (code) {
-                    await joinByInviteCode(code);
-                    syncMobileNodes();
-                }
+                if (code) { await joinByInviteCode(code); syncMobileNodes(); }
             };
             if (!myNodes.length) {
                 const empty = document.createElement("div");
@@ -2822,9 +2520,7 @@ function maybeInsertDateSep(container, timestamp) {
                 });
                 msgEl.style.color = "var(--accent)";
                 msgEl.textContent = "saved!";
-                setTimeout(() => {
-                    msgEl.textContent = "";
-                }, 2000);
+                setTimeout(() => { msgEl.textContent = ""; }, 2000);
             } catch {
                 msgEl.style.color = "var(--danger)";
                 msgEl.textContent = "failed to save";
@@ -2837,12 +2533,7 @@ function maybeInsertDateSep(container, timestamp) {
                 ["away", "🟡", "away"],
                 ["busy", "🔴", "busy"],
                 ["invisible", "⚫", "invisible"],
-            ]
-                .map(
-                    ([val, icon, label]) =>
-                        `<button class="mobile-status-btn" onclick="setMobileStatus('${val}','${icon}')">${icon} ${label}</button>`
-                )
-                .join("")}</div></div>`;
+            ].map(([val, icon, label]) => `<button class="mobile-status-btn" onclick="setMobileStatus('${val}','${icon}')">${icon} ${label}</button>`).join("")}</div></div>`;
         }
         function setMobileStatus(val, icon) {
             sendWS({ type: "set_status", status: val });
@@ -2911,8 +2602,7 @@ function maybeInsertDateSep(container, timestamp) {
             applyAllSettings();
         }
         function applyAllSettings() {
-            const s = userSettings,
-                root = document.documentElement;
+            const s = userSettings, root = document.documentElement;
             root.style.setProperty("--accent", s.accentColor);
             const hex = s.accentColor.replace("#", ""),
                 r = parseInt(hex.slice(0, 2), 16),
@@ -2946,18 +2636,10 @@ function maybeInsertDateSep(container, timestamp) {
         }
         function syncSettingsUI() {
             const s = userSettings;
-            document
-                .querySelectorAll(".s-swatch")
-                .forEach((sw) => sw.classList.toggle("selected", sw.dataset.color === s.accentColor));
-            document
-                .querySelectorAll("#seg-fontsize .s-seg-btn")
-                .forEach((btn) => btn.classList.toggle("active", btn.dataset.val === s.fontSize));
-            document
-                .querySelectorAll("#seg-density .s-seg-btn")
-                .forEach((btn) => btn.classList.toggle("active", btn.dataset.val === s.density));
-            document
-                .querySelectorAll("#seg-sound .s-seg-btn")
-                .forEach((btn) => btn.classList.toggle("active", btn.dataset.val === s.sound));
+            document.querySelectorAll(".s-swatch").forEach((sw) => sw.classList.toggle("selected", sw.dataset.color === s.accentColor));
+            document.querySelectorAll("#seg-fontsize .s-seg-btn").forEach((btn) => btn.classList.toggle("active", btn.dataset.val === s.fontSize));
+            document.querySelectorAll("#seg-density .s-seg-btn").forEach((btn) => btn.classList.toggle("active", btn.dataset.val === s.density));
+            document.querySelectorAll("#seg-sound .s-seg-btn").forEach((btn) => btn.classList.toggle("active", btn.dataset.val === s.sound));
             const map = {
                 "tog-timestamps": s.timestamps,
                 "tog-usernames": s.usernames,
@@ -2991,9 +2673,7 @@ function maybeInsertDateSep(container, timestamp) {
         function overlayClick(e) {
             if (e.target === document.getElementById("settings-overlay")) closeSettings();
         }
-        document.addEventListener("keydown", (e) => {
-            if (e.key === "Escape") closeSettings();
-        });
+        document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeSettings(); });
         function switchSettingsTab(tab) {
             ["appearance", "notifications", "behavior"].forEach((t) =>
                 document.getElementById("s-tab-" + t).classList.toggle("hidden", t !== tab)
@@ -3008,9 +2688,7 @@ function maybeInsertDateSep(container, timestamp) {
                 sw.addEventListener("click", () => {
                     userSettings.accentColor = sw.dataset.color;
                     applySetting("accentColor", sw.dataset.color);
-                    document
-                        .querySelectorAll(".s-swatch")
-                        .forEach((s2) => s2.classList.toggle("selected", s2.dataset.color === sw.dataset.color));
+                    document.querySelectorAll(".s-swatch").forEach((s2) => s2.classList.toggle("selected", s2.dataset.color === sw.dataset.color));
                 })
             );
             document.querySelectorAll("#seg-fontsize .s-seg-btn").forEach((btn) =>
@@ -3079,22 +2757,19 @@ function maybeInsertDateSep(container, timestamp) {
         function showReleaseBanner(release) {
             const banner = document.createElement("div");
             banner.id = "release-banner";
-            banner.style.cssText =
-                "position:fixed;top:16px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--accent);border-radius:var(--radius);padding:12px 16px;z-index:9998;max-width:420px;width:90%;box-shadow:0 4px 16px rgba(0,0,0,0.4);font-size:12px;";
+            banner.style.cssText = "position:fixed;top:16px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--accent);border-radius:var(--radius);padding:12px 16px;z-index:9998;max-width:420px;width:90%;box-shadow:0 4px 16px rgba(0,0,0,0.4);font-size:12px;";
             const head = document.createElement("div");
             head.style.cssText = "display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;";
             const tag = document.createElement("span");
             tag.style.cssText = "color:var(--accent);font-weight:500;";
             tag.textContent = "★ " + release.tag_name;
             const closeBtn = document.createElement("button");
-            closeBtn.style.cssText =
-                "background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;line-height:1;";
+            closeBtn.style.cssText = "background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;line-height:1;";
             closeBtn.textContent = "×";
             closeBtn.onclick = () => dismissRelease(release.tag_name);
             head.append(tag, closeBtn);
             const body = document.createElement("div");
-            body.style.cssText =
-                "color:var(--text);white-space:pre-wrap;max-height:160px;overflow-y:auto;line-height:1.5;";
+            body.style.cssText = "color:var(--text);white-space:pre-wrap;max-height:160px;overflow-y:auto;line-height:1.5;";
             body.textContent = release.body || "no notes";
             banner.append(head, body);
             document.body.appendChild(banner);
@@ -3112,24 +2787,17 @@ function maybeInsertDateSep(container, timestamp) {
             gifSearchTimer = null,
             gifFaves = [];
         function loadGifFaves() {
-            try {
-                gifFaves = JSON.parse(localStorage.getItem(GIF_FAVES_KEY)) || [];
-            } catch {
-                gifFaves = [];
-            }
+            try { gifFaves = JSON.parse(localStorage.getItem(GIF_FAVES_KEY)) || []; }
+            catch { gifFaves = []; }
         }
-        function saveGifFaves() {
-            localStorage.setItem(GIF_FAVES_KEY, JSON.stringify(gifFaves));
-        }
+        function saveGifFaves() { localStorage.setItem(GIF_FAVES_KEY, JSON.stringify(gifFaves)); }
         function toggleGifFave(gif) {
             const idx = gifFaves.findIndex((f) => f.id === gif.id);
             if (idx === -1) gifFaves.unshift(gif);
             else gifFaves.splice(idx, 1);
             saveGifFaves();
         }
-        function isGifFaved(id) {
-            return gifFaves.some((f) => f.id === id);
-        }
+        function isGifFaved(id) { return gifFaves.some((f) => f.id === id); }
         loadGifFaves();
         function toggleGifPicker() {
             gifPickerOpen = !gifPickerOpen;
@@ -3161,63 +2829,40 @@ function maybeInsertDateSep(container, timestamp) {
             document.getElementById("gif-search").addEventListener("input", (e) => {
                 clearTimeout(gifSearchTimer);
                 const q = e.target.value.trim();
-                if (!q) {
-                    gifCurrentTab === "trending" ? fetchTrending() : renderFaves();
-                    return;
-                }
+                if (!q) { gifCurrentTab === "trending" ? fetchTrending() : renderFaves(); return; }
                 gifSearchTimer = setTimeout(() => fetchSearch(q), 350);
             });
         });
         async function fetchTrending() {
-          renderGifGrid(null, 'loading');
-          try {
-            const r = await fetch(`${GIPHY_PROXY}?endpoint=trending&limit=30`, {
-              headers: { Authorization: 'Bearer ' + getToken() }
-            });
-            renderGifGrid((await r.json()).data);
-          } catch { renderGifGrid(null, 'error'); }
-        }        
-
+            renderGifGrid(null, 'loading');
+            try {
+                const r = await fetch(`${GIPHY_PROXY}?endpoint=trending&limit=30`, { headers: { Authorization: 'Bearer ' + getToken() } });
+                renderGifGrid((await r.json()).data);
+            } catch { renderGifGrid(null, 'error'); }
+        }
         async function fetchSearch(query) {
-          renderGifGrid(null, 'loading');
-          try {
-            const r = await fetch(`${GIPHY_PROXY}?endpoint=search&q=${encodeURIComponent(query)}&limit=30`, {
-              headers: { Authorization: 'Bearer ' + getToken() }
-            });
-            renderGifGrid((await r.json()).data);
-          } catch { renderGifGrid(null, 'error'); }
+            renderGifGrid(null, 'loading');
+            try {
+                const r = await fetch(`${GIPHY_PROXY}?endpoint=search&q=${encodeURIComponent(query)}&limit=30`, { headers: { Authorization: 'Bearer ' + getToken() } });
+                renderGifGrid((await r.json()).data);
+            } catch { renderGifGrid(null, 'error'); }
         }
         function gifToData(g) {
-            return {
-                id: g.id,
-                preview: g.images.fixed_height_small.url,
-                full: g.images.original.url,
-                title: g.title || "",
-            };
+            return { id: g.id, preview: g.images.fixed_height_small.url, full: g.images.original.url, title: g.title || "" };
         }
         function renderGifGrid(gifs, state) {
             const grid = document.getElementById("gif-grid");
             grid.innerHTML = "";
-            if (state === "loading") {
-                grid.innerHTML = '<div class="gif-empty">loading…</div>';
-                return;
-            }
-            if (state === "error") {
-                grid.innerHTML = '<div class="gif-empty">couldn\'t load GIFs</div>';
-                return;
-            }
-            if (!gifs?.length) {
-                grid.innerHTML = '<div class="gif-empty">nothing found</div>';
-                return;
-            }
+            if (state === "loading") { grid.innerHTML = '<div class="gif-empty">loading…</div>'; return; }
+            if (state === "error") { grid.innerHTML = '<div class="gif-empty">couldn\'t load GIFs</div>'; return; }
+            if (!gifs?.length) { grid.innerHTML = '<div class="gif-empty">nothing found</div>'; return; }
             gifs.map(gifToData).forEach((g) => grid.appendChild(buildGifItem(g)));
         }
         function renderFaves() {
             const grid = document.getElementById("gif-grid");
             grid.innerHTML = "";
             if (!gifFaves.length) {
-                grid.innerHTML =
-                    '<div class="gif-empty">no favourites yet<br><small>hover a GIF and click ★</small></div>';
+                grid.innerHTML = '<div class="gif-empty">no favourites yet<br><small>hover a GIF and click ★</small></div>';
                 return;
             }
             gifFaves.forEach((g) => grid.appendChild(buildGifItem(g)));
@@ -3263,4 +2908,5 @@ function maybeInsertDateSep(container, timestamp) {
     <script>
         if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js");
     </script>
+</body>
 </html>
