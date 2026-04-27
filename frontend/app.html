@@ -311,6 +311,25 @@
                 padding: 6px 10px;
             }
         }
+
+        .msg-date-sep {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 0 6px;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    color: var(--muted, #666);
+    font-weight: 500;
+    user-select: none;
+}
+.msg-date-sep::before,
+.msg-date-sep::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border, #2a2a38);
+}
     </style>
     <div id="auth-screen">
         <div class="auth-card">
@@ -927,6 +946,28 @@
             activeNodeChannel = "general",
             activeNodeData = null,
             replyingTo = null;
+        let lastRenderedDate = null;
+
+function formatDateSep(ts) {
+    const d = new Date(ts);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+    if (d.toDateString() === today.toDateString()) return 'Today';
+    if (d.toDateString() === yesterday.toDateString()) return 'Yesterday';
+    return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+}
+
+function maybeInsertDateSep(container, timestamp) {
+    const d = new Date(timestamp);
+    const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+    if (key === lastRenderedDate) return;
+    lastRenderedDate = key;
+    const sep = document.createElement('div');
+    sep.className = 'msg-date-sep';
+    sep.textContent = formatDateSep(timestamp);
+    container.appendChild(sep);
+}
         const STATUS_ICONS = { online: "🟢", away: "🟡", busy: "🔴", invisible: "⚫" };
         const QUICK_REACTIONS = ["👍", "❤️", "😂", "😮", "😢", "🔥", "✅", "👀"];
 
@@ -2208,11 +2249,13 @@
             updateFriendsBadge();
         }
         function scrollToBottom(force = false) {
-            const el = document.getElementById("messages");
-            const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 200;
-            if (force || nearBottom) el.scrollTop = el.scrollHeight;
+            const el = document.getElementById('messages');
+            const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 300;
+            if (force || nearBottom) {
+                el.scrollTop = el.scrollHeight;
+                requestAnimationFrame(() => { el.scrollTop = el.scrollHeight; });
+            }
         }
-
         function renderUserList(users) {
             const list = document.getElementById("users-list");
             list.innerHTML = "";
