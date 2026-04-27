@@ -901,20 +901,37 @@
             },
         ];
         function appendFilePreview(fileUrl, fileType, textEl) {
-            if (!fileUrl) return;
-            const url = fileUrl.startsWith("http") ? fileUrl : HTTP_BASE + fileUrl;
-            const r = FILE_RENDERERS.find((r) => r.test(fileType));
-            if (r) r.render(url, textEl);
-            else {
-                const a = document.createElement("a");
-                a.href = url;
-                a.target = "_blank";
-                a.textContent = "⬇ download file";
-                a.style.marginTop = "4px";
-                textEl.appendChild(a);
-            }
+    if (!fileUrl) return;
+    const url = fileUrl.startsWith('http') ? fileUrl : HTTP_BASE + fileUrl;
+    const r = FILE_RENDERERS.find((r) => r.test(fileType));
+    if (r) {
+        // Intercept image renderer to hook onload
+        if (fileType?.startsWith('image/')) {
+            const img = document.createElement('img');
+            img.src = url;
+            img.style.cssText = 'display:block;max-width:260px;margin-top:4px;border-radius:4px;cursor:pointer;';
+            img.onclick = () => window.open(img.src);
+            img.onload = () => scrollToBottom(false);
+            textEl.appendChild(img);
+        } else if (fileType?.startsWith('video/')) {
+            const v = document.createElement('video');
+            v.src = url;
+            v.controls = true;
+            v.style.cssText = 'display:block;max-width:260px;margin-top:4px;border-radius:4px;';
+            v.onloadedmetadata = () => scrollToBottom(false);
+            textEl.appendChild(v);
+        } else {
+            r.render(url, textEl);
         }
-
+    } else {
+        const a = document.createElement('a');
+        a.href = url;
+        a.target = '_blank';
+        a.textContent = '⬇ download file';
+        a.style.marginTop = '4px';
+        textEl.appendChild(a);
+    }
+}
         const RAW_URL = (
             typeof ASTERISK_CONFIG !== "undefined"
                 ? ASTERISK_CONFIG.BACKEND_URL
